@@ -1,0 +1,46 @@
+[
+  {
+    "id": "prod-1",
+    "title": "Handwritten Cards",
+    "subtitle": "maquette dé keepsake",
+    "price": 30000,
+    "image": "https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop",
+    "category": "CARDS",
+    "allowsCustomization": true,
+    "inStock": true,
+    "createdAt": "2026-09-29T22:00:00.000Z"
+  },
+  {
+    "id": "prod-2",
+    "title": "Handwritten Cards",
+    "subtitle": "black envelope luxury edition",
+    "price": 30000,
+    "image": "https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop",
+    "category": "CARDS",
+    "allowsCustomization": true,
+    "inStock": true,
+    "createdAt": "2026-09-29T22:00:00.000Z"
+  },
+  {
+    "id": "prod-3",
+    "title": "Flower Bundle",
+    "subtitle": "fresh floral arrangement FLW - 23",
+    "price": 15000,
+    "image": "https://images.unsplash.com/photo-1563241527-3004b7be0ffd?q=80&w=800&auto=format&fit=crop",
+    "category": "FLOWERS",
+    "allowsCustomization": false,
+    "inStock": true,
+    "createdAt": "2026-09-29T22:00:00.000Z"
+  },
+  {
+    "id": "prod-4",
+    "title": "Artisan Chocolates",
+    "subtitle": "artisan dark cocoa block CHLTE - 33",
+    "price": 5900,
+    "image": "https://images.unsplash.com/photo-1549007994-cb92caebd54b?q=80&w=800&auto=format&fit=crop",
+    "category": "CHOCOLATES",
+    "allowsCustomization": false,
+    "inStock": true,
+    "createdAt": "2026-09-29T22:00:00.000Z"
+  }
+]

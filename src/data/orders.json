@@ -1,0 +1,27 @@
+[
+  {
+    "id": "ORD-1001",
+    "purchaserName": "Jane Forster",
+    "purchaserEmail": "jane@example.com",
+    "recipientType": "gift",
+    "recipientName": "Alexander Forster",
+    "recipientEmail": "alexander@example.com",
+    "fulfillmentType": "digital_only",
+    "status": "in_production",
+    "totalAmount": 38500,
+    "accessCode": "KPSK-892F-37A1",
+    "items": [
+      {
+        "title": "Custom Keepsake Card",
+        "price": 8500,
+        "quantity": 1
+      },
+      {
+        "title": "Handwritten Cards",
+        "price": 30000,
+        "quantity": 1
+      }
+    ],
+    "createdAt": "2026-09-29T21:30:00.000Z"
+  }
+]

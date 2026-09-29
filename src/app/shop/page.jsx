@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
 
-const PRODUCTS = [
+const DEFAULT_PRODUCTS = [
   {
     id: 'shop-1',
     title: 'Handwritten Cards',
@@ -37,13 +37,20 @@ const PRODUCTS = [
 
 export default function ShopPage() {
   const { addToCart } = useCart();
-  const [quantities, setQuantities] = useState({
-    'shop-1': 1,
-    'shop-2': 1,
-    'shop-3': 1,
-    'shop-4': 1,
-  });
+  const [products, setProducts] = useState(DEFAULT_PRODUCTS);
+  const [quantities, setQuantities] = useState({});
   const [activePage, setActivePage] = useState(1);
+
+  useEffect(() => {
+    fetch('/api/admin/products')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.products && data.products.length > 0) {
+          setProducts(data.products);
+        }
+      })
+      .catch((err) => console.error('Error loading dynamic products:', err));
+  }, []);
 
   const handleQtyChange = (id, delta) => {
     setQuantities((prev) => ({
@@ -67,13 +74,13 @@ export default function ShopPage() {
 
         {/* Toolbar Bar */}
         <div style={styles.toolbar}>
-          <span style={styles.countText}>23 PRODUCTS FOUND</span>
+          <span style={styles.countText}>{products.length} PRODUCTS FOUND</span>
           <button className="btn-pill">Sort By:</button>
         </div>
 
-        {/* Products List */}
-        <div style={styles.productGrid}>
-          {PRODUCTS.map((prod) => (
+        {/* Products List (Strict 2x2 Desktop Grid) */}
+        <div className="shop-grid-2x2">
+          {products.map((prod) => (
             <div key={prod.id} style={styles.card}>
               <div style={styles.imgWrapper}>
                 <img src={prod.image} alt={prod.title} style={styles.img} />
@@ -82,7 +89,7 @@ export default function ShopPage() {
               <div style={styles.cardFooter}>
                 <div>
                   <div style={styles.price}>NGN {prod.price.toLocaleString()}</div>
-                  <div style={styles.subtitle}>{prod.title}</div>
+                  <div style={styles.subtitle}>{prod.title} {prod.subtitle ? `(${prod.subtitle})` : ''}</div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -93,7 +100,7 @@ export default function ShopPage() {
                     >
                       +
                     </button>
-                    <span className="quantity-val">{quantities[prod.id]}</span>
+                    <span className="quantity-val">{quantities[prod.id] || 1}</span>
                     <button
                       className="quantity-btn"
                       onClick={() => handleQtyChange(prod.id, -1)}
@@ -107,9 +114,9 @@ export default function ShopPage() {
                       addToCart({
                         id: prod.id,
                         title: prod.title,
-                        subtitle: prod.subtitle,
+                        subtitle: prod.subtitle || 'custom edition',
                         price: prod.price,
-                        quantity: quantities[prod.id],
+                        quantity: quantities[prod.id] || 1,
                         image: prod.image,
                       })
                     }

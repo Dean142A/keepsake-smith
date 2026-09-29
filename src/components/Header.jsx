@@ -57,6 +57,9 @@ export default function Header() {
           <Link href="/portal" style={styles.navLink}>
             PORTAL
           </Link>
+          <Link href="/admin" style={styles.navLink}>
+            ADMIN
+          </Link>
           <button
             onClick={() => setIsCartOpen(true)}
             style={styles.cartBtn}
