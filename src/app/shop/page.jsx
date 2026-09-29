@@ -205,9 +205,9 @@ const styles = {
     color: '#888888',
   },
   productGrid: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '4rem',
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
+    gap: '3.5rem 2rem',
     marginBottom: '4rem',
   },
   card: {
@@ -218,7 +218,7 @@ const styles = {
   },
   imgWrapper: {
     width: '100%',
-    height: '560px',
+    height: '460px',
     overflow: 'hidden',
   },
   img: {
