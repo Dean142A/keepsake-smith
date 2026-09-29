@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Upload, Image as ImageIcon, Sparkles } from 'lucide-react';
+import { Upload, Image as ImageIcon } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 export default function CustomizePage() {
@@ -154,9 +154,6 @@ export default function CustomizePage() {
           </div>
         </div>
 
-        {/* Divider */}
-        <div style={styles.divider} />
-
         {/* Totals Bar */}
         <div style={styles.totalsBar}>
           <div>
@@ -169,7 +166,7 @@ export default function CustomizePage() {
             className="btn-pill btn-pill-solid"
             style={{ padding: '0.9rem 2.5rem', fontSize: '0.9rem' }}
           >
-            Add to cart
+            Order Now
           </button>
         </div>
 
@@ -187,7 +184,7 @@ export default function CustomizePage() {
               onClick={handleAddToCart}
               className="btn-pill btn-pill-dark"
             >
-              Get Started
+              Order Now
             </button>
             <p className="text-muted">
               this explains color systems and color usages so they are used the way to brand identity portrays
@@ -226,9 +223,9 @@ const styles = {
   previewBox: {
     width: '100%',
     height: '480px',
-    backgroundColor: '#161616',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '20px',
+    backgroundColor: '#141414',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '0px',
     overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
@@ -255,9 +252,9 @@ const styles = {
   cardTextDisplay: {
     marginTop: '2rem',
     padding: '1rem 1.5rem',
-    backgroundColor: '#1A1A1A',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    borderRadius: '12px',
+    backgroundColor: 'transparent',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    borderRadius: '0px',
     maxWidth: '320px',
   },
   liveCardWrap: {
@@ -277,9 +274,8 @@ const styles = {
     right: '20px',
     padding: '1.25rem',
     backgroundColor: 'rgba(18, 18, 18, 0.85)',
-    backdropFilter: 'blur(10px)',
-    borderRadius: '14px',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
+    borderRadius: '0px',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
   },
   cardHeaderSmall: {
     fontSize: '0.65rem',
@@ -319,16 +315,15 @@ const styles = {
     letterSpacing: '0.02em',
   },
   uploadDropzone: {
-    border: '1px dashed rgba(255, 255, 255, 0.2)',
-    borderRadius: '12px',
+    border: '1px dashed rgba(255, 255, 255, 0.3)',
+    borderRadius: '0px',
     padding: '1.5rem',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     gap: '0.5rem',
     cursor: 'pointer',
-    backgroundColor: 'rgba(255, 255, 255, 0.02)',
-    transition: 'border-color 0.2s ease',
+    backgroundColor: 'transparent',
   },
   uploadText: {
     fontSize: '0.8rem',
@@ -337,9 +332,9 @@ const styles = {
   input: {
     width: '100%',
     padding: '1.1rem 1.25rem',
-    backgroundColor: '#161616',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '12px',
+    backgroundColor: 'transparent',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '0px',
     color: '#FFFFFF',
     fontSize: '0.9rem',
     outline: 'none',
@@ -347,9 +342,9 @@ const styles = {
   textarea: {
     width: '100%',
     padding: '1.1rem 1.25rem',
-    backgroundColor: '#161616',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '12px',
+    backgroundColor: 'transparent',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '0px',
     color: '#FFFFFF',
     fontSize: '0.9rem',
     outline: 'none',
@@ -361,17 +356,13 @@ const styles = {
     lineHeight: '1.5',
     marginTop: '0.5rem',
   },
-  divider: {
-    width: '100%',
-    height: '1px',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    margin: '3rem 0 2rem 0',
-  },
   totalsBar: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '4rem',
+    margin: '3rem 0 4rem 0',
+    paddingTop: '2rem',
+    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
   },
   totalsLabel: {
     fontSize: '0.75rem',
@@ -390,6 +381,5 @@ const styles = {
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: '3rem',
-    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
   },
 };

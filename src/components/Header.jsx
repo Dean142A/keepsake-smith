@@ -79,7 +79,6 @@ const styles = {
     zIndex: 90,
     backgroundColor: 'rgba(17, 17, 17, 0.85)',
     backdropFilter: 'blur(12px)',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
   },
   headerContainer: {
     display: 'flex',

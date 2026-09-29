@@ -36,9 +36,8 @@ export default function Footer() {
 const styles = {
   footer: {
     width: '100%',
-    padding: '4rem 0 3rem 0',
-    backgroundColor: '#0D0D0D',
-    borderTop: '1px solid rgba(255, 255, 255, 0.05)',
+    padding: '5rem 0 3rem 0',
+    backgroundColor: 'transparent',
     marginTop: '6rem',
   },
   navRow: {

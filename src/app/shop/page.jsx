@@ -71,7 +71,7 @@ export default function ShopPage() {
           <button className="btn-pill">Sort By:</button>
         </div>
 
-        {/* Products Single / Dual Column List */}
+        {/* Products List */}
         <div style={styles.productGrid}>
           {PRODUCTS.map((prod) => (
             <div key={prod.id} style={styles.card}>
@@ -138,7 +138,7 @@ export default function ShopPage() {
                 height: '38px',
                 borderRadius: '50%',
                 border: activePage === page ? '1px solid #FFF' : '1px solid rgba(255, 255, 255, 0.2)',
-                background: activePage === page ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+                background: 'transparent',
                 color: '#FFF',
                 cursor: 'pointer',
               }}
@@ -198,7 +198,6 @@ const styles = {
     alignItems: 'center',
     marginBottom: '2.5rem',
     paddingBottom: '1.25rem',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
   },
   countText: {
     fontSize: '0.78rem',
@@ -208,27 +207,28 @@ const styles = {
   productGrid: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '3.5rem',
+    gap: '4rem',
     marginBottom: '4rem',
   },
   card: {
-    backgroundColor: '#161616',
-    borderRadius: '24px',
+    backgroundColor: 'transparent',
+    borderRadius: '0px',
+    border: 'none',
     overflow: 'hidden',
-    border: '1px solid rgba(255, 255, 255, 0.06)',
   },
   imgWrapper: {
     width: '100%',
-    height: '540px',
+    height: '560px',
     overflow: 'hidden',
   },
   img: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
+    borderRadius: '0px',
   },
   cardFooter: {
-    padding: '1.8rem 2.2rem',
+    padding: '1.5rem 0',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -258,6 +258,5 @@ const styles = {
     justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: '3rem',
-    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
   },
 };

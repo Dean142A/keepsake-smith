@@ -8,7 +8,6 @@ import { useCart } from '@/context/CartContext';
 export default function HomePage() {
   const { addToCart } = useCart();
   
-  // Local quantity states for featured product cards
   const [qty1, setQty1] = useState(1);
   const [qty2, setQty2] = useState(1);
 
@@ -92,24 +91,10 @@ export default function HomePage() {
                 </div>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                   <div className="quantity-control">
-                    <button className="quantity-btn" onClick={() => setQty1(Math.max(1, qty1 - 1))}>+</button>
+                    <button className="quantity-btn" onClick={() => setQty1(qty1 + 1)}>+</button>
                     <span className="quantity-val">{qty1}</span>
-                    <button className="quantity-btn" onClick={() => setQty1(qty1 + 1)}>-</button>
+                    <button className="quantity-btn" onClick={() => setQty1(Math.max(1, qty1 - 1))}>-</button>
                   </div>
-                  <button
-                    onClick={() => addToCart({
-                      id: 'feat-1',
-                      title: 'Handwritten Cards',
-                      subtitle: 'maquette dé keepsake',
-                      price: 30000,
-                      quantity: qty1,
-                      image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
-                    })}
-                    className="btn-pill"
-                    style={{ fontSize: '0.75rem' }}
-                  >
-                    Add
-                  </button>
                 </div>
               </div>
             </div>
@@ -130,24 +115,10 @@ export default function HomePage() {
                 </div>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                   <div className="quantity-control">
-                    <button className="quantity-btn" onClick={() => setQty2(Math.max(1, qty2 - 1))}>+</button>
+                    <button className="quantity-btn" onClick={() => setQty2(qty2 + 1)}>+</button>
                     <span className="quantity-val">{qty2}</span>
-                    <button className="quantity-btn" onClick={() => setQty2(qty2 + 1)}>-</button>
+                    <button className="quantity-btn" onClick={() => setQty2(Math.max(1, qty2 - 1))}>-</button>
                   </div>
-                  <button
-                    onClick={() => addToCart({
-                      id: 'feat-2',
-                      title: 'Handwritten Cards',
-                      subtitle: 'black envelope luxury edition',
-                      price: 30000,
-                      quantity: qty2,
-                      image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop',
-                    })}
-                    className="btn-pill"
-                    style={{ fontSize: '0.75rem' }}
-                  >
-                    Add
-                  </button>
                 </div>
               </div>
             </div>
@@ -169,7 +140,7 @@ export default function HomePage() {
               just give us a budget.
             </h3>
             <p className="text-muted" style={{ maxWidth: '420px' }}>
-              this explains color systems and color usages so they are used the way to brand identity portrays.
+              this explains color systems and color usages so they are used the way to brand identity portrays
               this explains color systems and color usages so they are used the way to brand identity portrays.
             </p>
             <Link href="/customize" className="btn-pill btn-pill-solid" style={{ alignSelf: 'flex-start', marginTop: '1rem' }}>
@@ -205,7 +176,7 @@ export default function HomePage() {
                 <button
                   onClick={() => addToCart({
                     id: 'addon-flw-23',
-                    title: 'FLW - 23 Bouquet',
+                    title: 'FLW - 23',
                     subtitle: 'fresh floral arrangement',
                     price: 15000,
                     quantity: 1,
@@ -235,7 +206,7 @@ export default function HomePage() {
                 <button
                   onClick={() => addToCart({
                     id: 'addon-chlte-33',
-                    title: 'CHLTE - 33 Chocolates',
+                    title: 'CHLTE - 33',
                     subtitle: 'artisan dark cocoa block',
                     price: 5900,
                     quantity: 1,
@@ -265,7 +236,7 @@ export default function HomePage() {
                 <button
                   onClick={() => addToCart({
                     id: 'addon-jwl-17',
-                    title: 'JWL - 17 Gold Band',
+                    title: 'JWL - 17',
                     subtitle: 'handcrafted 14k gold ring set',
                     price: 26000,
                     quantity: 1,
@@ -284,8 +255,9 @@ export default function HomePage() {
         <section style={styles.calloutBanner}>
           <div style={{ flex: 1.2 }}>
             <h2 className="heading-xl" style={{ lineHeight: '1.1' }}>
-              we <span className="metallic-pill-badge" /> know how <br />
-              to make <span style={{ fontStyle: 'italic', fontFamily: 'var(--font-serif)' }}>this special</span>
+              we <span className="metallic-pill-badge" /> know <br />
+              how to make <br />
+              this special
             </h2>
           </div>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'flex-start' }}>
@@ -337,7 +309,6 @@ const styles = {
     borderRadius: '24px',
     overflow: 'hidden',
     marginTop: '1rem',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
   },
   fullImg: {
     width: '100%',
@@ -372,24 +343,24 @@ const styles = {
     gap: '2rem',
   },
   featuredCard: {
-    backgroundColor: '#161616',
-    borderRadius: '20px',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: '0px',
     overflow: 'hidden',
-    border: '1px solid rgba(255, 255, 255, 0.06)',
   },
   featuredImgWrapper: {
     width: '100%',
-    height: '460px',
+    height: '480px',
     overflow: 'hidden',
   },
   featuredImg: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
-    transition: 'transform 0.5s ease',
+    borderRadius: '0px',
   },
   featuredFooter: {
-    padding: '1.5rem 1.8rem',
+    padding: '1.2rem 0',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -406,8 +377,7 @@ const styles = {
   },
   budgetBannerCard: {
     margin: '4rem 0',
-    backgroundColor: '#181818',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
+    backgroundColor: '#161616',
     borderRadius: '24px',
     overflow: 'hidden',
     display: 'flex',
@@ -434,25 +404,26 @@ const styles = {
   productGrid3: {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-    gap: '1.8rem',
+    gap: '2rem',
   },
   addonCardItem: {
-    backgroundColor: '#161616',
-    borderRadius: '18px',
-    border: '1px solid rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'transparent',
+    border: 'none',
+    borderRadius: '0px',
     overflow: 'hidden',
   },
   addonImgWrap: {
     width: '100%',
-    height: '280px',
+    height: '300px',
   },
   addonImg: {
     width: '100%',
     height: '100%',
     objectFit: 'cover',
+    borderRadius: '0px',
   },
   addonFooter: {
-    padding: '1.25rem 1.5rem',
+    padding: '1.2rem 0',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',

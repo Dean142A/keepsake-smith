@@ -142,7 +142,6 @@ export default function CartDrawer() {
                         image: addon.image,
                         size: 'STD 1',
                       })}
-                      className="btn-pill"
                       style={styles.addBtn}
                     >
                       Add item
@@ -238,15 +237,15 @@ const styles = {
   cartCard: {
     display: 'flex',
     gap: '1.25rem',
-    backgroundColor: '#181818',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    borderRadius: '16px',
+    backgroundColor: 'transparent',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    borderRadius: '0px',
     padding: '1.25rem',
   },
   imgWrapper: {
     width: '100px',
     height: '100px',
-    borderRadius: '12px',
+    borderRadius: '0px',
     overflow: 'hidden',
     flexShrink: 0,
   },
@@ -319,9 +318,9 @@ const styles = {
     gap: '1rem',
   },
   addonCard: {
-    backgroundColor: '#181818',
-    border: '1px solid rgba(255, 255, 255, 0.06)',
-    borderRadius: '12px',
+    backgroundColor: '#141414',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
+    borderRadius: '0px',
     overflow: 'hidden',
     display: 'flex',
     flexDirection: 'column',
@@ -348,9 +347,14 @@ const styles = {
     marginBottom: '6px',
   },
   addBtn: {
-    fontSize: '0.7rem',
-    padding: '0.35rem 0.5rem',
+    fontSize: '0.75rem',
+    padding: '0.4rem 0.8rem',
     width: '100%',
+    backgroundColor: 'transparent',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    borderRadius: '0px',
+    color: '#FFFFFF',
+    cursor: 'pointer',
   },
   footerBar: {
     paddingTop: '1.25rem',

@@ -4,13 +4,13 @@
   --bg-primary: #111111;
   --bg-surface: #171717;
   --bg-surface-hover: #202020;
-  --bg-card: #151515;
+  --bg-card: transparent;
   
   --text-primary: #FFFFFF;
   --text-secondary: #9E9E9E;
   --text-muted: #666666;
   
-  --border-light: rgba(255, 255, 255, 0.2);
+  --border-light: rgba(255, 255, 255, 0.25);
   --border-subtle: rgba(255, 255, 255, 0.08);
   
   --accent-gold: #C5A059;
@@ -21,8 +21,8 @@
   --font-serif: 'Helvetica Neue', Helvetica, Arial, sans-serif;
 
   --radius-pill: 9999px;
-  --radius-card: 16px;
-  --radius-lg: 24px;
+  --radius-card: 0px;
+  --radius-lg: 0px;
 }
 
 * {
@@ -46,20 +46,21 @@ a {
   text-decoration: none;
 }
 
-/* Universal Button Rule - No Backgrounds */
-button, .btn-pill, .btn-pill-solid, .btn-pill-dark {
+/* Universal Base Button Rule */
+button {
   font-family: var(--font-sans);
   cursor: pointer;
-  background: transparent !important;
-  color: #FFFFFF !important;
-  border: 1px solid var(--border-light) !important;
-  box-shadow: none !important;
+  background: transparent;
+  border: none;
+  color: inherit;
+  outline: none;
 }
 
 input, textarea, select {
   font-family: var(--font-sans);
   color: var(--text-primary);
   background: transparent;
+  border-radius: 0px !important;
 }
 
 /* Custom Scrollbar */
@@ -146,7 +147,7 @@ input, textarea, select {
 }
 
 .btn-pill:hover {
-  border-color: rgba(255, 255, 255, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
   background: rgba(255, 255, 255, 0.05) !important;
   transform: translateY(-1px);
 }
@@ -154,73 +155,74 @@ input, textarea, select {
 .btn-pill-solid {
   background: transparent !important;
   color: #FFFFFF !important;
-  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  border: 1px solid rgba(255, 255, 255, 0.4) !important;
   font-weight: 400;
 }
 
 .btn-pill-solid:hover {
   background: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.6) !important;
+  border-color: rgba(255, 255, 255, 0.7) !important;
   transform: translateY(-1px);
 }
 
 .btn-pill-dark {
   background: transparent !important;
-  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
   color: var(--text-primary) !important;
 }
 
 .btn-pill-dark:hover {
   background: rgba(255, 255, 255, 0.08) !important;
-  border-color: rgba(255, 255, 255, 0.5) !important;
+  border-color: rgba(255, 255, 255, 0.6) !important;
 }
 
-/* Quantity Control Pill */
+/* Quantity Control (3 Circular Rings matching Figma) */
 .quantity-control {
   display: inline-flex;
   align-items: center;
-  border: 1px solid var(--border-light);
-  border-radius: var(--radius-pill);
-  padding: 2px 6px;
+  gap: 6px;
   background: transparent;
 }
 
 .quantity-btn {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1rem;
-  color: var(--text-primary) !important;
+  font-size: 0.9rem;
+  color: #FFFFFF !important;
   background: transparent !important;
-  border: none !important;
-  transition: background 0.2s ease;
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
 .quantity-btn:hover {
-  background: rgba(255, 255, 255, 0.15) !important;
+  border-color: rgba(255, 255, 255, 0.7) !important;
+  background: rgba(255, 255, 255, 0.08) !important;
 }
 
 .quantity-val {
-  padding: 0 12px;
-  font-size: 0.9rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
   font-weight: 400;
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
-/* Card Container */
+/* Sharp Card Container (No Background, No Border) */
 .luxury-card {
-  background: var(--bg-card);
-  border: 1px solid var(--border-subtle);
-  border-radius: var(--radius-card);
+  background: transparent;
+  border: none;
+  border-radius: 0px;
   overflow: hidden;
-  transition: transform 0.3s ease, border-color 0.3s ease;
-}
-
-.luxury-card:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  transform: translateY(-3px);
 }
 
 /* Layout Grid Container */
