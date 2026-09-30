@@ -244,24 +244,30 @@ input, textarea, select {
   }
 }
 
-/* Layout Grid Container */
+/* Layout Grid Container - Full Width with Figma-aligned adequate margins */
 .container {
   width: 100%;
-  max-width: 1480px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 clamp(1.5rem, 3.5vw, 3.5rem);
 }
 
 @media (max-width: 768px) {
   .container {
-    padding: 0 1rem;
+    padding: 0 1.25rem;
   }
 }
 
 /* Admin Specific Full-Width Container */
 .admin-container {
   width: 100%;
-  max-width: 1600px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: 0 1.5rem;
+  padding: 0 clamp(1.5rem, 3.5vw, 3.5rem);
+}
+
+@media (max-width: 768px) {
+  .admin-container {
+    padding: 0 1.25rem;
+  }
 }
