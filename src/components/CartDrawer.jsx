@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 import { X, Plus, Trash2 } from 'lucide-react';
 
@@ -31,6 +32,7 @@ const ADDONS = [
 ];
 
 export default function CartDrawer() {
+  const pathname = usePathname();
   const {
     cart,
     isCartOpen,
@@ -41,7 +43,14 @@ export default function CartDrawer() {
     cartTotal,
   } = useCart();
 
-  if (!isCartOpen) return null;
+  const isAdmin = pathname?.startsWith('/admin') || (
+    typeof window !== 'undefined' && (
+      window.location.hostname.startsWith('admin.') || 
+      window.location.hostname.includes('admin')
+    )
+  );
+
+  if (isAdmin || !isCartOpen) return null;
 
   return (
     <div style={styles.overlay} onClick={() => setIsCartOpen(false)}>

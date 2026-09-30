@@ -2,10 +2,23 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
 
 export default function Header() {
+  const pathname = usePathname();
   const { cartCount, setIsCartOpen } = useCart();
+
+  const isAdmin = pathname?.startsWith('/admin') || (
+    typeof window !== 'undefined' && (
+      window.location.hostname.startsWith('admin.') || 
+      window.location.hostname.includes('admin')
+    )
+  );
+
+  if (isAdmin) {
+    return null;
+  }
 
   return (
     <header style={styles.header}>

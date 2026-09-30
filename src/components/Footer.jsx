@@ -2,8 +2,22 @@
 
 import React from 'react';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 
 export default function Footer() {
+  const pathname = usePathname();
+
+  const isAdmin = pathname?.startsWith('/admin') || (
+    typeof window !== 'undefined' && (
+      window.location.hostname.startsWith('admin.') || 
+      window.location.hostname.includes('admin')
+    )
+  );
+
+  if (isAdmin) {
+    return null;
+  }
+
   return (
     <footer style={styles.footer}>
       <div className="container">
