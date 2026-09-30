@@ -10,6 +10,7 @@ export default function AdminDashboardPage() {
   const [loginError, setLoginError] = useState('');
 
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' or 'products'
+  const [orderFilter, setOrderFilter] = useState('ALL'); // 'ALL', 'PHYSICAL', 'DIGITAL', 'GIFTS'
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -388,111 +389,211 @@ export default function AdminDashboardPage() {
             <div style={styles.pageTitleRow}>
               <div>
                 <h1 style={styles.headingTitle}>Orders Queue & Access Codes CRM</h1>
-                <p style={styles.headingSub}>Manage live customer purchases, 12-char access code keys, and gift fulfillment</p>
+                <p style={styles.headingSub}>Classify physical card shipments vs digital 3D portal orders, manage access codes & fulfillment</p>
               </div>
             </div>
 
+            {/* Stats Grid */}
             <div style={styles.statsGrid}>
               <div style={styles.statCard}>
                 <span style={styles.statLabel}>Total Orders</span>
                 <span style={styles.statVal}>{orders.length}</span>
               </div>
               <div style={styles.statCard}>
-                <span style={styles.statLabel}>In Production</span>
-                <span style={styles.statVal}>{orders.filter((o) => o.status === 'in_production').length}</span>
+                <span style={styles.statLabel}>📦 Physical Card Packages</span>
+                <span style={styles.statVal}>{orders.filter((o) => o.fulfillmentType === 'physical_card').length}</span>
               </div>
               <div style={styles.statCard}>
-                <span style={styles.statLabel}>Ready / Delivered</span>
-                <span style={styles.statVal}>{orders.filter((o) => o.status === 'ready' || o.status === 'delivered').length}</span>
+                <span style={styles.statLabel}>💻 Digital-Only Orders</span>
+                <span style={styles.statVal}>{orders.filter((o) => o.fulfillmentType === 'digital_only').length}</span>
               </div>
+              <div style={styles.statCard}>
+                <span style={styles.statLabel}>🎁 Gift Purchases</span>
+                <span style={styles.statVal}>{orders.filter((o) => o.recipientType === 'gift').length}</span>
+              </div>
+            </div>
+
+            {/* Fulfillment Filter Pills */}
+            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
+              <button
+                onClick={() => setOrderFilter('ALL')}
+                style={{
+                  ...styles.filterPill,
+                  backgroundColor: orderFilter === 'ALL' ? '#C5A059' : 'rgba(255, 255, 255, 0.05)',
+                  color: orderFilter === 'ALL' ? '#000' : '#FFF',
+                  borderColor: orderFilter === 'ALL' ? '#C5A059' : 'rgba(255, 255, 255, 0.15)',
+                }}
+              >
+                All Orders ({orders.length})
+              </button>
+              <button
+                onClick={() => setOrderFilter('PHYSICAL')}
+                style={{
+                  ...styles.filterPill,
+                  backgroundColor: orderFilter === 'PHYSICAL' ? '#C5A059' : 'rgba(255, 255, 255, 0.05)',
+                  color: orderFilter === 'PHYSICAL' ? '#000' : '#FFF',
+                  borderColor: orderFilter === 'PHYSICAL' ? '#C5A059' : 'rgba(255, 255, 255, 0.15)',
+                }}
+              >
+                📦 Physical Cards ({orders.filter((o) => o.fulfillmentType === 'physical_card').length})
+              </button>
+              <button
+                onClick={() => setOrderFilter('DIGITAL')}
+                style={{
+                  ...styles.filterPill,
+                  backgroundColor: orderFilter === 'DIGITAL' ? '#C5A059' : 'rgba(255, 255, 255, 0.05)',
+                  color: orderFilter === 'DIGITAL' ? '#000' : '#FFF',
+                  borderColor: orderFilter === 'DIGITAL' ? '#C5A059' : 'rgba(255, 255, 255, 0.15)',
+                }}
+              >
+                💻 Digital 3D Portal ({orders.filter((o) => o.fulfillmentType === 'digital_only').length})
+              </button>
+              <button
+                onClick={() => setOrderFilter('GIFTS')}
+                style={{
+                  ...styles.filterPill,
+                  backgroundColor: orderFilter === 'GIFTS' ? '#C5A059' : 'rgba(255, 255, 255, 0.05)',
+                  color: orderFilter === 'GIFTS' ? '#000' : '#FFF',
+                  borderColor: orderFilter === 'GIFTS' ? '#C5A059' : 'rgba(255, 255, 255, 0.15)',
+                }}
+              >
+                🎁 Gifts ({orders.filter((o) => o.recipientType === 'gift').length})
+              </button>
             </div>
 
             <div style={styles.tableContainer}>
               <table style={styles.table}>
                 <thead>
                   <tr style={styles.trHeader}>
-                    <th style={styles.th}>Order ID</th>
+                    <th style={styles.th}>Order ID & Date</th>
+                    <th style={styles.th}>Order Type</th>
                     <th style={styles.th}>Purchaser & Recipient</th>
-                    <th style={styles.th}>12-Char Access Code</th>
+                    <th style={styles.th}>Package Items</th>
+                    <th style={styles.th}>12-Char Code</th>
                     <th style={styles.th}>Total</th>
-                    <th style={styles.th}>Fulfillment Status</th>
+                    <th style={styles.th}>Status</th>
                     <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {orders.length === 0 ? (
+                  {orders.filter((ord) => {
+                    if (orderFilter === 'PHYSICAL') return ord.fulfillmentType === 'physical_card';
+                    if (orderFilter === 'DIGITAL') return ord.fulfillmentType === 'digital_only';
+                    if (orderFilter === 'GIFTS') return ord.recipientType === 'gift';
+                    return true;
+                  }).length === 0 ? (
                     <tr>
-                      <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
-                        No live orders in queue.
+                      <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
+                        No orders match the selected filter.
                       </td>
                     </tr>
                   ) : (
-                    orders.map((ord) => (
-                      <tr key={ord.id} style={styles.trBody}>
-                        <td style={styles.td}>
-                          <div style={{ color: '#FFF', fontWeight: '400', fontFamily: 'monospace' }}>#{ord.id}</div>
-                          <div style={{ fontSize: '0.75rem', color: '#777', marginTop: '2px' }}>
-                            {new Date(ord.createdAt).toLocaleDateString()}
-                          </div>
-                        </td>
-                        <td style={styles.td}>
-                          <div style={{ color: '#FFF', fontWeight: '400' }}>{ord.purchaserName}</div>
-                          <div style={{ fontSize: '0.78rem', color: '#888' }}>{ord.purchaserEmail}</div>
-                          {ord.recipientName && (
-                            <div style={{ fontSize: '0.75rem', color: '#C5A059', marginTop: '4px' }}>
-                              🎁 To: {ord.recipientName} ({ord.recipientEmail || 'digital'})
+                    orders
+                      .filter((ord) => {
+                        if (orderFilter === 'PHYSICAL') return ord.fulfillmentType === 'physical_card';
+                        if (orderFilter === 'DIGITAL') return ord.fulfillmentType === 'digital_only';
+                        if (orderFilter === 'GIFTS') return ord.recipientType === 'gift';
+                        return true;
+                      })
+                      .map((ord) => (
+                        <tr key={ord.id} style={styles.trBody}>
+                          <td style={styles.td}>
+                            <div style={{ color: '#FFF', fontWeight: '400', fontFamily: 'monospace' }}>#{ord.id}</div>
+                            <div style={{ fontSize: '0.75rem', color: '#777', marginTop: '2px' }}>
+                              {new Date(ord.createdAt).toLocaleDateString()}
                             </div>
-                          )}
-                        </td>
-                        <td style={styles.td}>
-                          <div style={styles.codeBadge}>
-                            <Key size={12} color="#C5A059" /> {ord.accessCode}
-                          </div>
-                        </td>
-                        <td style={styles.td}>
-                          <span style={{ color: '#FFF', fontWeight: '400' }}>₦{ord.totalAmount.toLocaleString()}</span>
-                        </td>
-                        <td style={styles.td}>
-                          <span
-                            style={{
-                              ...styles.statusTag,
-                              borderColor:
-                                ord.status === 'ready'
-                                  ? '#66BB6A'
-                                  : ord.status === 'in_production'
-                                  ? '#C5A059'
-                                  : '#888888',
-                              color:
-                                ord.status === 'ready'
-                                  ? '#66BB6A'
-                                  : ord.status === 'in_production'
-                                  ? '#C5A059'
-                                  : '#888888',
-                            }}
-                          >
-                            {ord.status.toUpperCase().replace('_', ' ')}
-                          </span>
-                        </td>
-                        <td style={{ ...styles.td, textAlign: 'right' }}>
-                          {ord.status === 'in_production' && (
-                            <button
-                              onClick={() => handleOrderStatusToggle(ord.id, 'ready')}
-                              className="btn-pill btn-pill-solid"
-                              style={{ fontSize: '0.75rem', padding: '0.35rem 0.8rem', marginRight: '6px' }}
+                          </td>
+                          <td style={styles.td}>
+                            {ord.fulfillmentType === 'physical_card' ? (
+                              <span style={styles.physicalTag}>📦 Physical Card</span>
+                            ) : (
+                              <span style={styles.digitalTag}>💻 Digital Only</span>
+                            )}
+                          </td>
+                          <td style={styles.td}>
+                            <div style={{ color: '#FFF', fontWeight: '400' }}>{ord.purchaserName}</div>
+                            <div style={{ fontSize: '0.78rem', color: '#888' }}>{ord.purchaserEmail}</div>
+                            {ord.recipientName ? (
+                              <div style={{ fontSize: '0.75rem', color: '#C5A059', marginTop: '4px' }}>
+                                🎁 To: {ord.recipientName} ({ord.recipientEmail || 'digital'})
+                              </div>
+                            ) : (
+                              <div style={{ fontSize: '0.72rem', color: '#666', marginTop: '2px' }}>
+                                👤 Self Purchase
+                              </div>
+                            )}
+                          </td>
+                          <td style={styles.td}>
+                            {ord.items && ord.items.length > 0 ? (
+                              <div style={{ fontSize: '0.78rem', color: '#DDD' }}>
+                                {ord.items.map((item, idx) => (
+                                  <div key={idx} style={{ marginBottom: '2px' }}>
+                                    • {item.title || item.name} {item.quantity > 1 ? `x${item.quantity}` : ''}
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <span style={{ color: '#666', fontSize: '0.78rem' }}>Keepsake Package</span>
+                            )}
+                          </td>
+                          <td style={styles.td}>
+                            <div style={styles.codeBadge}>
+                              <Key size={12} color="#C5A059" /> {ord.accessCode}
+                            </div>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={{ color: '#FFF', fontWeight: '400' }}>₦{ord.totalAmount.toLocaleString()}</span>
+                          </td>
+                          <td style={styles.td}>
+                            <span
+                              style={{
+                                ...styles.statusTag,
+                                borderColor:
+                                  ord.status === 'ready'
+                                    ? '#66BB6A'
+                                    : ord.status === 'in_production'
+                                    ? '#C5A059'
+                                    : '#888888',
+                                color:
+                                  ord.status === 'ready'
+                                    ? '#66BB6A'
+                                    : ord.status === 'in_production'
+                                    ? '#C5A059'
+                                    : '#888888',
+                              }}
                             >
-                              Mark Ready & Send Email
+                              {ord.status.toUpperCase().replace('_', ' ')}
+                            </span>
+                          </td>
+                          <td style={{ ...styles.td, textAlign: 'right' }}>
+                            {ord.status === 'in_production' && (
+                              <button
+                                onClick={() => handleOrderStatusToggle(ord.id, 'ready')}
+                                style={{
+                                  fontSize: '0.75rem',
+                                  padding: '0.35rem 0.8rem',
+                                  marginRight: '6px',
+                                  backgroundColor: '#C5A059',
+                                  color: '#000',
+                                  border: 'none',
+                                  borderRadius: '9999px',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                Mark Ready & Send Email
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleSendNotification(ord.id)}
+                              style={styles.actionBtn}
+                              title="Resend Email Notification"
+                            >
+                              <Mail size={16} color="#FFF" />
                             </button>
-                          )}
-                          <button
-                            onClick={() => handleSendNotification(ord.id)}
-                            style={styles.actionBtn}
-                            title="Resend Email Notification"
-                          >
-                            <Mail size={16} color="#FFF" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
+                          </td>
+                        </tr>
+                      ))
                   )}
                 </tbody>
               </table>
@@ -1179,5 +1280,38 @@ const styles = {
     border: '1px solid rgba(255, 107, 107, 0.4)',
     color: '#FF6B6B',
     cursor: 'pointer',
+  },
+  filterPill: {
+    padding: '0.5rem 1.1rem',
+    fontSize: '0.78rem',
+    fontWeight: '500',
+    border: '1px solid',
+    borderRadius: '9999px',
+    cursor: 'pointer',
+    letterSpacing: '0.04em',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+    transition: 'all 0.2s ease',
+  },
+  physicalTag: {
+    fontSize: '0.72rem',
+    fontWeight: '500',
+    letterSpacing: '0.04em',
+    padding: '4px 8px',
+    backgroundColor: 'rgba(197, 160, 89, 0.15)',
+    border: '1px solid #C5A059',
+    color: '#C5A059',
+    borderRadius: '0px',
+    whiteSpace: 'nowrap',
+  },
+  digitalTag: {
+    fontSize: '0.72rem',
+    fontWeight: '500',
+    letterSpacing: '0.04em',
+    padding: '4px 8px',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    color: '#AAA',
+    borderRadius: '0px',
+    whiteSpace: 'nowrap',
   },
 };
