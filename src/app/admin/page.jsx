@@ -2,9 +2,13 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Edit2, Trash2, CheckCircle, XCircle, Package, Send, RefreshCw, Key, Mail, CheckCircle2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, XCircle, Package, RefreshCw, Key, Mail, Lock, LogOut, ShieldCheck, Search, Filter } from 'lucide-react';
 
 export default function AdminDashboardPage() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' or 'products'
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -20,6 +24,31 @@ export default function AdminDashboardPage() {
   const [category, setCategory] = useState('CARDS');
   const [image, setImage] = useState('');
   const [allowsCustomization, setAllowsCustomization] = useState(true);
+
+  // Check login session on mount
+  useEffect(() => {
+    const authSession = sessionStorage.getItem('ks_admin_auth');
+    if (authSession === 'true') {
+      setIsAuthenticated(true);
+    }
+  }, []);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (password === 'keepsake2026' || password === 'admin') {
+      setIsAuthenticated(true);
+      sessionStorage.setItem('ks_admin_auth', 'true');
+      setLoginError('');
+    } else {
+      setLoginError('Invalid Admin Passcode. Please try again.');
+    }
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+    sessionStorage.removeItem('ks_admin_auth');
+    setPassword('');
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -41,8 +70,10 @@ export default function AdminDashboardPage() {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (isAuthenticated) {
+      fetchData();
+    }
+  }, [isAuthenticated]);
 
   const resetForm = () => {
     setTitle('');
@@ -164,17 +195,93 @@ export default function AdminDashboardPage() {
     }
   };
 
-  return (
-    <div style={styles.page}>
-      <div className="container">
-        {/* Header */}
-        <div style={styles.headerRow}>
-          <div>
-            <span style={styles.badgeText}>admin.thekeepsakesmith.com</span>
-            <h1 className="heading-xl">CMS & Production CRM</h1>
+  // 1. LOGIN SCREEN (IF UNAUTHENTICATED)
+  if (!isAuthenticated) {
+    return (
+      <div style={styles.loginPage}>
+        <div style={styles.loginCard}>
+          {/* Logo Emblem */}
+          <div style={styles.loginLogo}>
+            <svg width="48" height="48" viewBox="0 0 100 100" fill="none">
+              <circle cx="50" cy="50" r="46" stroke="#FFFFFF" strokeWidth="2" opacity="0.8" />
+              <path d="M50 15 C30 15, 15 30, 15 50 C15 70, 30 85, 50 85" stroke="#FFFFFF" strokeWidth="2" />
+            </svg>
+            <h1 style={styles.loginTitle}>THE KEEPSAKE SMITH</h1>
+            <span style={styles.loginSub}>ADMIN CMS LOGIN</span>
           </div>
 
-          <div style={{ display: 'flex', gap: '1rem' }}>
+          <form onSubmit={handleLogin} style={styles.loginForm}>
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Admin Security Passcode</label>
+              <div style={styles.inputWrap}>
+                <Lock size={16} color="#888" style={{ marginLeft: '12px' }} />
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter admin passcode"
+                  style={styles.passwordInput}
+                  required
+                />
+              </div>
+            </div>
+
+            {loginError && <div style={styles.errorAlert}>{loginError}</div>}
+
+            <button type="submit" className="btn-pill btn-pill-solid" style={styles.loginBtn}>
+              Unlock Dashboard
+            </button>
+          </form>
+
+          <p style={styles.hintText}>Protected system portal. Default access passcode: <code>keepsake2026</code></p>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. AUTHENTICATED ADMIN DASHBOARD
+  return (
+    <div style={styles.adminPage}>
+      {/* DEDICATED ADMIN HEADER (Independent from Storefront) */}
+      <header style={styles.adminNavHeader}>
+        <div className="admin-container" style={styles.adminHeaderRow}>
+          <div style={styles.brandGroup}>
+            <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
+              <circle cx="50" cy="50" r="46" stroke="#FFFFFF" strokeWidth="2" opacity="0.8" />
+              <path d="M50 15 C30 15, 15 30, 15 50 C15 70, 30 85, 50 85" stroke="#FFFFFF" strokeWidth="2" />
+            </svg>
+            <div>
+              <div style={styles.brandTitle}>THE KEEPSAKE SMITH</div>
+              <div style={styles.subdomainLabel}>admin.thekeepsakesmith.com</div>
+            </div>
+          </div>
+
+          {/* Center Tab Buttons */}
+          <div style={styles.navTabs}>
+            <button
+              onClick={() => setActiveTab('orders')}
+              style={{
+                ...styles.navTabBtn,
+                color: activeTab === 'orders' ? '#FFFFFF' : '#888888',
+                borderBottom: activeTab === 'orders' ? '2px solid #C5A059' : '2px solid transparent',
+              }}
+            >
+              Orders CRM ({orders.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('products')}
+              style={{
+                ...styles.navTabBtn,
+                color: activeTab === 'products' ? '#FFFFFF' : '#888888',
+                borderBottom: activeTab === 'products' ? '2px solid #C5A059' : '2px solid transparent',
+              }}
+            >
+              Product Catalog ({products.length})
+            </button>
+          </div>
+
+          {/* Right Action Group */}
+          <div style={styles.rightActions}>
             {activeTab === 'products' && (
               <button
                 onClick={() => {
@@ -182,51 +289,50 @@ export default function AdminDashboardPage() {
                   setIsFormOpen(true);
                 }}
                 className="btn-pill btn-pill-solid"
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                style={{ fontSize: '0.8rem', padding: '0.45rem 1.2rem', display: 'flex', alignItems: 'center', gap: '6px' }}
               >
-                <Plus size={16} /> Add Product
+                <Plus size={14} /> Add Product
               </button>
             )}
-            <button onClick={fetchData} className="btn-pill" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+
+            <button
+              onClick={fetchData}
+              className="btn-pill"
+              style={{ fontSize: '0.8rem', padding: '0.45rem 1rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
               <RefreshCw size={14} /> Refresh
+            </button>
+
+            <button
+              onClick={handleLogout}
+              className="btn-pill btn-pill-dark"
+              style={{ fontSize: '0.8rem', padding: '0.45rem 1rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+            >
+              <LogOut size={14} /> Logout
             </button>
           </div>
         </div>
+      </header>
 
-        {/* Tab Navigation */}
-        <div style={styles.tabBar}>
-          <button
-            onClick={() => setActiveTab('orders')}
-            style={{
-              ...styles.tabBtn,
-              borderBottom: activeTab === 'orders' ? '2px solid #C5A059' : 'none',
-              color: activeTab === 'orders' ? '#FFFFFF' : '#888888',
-            }}
-          >
-            Orders & Access Codes Queue ({orders.length})
-          </button>
-          <button
-            onClick={() => setActiveTab('products')}
-            style={{
-              ...styles.tabBtn,
-              borderBottom: activeTab === 'products' ? '2px solid #C5A059' : 'none',
-              color: activeTab === 'products' ? '#FFFFFF' : '#888888',
-            }}
-          >
-            Product Catalog ({products.length})
-          </button>
-        </div>
-
-        {/* Alert Status Banner */}
+      <div className="admin-container" style={styles.mainContent}>
+        {/* Status Alert Message */}
         {statusMsg && (
           <div style={styles.alertBanner} onClick={() => setStatusMsg('')}>
-            {statusMsg}
+            <span>{statusMsg}</span>
+            <span style={{ cursor: 'pointer', opacity: 0.8 }}>✕</span>
           </div>
         )}
 
-        {/* ORDERS CRM TAB */}
+        {/* ORDERS CRM QUEUE TAB */}
         {activeTab === 'orders' && (
           <div>
+            <div style={styles.pageTitleRow}>
+              <div>
+                <h1 style={styles.headingTitle}>Orders Queue & Access Codes CRM</h1>
+                <p style={styles.headingSub}>Manage live customer purchases, 12-char access code keys, and gift fulfillment</p>
+              </div>
+            </div>
+
             <div style={styles.statsGrid}>
               <div style={styles.statCard}>
                 <span style={styles.statLabel}>Total Orders</span>
@@ -266,7 +372,7 @@ export default function AdminDashboardPage() {
                       <tr key={ord.id} style={styles.trBody}>
                         <td style={styles.td}>
                           <div style={{ color: '#FFF', fontWeight: '400', fontFamily: 'monospace' }}>#{ord.id}</div>
-                          <div style={{ fontSize: '0.72rem', color: '#777' }}>
+                          <div style={{ fontSize: '0.75rem', color: '#777', marginTop: '2px' }}>
                             {new Date(ord.createdAt).toLocaleDateString()}
                           </div>
                         </td>
@@ -338,6 +444,13 @@ export default function AdminDashboardPage() {
         {/* PRODUCTS CATALOG TAB */}
         {activeTab === 'products' && (
           <div>
+            <div style={styles.pageTitleRow}>
+              <div>
+                <h1 style={styles.headingTitle}>Product Catalog CMS</h1>
+                <p style={styles.headingSub}>Add, edit, or customize product listings, pricing, and custom order flags</p>
+              </div>
+            </div>
+
             <div style={styles.statsGrid}>
               <div style={styles.statCard}>
                 <span style={styles.statLabel}>Total Catalog Products</span>
@@ -349,7 +462,7 @@ export default function AdminDashboardPage() {
               </div>
               <div style={styles.statCard}>
                 <span style={styles.statLabel}>Database Status</span>
-                <span style={styles.statVal}>ACTIVE</span>
+                <span style={styles.statVal}>LIVE</span>
               </div>
             </div>
 
@@ -520,47 +633,171 @@ export default function AdminDashboardPage() {
 }
 
 const styles = {
-  page: {
-    paddingTop: '2rem',
-    minHeight: '85vh',
-    paddingBottom: '6rem',
-  },
-  headerRow: {
+  // Login Gate Styles
+  loginPage: {
+    minHeight: '100vh',
+    backgroundColor: '#111111',
     display: 'flex',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    justifyContent: 'center',
+    padding: '2rem 1rem',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+  },
+  loginCard: {
+    width: '100%',
+    maxWidth: '440px',
+    backgroundColor: '#161616',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    padding: '3rem 2.5rem',
+    textAlign: 'center',
+  },
+  loginLogo: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '0.5rem',
     marginBottom: '2rem',
+  },
+  loginTitle: {
+    fontSize: '1.2rem',
+    fontWeight: '300',
+    letterSpacing: '0.1em',
+    color: '#FFFFFF',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+    marginTop: '0.5rem',
+  },
+  loginSub: {
+    fontSize: '0.7rem',
+    letterSpacing: '0.15em',
+    color: '#C5A059',
+  },
+  loginForm: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.25rem',
+  },
+  inputWrap: {
+    display: 'flex',
+    alignItems: 'center',
+    backgroundColor: '#0F0F0F',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+  },
+  passwordInput: {
+    width: '100%',
+    padding: '1rem',
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#FFFFFF',
+    fontSize: '0.95rem',
+    outline: 'none',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+  },
+  loginBtn: {
+    width: '100%',
+    padding: '0.95rem',
+    fontSize: '0.9rem',
+    marginTop: '0.5rem',
+  },
+  errorAlert: {
+    fontSize: '0.8rem',
+    color: '#FF6B6B',
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    padding: '0.65rem',
+  },
+  hintText: {
+    fontSize: '0.72rem',
+    color: '#666666',
+    marginTop: '2rem',
+    lineHeight: '1.4',
+  },
+
+  // Main Authenticated Admin Styles
+  adminPage: {
+    minHeight: '100vh',
+    backgroundColor: '#111111',
+    color: '#FFFFFF',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif !important",
+  },
+  adminNavHeader: {
+    width: '100%',
+    backgroundColor: '#161616',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+    padding: '1.25rem 0',
+  },
+  adminHeaderRow: {
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     flexWrap: 'wrap',
     gap: '1.5rem',
   },
-  badgeText: {
-    fontSize: '0.75rem',
+  brandGroup: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.85rem',
+  },
+  brandTitle: {
+    fontSize: '0.95rem',
+    fontWeight: '300',
+    letterSpacing: '0.08em',
+    color: '#FFFFFF',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+  },
+  subdomainLabel: {
+    fontSize: '0.68rem',
     letterSpacing: '0.12em',
     color: '#C5A059',
-    textTransform: 'uppercase',
   },
-  tabBar: {
+  navTabs: {
     display: 'flex',
-    gap: '2rem',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-    marginBottom: '2.5rem',
+    gap: '1.5rem',
   },
-  tabBtn: {
-    padding: '0.75rem 0',
-    fontSize: '0.9rem',
+  navTabBtn: {
+    fontSize: '0.85rem',
     letterSpacing: '0.05em',
-    background: 'none',
+    padding: '0.5rem 0',
+    backgroundColor: 'transparent',
     border: 'none',
     cursor: 'pointer',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+  },
+  rightActions: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.75rem',
+  },
+
+  mainContent: {
+    paddingTop: '2.5rem',
+    paddingBottom: '6rem',
+  },
+  pageTitleRow: {
+    marginBottom: '2rem',
+  },
+  headingTitle: {
+    fontSize: '2rem',
+    fontWeight: '300',
+    letterSpacing: '-0.02em',
+    color: '#FFFFFF',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif !important",
+  },
+  headingSub: {
+    fontSize: '0.82rem',
+    color: '#888888',
+    marginTop: '4px',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
   },
   alertBanner: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     padding: '1rem 1.25rem',
     backgroundColor: 'rgba(197, 160, 89, 0.15)',
     border: '1px solid #C5A059',
     color: '#FFFFFF',
     marginBottom: '2rem',
     fontSize: '0.85rem',
-    cursor: 'pointer',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
   },
   statsGrid: {
     display: 'grid',
@@ -569,33 +806,37 @@ const styles = {
     marginBottom: '3rem',
   },
   statCard: {
-    backgroundColor: 'transparent',
-    border: '1px solid rgba(255, 255, 255, 0.15)',
+    backgroundColor: '#161616',
+    border: '1px solid rgba(255, 255, 255, 0.1)',
     padding: '1.5rem',
     display: 'flex',
     flexDirection: 'column',
     gap: '6px',
   },
   statLabel: {
-    fontSize: '0.75rem',
+    fontSize: '0.72rem',
     color: '#888888',
     letterSpacing: '0.08em',
     textTransform: 'uppercase',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
   },
   statVal: {
-    fontSize: '2rem',
+    fontSize: '2.2rem',
     fontWeight: '300',
     color: '#FFFFFF',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
   },
   tableContainer: {
     width: '100%',
     overflowX: 'auto',
-    border: '1px solid rgba(255, 255, 255, 0.15)',
+    backgroundColor: '#161616',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
   },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
     textAlign: 'left',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif !important",
   },
   trHeader: {
     backgroundColor: 'rgba(255, 255, 255, 0.04)',
@@ -608,14 +849,16 @@ const styles = {
     color: '#888888',
     textTransform: 'uppercase',
     fontWeight: '400',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
   },
   trBody: {
     borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
   },
   td: {
-    padding: '1rem 1.25rem',
+    padding: '1.1rem 1.25rem',
     verticalAlign: 'middle',
-    fontSize: '0.9rem',
+    fontSize: '0.88rem',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
   },
   thumbImg: {
     width: '54px',
@@ -671,9 +914,10 @@ const styles = {
   modalContent: {
     width: '100%',
     maxWidth: '560px',
-    backgroundColor: '#141414',
+    backgroundColor: '#161616',
     border: '1px solid rgba(255, 255, 255, 0.2)',
     padding: '2.5rem',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
   },
   modalHeader: {
     display: 'flex',
@@ -685,11 +929,14 @@ const styles = {
     fontSize: '1.5rem',
     fontWeight: '300',
     color: '#FFFFFF',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
   },
   closeBtn: {
     fontSize: '1.2rem',
     color: '#888',
     cursor: 'pointer',
+    background: 'none',
+    border: 'none',
   },
   form: {
     display: 'flex',
@@ -708,24 +955,27 @@ const styles = {
   label: {
     fontSize: '0.78rem',
     color: '#888888',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
   },
   input: {
     width: '100%',
     padding: '0.9rem 1rem',
-    backgroundColor: 'transparent',
+    backgroundColor: '#0F0F0F',
     border: '1px solid rgba(255, 255, 255, 0.2)',
     color: '#FFFFFF',
     fontSize: '0.9rem',
     outline: 'none',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
   },
   select: {
     width: '100%',
     padding: '0.9rem 1rem',
-    backgroundColor: '#181818',
+    backgroundColor: '#0F0F0F',
     border: '1px solid rgba(255, 255, 255, 0.2)',
     color: '#FFFFFF',
     fontSize: '0.9rem',
     outline: 'none',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
   },
   checkboxRow: {
     display: 'flex',

@@ -1,8 +1,6 @@
 import './globals.css';
 import { CartProvider } from '@/context/CartContext';
-import Header from '@/components/Header';
-import Footer from '@/components/Footer';
-import CartDrawer from '@/components/CartDrawer';
+import ClientLayoutWrapper from '@/components/ClientLayoutWrapper';
 
 export const metadata = {
   title: 'The Keepsake Smith | Custom 3D & Physical Keepsake Experience',
@@ -14,10 +12,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body>
         <CartProvider>
-          <Header />
-          <main>{children}</main>
-          <CartDrawer />
-          <Footer />
+          <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
         </CartProvider>
       </body>
     </html>
