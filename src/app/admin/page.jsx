@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Edit2, Trash2, CheckCircle, XCircle, Package, RefreshCw, Key, Mail, Lock, LogOut, ShieldCheck, Search, Filter } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, XCircle, Package, RefreshCw, Key, Mail, Lock, LogOut, ShieldCheck, Search, Filter, Upload, Image as ImageIcon, Link as LinkIcon, X } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -24,6 +24,11 @@ export default function AdminDashboardPage() {
   const [category, setCategory] = useState('CARDS');
   const [image, setImage] = useState('');
   const [allowsCustomization, setAllowsCustomization] = useState(true);
+
+  // File Upload State
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState('');
+  const [useUrlInput, setUseUrlInput] = useState(false);
 
   // Check login session on mount
   useEffect(() => {
@@ -98,7 +103,40 @@ export default function AdminDashboardPage() {
     setImage('');
     setAllowsCustomization(true);
     setEditingProduct(null);
+    setUploadError('');
+    setUploading(false);
+    setUseUrlInput(false);
     setIsFormOpen(false);
+  };
+
+  const handleFileUpload = async (e) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/admin/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setImage(data.url || data.dataUrl);
+      } else {
+        setUploadError(data.error || 'Failed to upload image.');
+      }
+    } catch (err) {
+      console.error('File upload error:', err);
+      setUploadError('Server error uploading image file.');
+    } finally {
+      setUploading(false);
+    }
   };
 
   const handleOpenEdit = (prod) => {
@@ -613,14 +651,82 @@ export default function AdminDashboardPage() {
                 </div>
 
                 <div style={styles.formGroup}>
-                  <label style={styles.label}>Image URL</label>
-                  <input
-                    type="text"
-                    value={image}
-                    onChange={(e) => setImage(e.target.value)}
-                    placeholder="https://images.unsplash.com/photo-..."
-                    style={styles.input}
-                  />
+                  <label style={styles.label}>Product Image *</label>
+                  
+                  {/* File Upload Box */}
+                  <div style={styles.uploadBox}>
+                    {image ? (
+                      <div style={styles.imagePreviewRow}>
+                        <img src={image} alt="Preview" style={styles.uploadPreviewImg} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ fontSize: '0.85rem', color: '#FFFFFF', fontWeight: '500' }}>Product Photo Selected</div>
+                          <div style={{ fontSize: '0.72rem', color: '#888888', wordBreak: 'break-all', marginTop: '2px' }}>
+                            {image.startsWith('data:') ? 'Local file attached (Ready to save)' : image}
+                          </div>
+                          <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
+                            <label style={styles.changeFileBtn}>
+                              <Upload size={12} /> Replace Image
+                              <input type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
+                            </label>
+                            <button type="button" onClick={() => setImage('')} style={styles.removeFileBtn}>
+                              Remove
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <label style={styles.dropzone}>
+                        {uploading ? (
+                          <div style={styles.dropzoneContent}>
+                            <RefreshCw size={24} color="#C5A059" style={{ animation: 'spin 1s linear infinite' }} />
+                            <span style={{ fontSize: '0.85rem', color: '#C5A059' }}>Uploading image to server...</span>
+                          </div>
+                        ) : (
+                          <div style={styles.dropzoneContent}>
+                            <Upload size={28} color="#C5A059" />
+                            <div style={{ fontSize: '0.88rem', color: '#FFFFFF', fontWeight: '500' }}>
+                              Click to select image file from computer
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: '#888888' }}>
+                              Supports PNG, JPG, WEBP, GIF (High resolution)
+                            </div>
+                          </div>
+                        )}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleFileUpload}
+                          disabled={uploading}
+                          style={{ display: 'none' }}
+                        />
+                      </label>
+                    )}
+                  </div>
+
+                  {uploadError && <div style={styles.errorAlert}>{uploadError}</div>}
+
+                  {/* Optional Toggle for Manual URL */}
+                  <div style={{ marginTop: '6px', textAlign: 'right' }}>
+                    <button
+                      type="button"
+                      onClick={() => setUseUrlInput(!useUrlInput)}
+                      style={{ background: 'none', border: 'none', color: '#888', fontSize: '0.72rem', cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                      {useUrlInput ? 'Hide URL paste input' : 'Paste external image URL instead'}
+                    </button>
+                  </div>
+
+                  {useUrlInput && (
+                    <div style={{ marginTop: '8px' }}>
+                      <input
+                        type="text"
+                        value={image}
+                        onChange={(e) => setImage(e.target.value)}
+                        placeholder="https://images.unsplash.com/photo-..."
+                        style={styles.input}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div style={styles.checkboxRow}>
@@ -1024,5 +1130,54 @@ const styles = {
     justifyContent: 'flex-end',
     gap: '1rem',
     marginTop: '1.5rem',
+  },
+  uploadBox: {
+    backgroundColor: '#0F0F0F',
+    border: '1px dashed rgba(255, 255, 255, 0.25)',
+    padding: '1rem',
+    textAlign: 'center',
+    transition: 'all 0.2s ease',
+  },
+  dropzone: {
+    display: 'block',
+    cursor: 'pointer',
+    padding: '1.25rem',
+  },
+  dropzoneContent: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    gap: '8px',
+  },
+  imagePreviewRow: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1.25rem',
+    textAlign: 'left',
+  },
+  uploadPreviewImg: {
+    width: '70px',
+    height: '70px',
+    objectFit: 'cover',
+    border: '1px solid #C5A059',
+  },
+  changeFileBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '4px 10px',
+    fontSize: '0.75rem',
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    color: '#FFF',
+    cursor: 'pointer',
+  },
+  removeFileBtn: {
+    padding: '4px 10px',
+    fontSize: '0.75rem',
+    backgroundColor: 'transparent',
+    border: '1px solid rgba(255, 107, 107, 0.4)',
+    color: '#FF6B6B',
+    cursor: 'pointer',
   },
 };
