@@ -677,22 +677,18 @@ export default function AdminDashboardPage() {
                           <td style={{ ...styles.td, textAlign: 'right' }}>
                             <button
                               onClick={() => setViewingOrder(ord)}
+                              className="btn-pill"
                               style={{
-                                fontSize: '0.75rem',
-                                padding: '0.35rem 0.8rem',
+                                fontSize: '0.78rem',
+                                padding: '0.4rem 0.9rem',
                                 marginRight: '6px',
-                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                                color: '#FFF',
-                                border: '1px solid rgba(255, 255, 255, 0.2)',
-                                borderRadius: '9999px',
-                                cursor: 'pointer',
                                 display: 'inline-flex',
                                 alignItems: 'center',
-                                gap: '4px',
+                                gap: '5px',
                               }}
                               title="View Order Details"
                             >
-                              <Eye size={12} /> View
+                              <Eye size={13} /> View
                             </button>
                             {ord.status === 'in_production' && (
                               <button
@@ -1139,11 +1135,13 @@ export default function AdminDashboardPage() {
                     Placed on {new Date(viewingOrder.createdAt).toLocaleString()}
                   </div>
                 </div>
-                <button onClick={() => setViewingOrder(null)} style={styles.closeBtn}>✕</button>
+                <button onClick={() => setViewingOrder(null)} style={styles.closeBtn}>
+                  <X size={18} color="#AAA" />
+                </button>
               </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                {/* Order Type & Status Banner */}
+                {/* Order Type & Status Banner with Quick Status Dropdown */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0F0F0F', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
                   <div>
                     <div style={{ fontSize: '0.72rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Fulfillment Classification</div>
@@ -1151,25 +1149,32 @@ export default function AdminDashboardPage() {
                       {viewingOrder.fulfillmentType === 'physical_card' ? 'Physical Card & Luxury Package' : 'Digital 3D Portal Experience'}
                     </div>
                   </div>
-                  <span
-                    style={{
-                      ...styles.statusTag,
-                      borderColor:
-                        viewingOrder.status === 'ready'
-                          ? '#66BB6A'
-                          : viewingOrder.status === 'in_production'
-                          ? '#C5A059'
-                          : '#888888',
-                      color:
-                        viewingOrder.status === 'ready'
-                          ? '#66BB6A'
-                          : viewingOrder.status === 'in_production'
-                          ? '#C5A059'
-                          : '#888888',
-                    }}
-                  >
-                    {viewingOrder.status.toUpperCase().replace('_', ' ')}
-                  </span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <select
+                      value={viewingOrder.status}
+                      onChange={(e) => {
+                        const newStatus = e.target.value;
+                        handleOrderStatusToggle(viewingOrder.id, newStatus);
+                        setViewingOrder({ ...viewingOrder, status: newStatus });
+                      }}
+                      style={{
+                        backgroundColor: '#161616',
+                        border: '1px solid #C5A059',
+                        color: '#C5A059',
+                        fontSize: '0.75rem',
+                        fontWeight: '600',
+                        padding: '5px 10px',
+                        cursor: 'pointer',
+                        outline: 'none',
+                        letterSpacing: '0.05em',
+                      }}
+                    >
+                      <option value="pending">PENDING</option>
+                      <option value="in_production">IN PRODUCTION</option>
+                      <option value="ready">READY</option>
+                      <option value="delivered">DELIVERED</option>
+                    </select>
+                  </div>
                 </div>
 
                 {/* 12-Char Access Code Section */}
@@ -1187,14 +1192,13 @@ export default function AdminDashboardPage() {
                           setTimeout(() => setCopiedCode(false), 2000);
                         }
                       }}
+                      className="btn-pill"
                       style={{
                         fontSize: '0.75rem',
                         padding: '0.4rem 0.9rem',
                         backgroundColor: copiedCode ? '#66BB6A' : 'rgba(255, 255, 255, 0.1)',
                         color: '#FFF',
                         border: '1px solid rgba(255, 255, 255, 0.2)',
-                        borderRadius: '9999px',
-                        cursor: 'pointer',
                         display: 'flex',
                         alignItems: 'center',
                         gap: '4px',
@@ -1206,24 +1210,11 @@ export default function AdminDashboardPage() {
                   </div>
                 </div>
 
-                {/* Purchaser & Recipient Details */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div style={{ backgroundColor: '#0F0F0F', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                    <div style={{ fontSize: '0.72rem', color: '#888', textTransform: 'uppercase' }}>Purchaser Information</div>
-                    <div style={{ fontSize: '0.9rem', color: '#FFF', marginTop: '4px', fontWeight: '500' }}>{viewingOrder.purchaserName}</div>
-                    <div style={{ fontSize: '0.8rem', color: '#AAA', marginTop: '2px' }}>{viewingOrder.purchaserEmail}</div>
-                  </div>
-                  <div style={{ backgroundColor: '#0F0F0F', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                    <div style={{ fontSize: '0.72rem', color: '#888', textTransform: 'uppercase' }}>Recipient Destination</div>
-                    {viewingOrder.recipientName ? (
-                      <>
-                        <div style={{ fontSize: '0.9rem', color: '#C5A059', marginTop: '4px', fontWeight: '500' }}>Gift Recipient: {viewingOrder.recipientName}</div>
-                        <div style={{ fontSize: '0.8rem', color: '#AAA', marginTop: '2px' }}>{viewingOrder.recipientEmail || 'Digital Delivery'}</div>
-                      </>
-                    ) : (
-                      <div style={{ fontSize: '0.88rem', color: '#AAA', marginTop: '4px' }}>Self Purchase (Purchaser is Recipient)</div>
-                    )}
-                  </div>
+                {/* Purchaser Details (Lower Recipient Box Removed) */}
+                <div style={{ backgroundColor: '#0F0F0F', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Purchaser Information</div>
+                  <div style={{ fontSize: '0.95rem', color: '#FFF', marginTop: '4px', fontWeight: '500' }}>{viewingOrder.purchaserName}</div>
+                  <div style={{ fontSize: '0.82rem', color: '#AAA', marginTop: '2px' }}>{viewingOrder.purchaserEmail}</div>
                 </div>
 
                 {/* Package Items Breakdown */}
@@ -1271,14 +1262,10 @@ export default function AdminDashboardPage() {
                   )}
                   <button
                     onClick={() => handleSendNotification(viewingOrder.id)}
+                    className="btn-pill"
                     style={{
                       fontSize: '0.8rem',
                       padding: '0.6rem 1.2rem',
-                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                      color: '#FFF',
-                      border: '1px solid rgba(255, 255, 255, 0.2)',
-                      borderRadius: '9999px',
-                      cursor: 'pointer',
                     }}
                   >
                     Resend Email Notification
