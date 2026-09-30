@@ -1,0 +1,30 @@
+[
+  {
+    "id": "cat-cards",
+    "name": "CARDS",
+    "slug": "cards",
+    "description": "Handwritten bespoke cards and luxury envelope editions",
+    "createdAt": "2026-09-30T10:00:00.000Z"
+  },
+  {
+    "id": "cat-flowers",
+    "name": "FLOWERS",
+    "slug": "flowers",
+    "description": "Fresh floral arrangements and bouquet packages",
+    "createdAt": "2026-09-30T10:00:00.000Z"
+  },
+  {
+    "id": "cat-chocolates",
+    "name": "CHOCOLATES",
+    "slug": "chocolates",
+    "description": "Artisan dark cocoa blocks and gourmet treats",
+    "createdAt": "2026-09-30T10:00:00.000Z"
+  },
+  {
+    "id": "cat-jewelry",
+    "name": "JEWELRY",
+    "slug": "jewelry",
+    "description": "Handcrafted gold chain rings and keepsake accessories",
+    "createdAt": "2026-09-30T10:00:00.000Z"
+  }
+]

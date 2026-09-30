@@ -31,6 +31,13 @@ export default function AdminDashboardPage() {
   const [uploadError, setUploadError] = useState('');
   const [useUrlInput, setUseUrlInput] = useState(false);
 
+  // Categories Manager State
+  const [categories, setCategories] = useState([]);
+  const [editingCategory, setEditingCategory] = useState(null);
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [catName, setCatName] = useState('');
+  const [catDescription, setCatDescription] = useState('');
+
   // Check login session on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -74,15 +81,18 @@ export default function AdminDashboardPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [resProd, resOrd] = await Promise.all([
+      const [resProd, resOrd, resCat] = await Promise.all([
         fetch('/api/admin/products'),
         fetch('/api/admin/orders'),
+        fetch('/api/admin/categories'),
       ]);
       const dataProd = await resProd.json();
       const dataOrd = await resOrd.json();
+      const dataCat = await resCat.json();
 
       if (dataProd.success) setProducts(dataProd.products || []);
       if (dataOrd.success) setOrders(dataOrd.orders || []);
+      if (dataCat.success) setCategories(dataCat.categories || []);
     } catch (err) {
       console.error('Error fetching admin data:', err);
     } finally {
@@ -205,9 +215,88 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (data.success) {
         setProducts(products.filter((p) => p.id !== id));
+        setStatusMsg('Product deleted successfully.');
       }
     } catch (err) {
       console.error('Error deleting product:', err);
+    }
+  };
+
+  // CATEGORY MANAGEMENT HANDLERS
+  const resetCategoryForm = () => {
+    setCatName('');
+    setCatDescription('');
+    setEditingCategory(null);
+    setIsCategoryModalOpen(false);
+  };
+
+  const handleOpenEditCategory = (cat) => {
+    setEditingCategory(cat);
+    setCatName(cat.name);
+    setCatDescription(cat.description || '');
+    setIsCategoryModalOpen(true);
+  };
+
+  const handleCategorySubmit = async (e) => {
+    e.preventDefault();
+    if (!catName || !catName.trim()) {
+      setStatusMsg('Category name is required.');
+      return;
+    }
+
+    const payload = {
+      name: catName.trim().toUpperCase(),
+      description: catDescription.trim(),
+    };
+
+    try {
+      if (editingCategory) {
+        const res = await fetch('/api/admin/categories', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingCategory.id, ...payload }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setStatusMsg(`Category "${data.category.name}" updated successfully!`);
+          fetchData();
+          resetCategoryForm();
+        } else {
+          setStatusMsg(data.error || 'Error updating category');
+        }
+      } else {
+        const res = await fetch('/api/admin/categories', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setStatusMsg(`New category "${data.category.name}" created successfully!`);
+          fetchData();
+          resetCategoryForm();
+        } else {
+          setStatusMsg(data.error || 'Error creating category');
+        }
+      }
+    } catch (err) {
+      setStatusMsg('Server error saving category.');
+    }
+  };
+
+  const handleDeleteCategory = async (id, name) => {
+    if (!confirm(`Are you sure you want to delete category "${name}"?`)) return;
+    try {
+      const res = await fetch(`/api/admin/categories?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success) {
+        setStatusMsg(`Category "${name}" deleted.`);
+        fetchData();
+      } else {
+        setStatusMsg(data.error || 'Failed to delete category');
+      }
+    } catch (err) {
+      console.error('Error deleting category:', err);
     }
   };
 
@@ -338,6 +427,16 @@ export default function AdminDashboardPage() {
             >
               Product Catalog ({products.length})
             </button>
+            <button
+              onClick={() => setActiveTab('categories')}
+              style={{
+                ...styles.navTabBtn,
+                color: activeTab === 'categories' ? '#FFFFFF' : '#888888',
+                borderBottom: activeTab === 'categories' ? '2px solid #C5A059' : '2px solid transparent',
+              }}
+            >
+              Categories ({categories.length})
+            </button>
           </div>
 
           {/* Right Action Group */}
@@ -348,10 +447,45 @@ export default function AdminDashboardPage() {
                   resetForm();
                   setIsFormOpen(true);
                 }}
-                className="btn-pill btn-pill-solid"
-                style={{ fontSize: '0.8rem', padding: '0.45rem 1.2rem', display: 'flex', alignItems: 'center', gap: '6px' }}
+                style={{
+                  fontSize: '0.8rem',
+                  padding: '0.45rem 1.2rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: '#C5A059',
+                  color: '#000',
+                  border: 'none',
+                  borderRadius: '9999px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                }}
               >
                 <Plus size={14} /> Add Product
+              </button>
+            )}
+
+            {activeTab === 'categories' && (
+              <button
+                onClick={() => {
+                  resetCategoryForm();
+                  setIsCategoryModalOpen(true);
+                }}
+                style={{
+                  fontSize: '0.8rem',
+                  padding: '0.45rem 1.2rem',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  backgroundColor: '#C5A059',
+                  color: '#000',
+                  border: 'none',
+                  borderRadius: '9999px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                }}
+              >
+                <Plus size={14} /> Add Category
               </button>
             )}
 
@@ -689,6 +823,80 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
+        {/* CATEGORIES MANAGEMENT TAB */}
+        {activeTab === 'categories' && (
+          <div>
+            <div style={styles.pageTitleRow}>
+              <div>
+                <h1 style={styles.headingTitle}>Categories Manager</h1>
+                <p style={styles.headingSub}>Create, edit, or delete product categories dynamically — linked directly to product listings</p>
+              </div>
+            </div>
+
+            <div style={styles.statsGrid}>
+              <div style={styles.statCard}>
+                <span style={styles.statLabel}>Total Categories</span>
+                <span style={styles.statVal}>{categories.length}</span>
+              </div>
+              <div style={styles.statCard}>
+                <span style={styles.statLabel}>Active Catalog Products</span>
+                <span style={styles.statVal}>{products.length}</span>
+              </div>
+            </div>
+
+            <div style={styles.tableContainer}>
+              <table style={styles.table}>
+                <thead>
+                  <tr style={styles.trHeader}>
+                    <th style={styles.th}>Category Name</th>
+                    <th style={styles.th}>URL Slug</th>
+                    <th style={styles.th}>Description</th>
+                    <th style={styles.th}>Assigned Products</th>
+                    <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {categories.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
+                        No categories configured. Click "Add Category" to create one.
+                      </td>
+                    </tr>
+                  ) : (
+                    categories.map((cat) => {
+                      const assignedCount = products.filter((p) => p.category === cat.name).length;
+                      return (
+                        <tr key={cat.id} style={styles.trBody}>
+                          <td style={styles.td}>
+                            <span style={styles.catBadge}>{cat.name}</span>
+                          </td>
+                          <td style={styles.td}>
+                            <code style={{ fontSize: '0.8rem', color: '#C5A059' }}>{cat.slug || cat.name.toLowerCase()}</code>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={{ color: '#AAA', fontSize: '0.82rem' }}>{cat.description || '—'}</span>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={{ color: '#FFF', fontWeight: '500' }}>{assignedCount} items</span>
+                          </td>
+                          <td style={{ ...styles.td, textAlign: 'right' }}>
+                            <button onClick={() => handleOpenEditCategory(cat)} style={styles.actionBtn} title="Edit Category">
+                              <Edit2 size={16} color="#FFF" />
+                            </button>
+                            <button onClick={() => handleDeleteCategory(cat.id, cat.name)} style={styles.actionBtn} title="Delete Category">
+                              <Trash2 size={16} color="#FF6B6B" />
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {/* Modal / Product Form Overlay */}
         {isFormOpen && (
           <div style={styles.modalOverlay} onClick={resetForm}>
@@ -737,16 +945,26 @@ export default function AdminDashboardPage() {
                     />
                   </div>
                   <div style={{ flex: 1 }}>
-                    <label style={styles.label}>Category</label>
+                    <label style={styles.label}>Category (Dynamic)</label>
                     <select
                       value={category}
                       onChange={(e) => setCategory(e.target.value)}
                       style={styles.select}
                     >
-                      <option value="CARDS">CARDS</option>
-                      <option value="FLOWERS">FLOWERS</option>
-                      <option value="CHOCOLATES">CHOCOLATES</option>
-                      <option value="JEWELRY">JEWELRY</option>
+                      {categories.length === 0 ? (
+                        <>
+                          <option value="CARDS">CARDS</option>
+                          <option value="FLOWERS">FLOWERS</option>
+                          <option value="CHOCOLATES">CHOCOLATES</option>
+                          <option value="JEWELRY">JEWELRY</option>
+                        </>
+                      ) : (
+                        categories.map((cat) => (
+                          <option key={cat.id} value={cat.name}>
+                            {cat.name}
+                          </option>
+                        ))
+                      )}
                     </select>
                   </div>
                 </div>
@@ -849,6 +1067,66 @@ export default function AdminDashboardPage() {
                   </button>
                   <button type="submit" className="btn-pill btn-pill-solid">
                     {editingProduct ? 'Save Changes' : 'Create Product'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal / Category Form Overlay */}
+        {isCategoryModalOpen && (
+          <div style={styles.modalOverlay} onClick={resetCategoryForm}>
+            <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.modalHeader}>
+                <h2 style={styles.modalTitle}>
+                  {editingCategory ? 'Edit Category' : 'Create New Category'}
+                </h2>
+                <button onClick={resetCategoryForm} style={styles.closeBtn}>✕</button>
+              </div>
+
+              <form onSubmit={handleCategorySubmit} style={styles.form}>
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Category Name *</label>
+                  <input
+                    type="text"
+                    value={catName}
+                    onChange={(e) => setCatName(e.target.value)}
+                    placeholder="e.g. LUXURY GIFTS"
+                    style={styles.input}
+                    required
+                    autoFocus
+                  />
+                </div>
+
+                <div style={styles.formGroup}>
+                  <label style={styles.label}>Description</label>
+                  <textarea
+                    value={catDescription}
+                    onChange={(e) => setCatDescription(e.target.value)}
+                    placeholder="Brief description of products in this category..."
+                    style={{ ...styles.input, height: '80px', resize: 'vertical' }}
+                  />
+                </div>
+
+                <div style={styles.formActions}>
+                  <button type="button" onClick={resetCategoryForm} className="btn-pill btn-pill-dark">
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    style={{
+                      padding: '0.75rem 1.8rem',
+                      fontSize: '0.85rem',
+                      fontWeight: '600',
+                      backgroundColor: '#C5A059',
+                      color: '#000',
+                      border: 'none',
+                      borderRadius: '9999px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    {editingCategory ? 'Save Changes' : 'Create Category'}
                   </button>
                 </div>
               </form>
