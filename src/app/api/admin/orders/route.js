@@ -74,7 +74,7 @@ export async function PUT(request) {
 
       const res = await sendEmail({
         to: recipientEmail,
-        subject: `✨ Your 3D Keepsake Experience is Ready! — The Keepsake Smith`,
+        subject: `Your 3D Keepsake Experience is Ready! — The Keepsake Smith`,
         html,
       });
 

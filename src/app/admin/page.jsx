@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Edit2, Trash2, CheckCircle, XCircle, Package, RefreshCw, Key, Mail, Lock, LogOut, ShieldCheck, Search, Filter, Upload, Image as ImageIcon, Link as LinkIcon, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, CheckCircle, XCircle, Package, RefreshCw, Key, Mail, Lock, LogOut, ShieldCheck, Search, Filter, Upload, Image as ImageIcon, Link as LinkIcon, X, Eye, Copy, Check } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -15,6 +15,10 @@ export default function AdminDashboardPage() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statusMsg, setStatusMsg] = useState('');
+
+  // Order Details Modal State
+  const [viewingOrder, setViewingOrder] = useState(null);
+  const [copiedCode, setCopiedCode] = useState(false);
 
   // Product Form State
   const [editingProduct, setEditingProduct] = useState(null);
@@ -534,15 +538,15 @@ export default function AdminDashboardPage() {
                 <span style={styles.statVal}>{orders.length}</span>
               </div>
               <div style={styles.statCard}>
-                <span style={styles.statLabel}>📦 Physical Card Packages</span>
+                <span style={styles.statLabel}>Physical Card Packages</span>
                 <span style={styles.statVal}>{orders.filter((o) => o.fulfillmentType === 'physical_card').length}</span>
               </div>
               <div style={styles.statCard}>
-                <span style={styles.statLabel}>💻 Digital-Only Orders</span>
+                <span style={styles.statLabel}>Digital-Only Orders</span>
                 <span style={styles.statVal}>{orders.filter((o) => o.fulfillmentType === 'digital_only').length}</span>
               </div>
               <div style={styles.statCard}>
-                <span style={styles.statLabel}>🎁 Gift Purchases</span>
+                <span style={styles.statLabel}>Gift Purchases</span>
                 <span style={styles.statVal}>{orders.filter((o) => o.recipientType === 'gift').length}</span>
               </div>
             </div>
@@ -569,7 +573,7 @@ export default function AdminDashboardPage() {
                   borderColor: orderFilter === 'PHYSICAL' ? '#C5A059' : 'rgba(255, 255, 255, 0.15)',
                 }}
               >
-                📦 Physical Cards ({orders.filter((o) => o.fulfillmentType === 'physical_card').length})
+                Physical Cards ({orders.filter((o) => o.fulfillmentType === 'physical_card').length})
               </button>
               <button
                 onClick={() => setOrderFilter('DIGITAL')}
@@ -580,7 +584,7 @@ export default function AdminDashboardPage() {
                   borderColor: orderFilter === 'DIGITAL' ? '#C5A059' : 'rgba(255, 255, 255, 0.15)',
                 }}
               >
-                💻 Digital 3D Portal ({orders.filter((o) => o.fulfillmentType === 'digital_only').length})
+                Digital 3D Portal ({orders.filter((o) => o.fulfillmentType === 'digital_only').length})
               </button>
               <button
                 onClick={() => setOrderFilter('GIFTS')}
@@ -591,7 +595,7 @@ export default function AdminDashboardPage() {
                   borderColor: orderFilter === 'GIFTS' ? '#C5A059' : 'rgba(255, 255, 255, 0.15)',
                 }}
               >
-                🎁 Gifts ({orders.filter((o) => o.recipientType === 'gift').length})
+                Gifts ({orders.filter((o) => o.recipientType === 'gift').length})
               </button>
             </div>
 
@@ -601,9 +605,7 @@ export default function AdminDashboardPage() {
                   <tr style={styles.trHeader}>
                     <th style={styles.th}>Order ID & Date</th>
                     <th style={styles.th}>Order Type</th>
-                    <th style={styles.th}>Purchaser & Recipient</th>
-                    <th style={styles.th}>Package Items</th>
-                    <th style={styles.th}>12-Char Code</th>
+                    <th style={styles.th}>Purchaser</th>
                     <th style={styles.th}>Total</th>
                     <th style={styles.th}>Status</th>
                     <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
@@ -617,7 +619,7 @@ export default function AdminDashboardPage() {
                     return true;
                   }).length === 0 ? (
                     <tr>
-                      <td colSpan={8} style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
+                      <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
                         No orders match the selected filter.
                       </td>
                     </tr>
@@ -639,41 +641,14 @@ export default function AdminDashboardPage() {
                           </td>
                           <td style={styles.td}>
                             {ord.fulfillmentType === 'physical_card' ? (
-                              <span style={styles.physicalTag}>📦 Physical Card</span>
+                              <span style={styles.physicalTag}>Physical Card</span>
                             ) : (
-                              <span style={styles.digitalTag}>💻 Digital Only</span>
+                              <span style={styles.digitalTag}>Digital Only</span>
                             )}
                           </td>
                           <td style={styles.td}>
                             <div style={{ color: '#FFF', fontWeight: '400' }}>{ord.purchaserName}</div>
                             <div style={{ fontSize: '0.78rem', color: '#888' }}>{ord.purchaserEmail}</div>
-                            {ord.recipientName ? (
-                              <div style={{ fontSize: '0.75rem', color: '#C5A059', marginTop: '4px' }}>
-                                🎁 To: {ord.recipientName} ({ord.recipientEmail || 'digital'})
-                              </div>
-                            ) : (
-                              <div style={{ fontSize: '0.72rem', color: '#666', marginTop: '2px' }}>
-                                👤 Self Purchase
-                              </div>
-                            )}
-                          </td>
-                          <td style={styles.td}>
-                            {ord.items && ord.items.length > 0 ? (
-                              <div style={{ fontSize: '0.78rem', color: '#DDD' }}>
-                                {ord.items.map((item, idx) => (
-                                  <div key={idx} style={{ marginBottom: '2px' }}>
-                                    • {item.title || item.name} {item.quantity > 1 ? `x${item.quantity}` : ''}
-                                  </div>
-                                ))}
-                              </div>
-                            ) : (
-                              <span style={{ color: '#666', fontSize: '0.78rem' }}>Keepsake Package</span>
-                            )}
-                          </td>
-                          <td style={styles.td}>
-                            <div style={styles.codeBadge}>
-                              <Key size={12} color="#C5A059" /> {ord.accessCode}
-                            </div>
                           </td>
                           <td style={styles.td}>
                             <span style={{ color: '#FFF', fontWeight: '400' }}>₦{ord.totalAmount.toLocaleString()}</span>
@@ -700,6 +675,25 @@ export default function AdminDashboardPage() {
                             </span>
                           </td>
                           <td style={{ ...styles.td, textAlign: 'right' }}>
+                            <button
+                              onClick={() => setViewingOrder(ord)}
+                              style={{
+                                fontSize: '0.75rem',
+                                padding: '0.35rem 0.8rem',
+                                marginRight: '6px',
+                                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                                color: '#FFF',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                borderRadius: '9999px',
+                                cursor: 'pointer',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                              }}
+                              title="View Order Details"
+                            >
+                              <Eye size={12} /> View
+                            </button>
                             {ord.status === 'in_production' && (
                               <button
                                 onClick={() => handleOrderStatusToggle(ord.id, 'ready')}
@@ -1130,6 +1124,167 @@ export default function AdminDashboardPage() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal / Order Details View Overlay */}
+        {viewingOrder && (
+          <div style={styles.modalOverlay} onClick={() => setViewingOrder(null)}>
+            <div style={{ ...styles.modalContent, maxWidth: '640px' }} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.modalHeader}>
+                <div>
+                  <h2 style={styles.modalTitle}>Order Details #{viewingOrder.id}</h2>
+                  <div style={{ fontSize: '0.78rem', color: '#888', marginTop: '4px' }}>
+                    Placed on {new Date(viewingOrder.createdAt).toLocaleString()}
+                  </div>
+                </div>
+                <button onClick={() => setViewingOrder(null)} style={styles.closeBtn}>✕</button>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                {/* Order Type & Status Banner */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0F0F0F', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
+                  <div>
+                    <div style={{ fontSize: '0.72rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Fulfillment Classification</div>
+                    <div style={{ fontSize: '0.95rem', color: '#FFF', fontWeight: '500', marginTop: '2px' }}>
+                      {viewingOrder.fulfillmentType === 'physical_card' ? 'Physical Card & Luxury Package' : 'Digital 3D Portal Experience'}
+                    </div>
+                  </div>
+                  <span
+                    style={{
+                      ...styles.statusTag,
+                      borderColor:
+                        viewingOrder.status === 'ready'
+                          ? '#66BB6A'
+                          : viewingOrder.status === 'in_production'
+                          ? '#C5A059'
+                          : '#888888',
+                      color:
+                        viewingOrder.status === 'ready'
+                          ? '#66BB6A'
+                          : viewingOrder.status === 'in_production'
+                          ? '#C5A059'
+                          : '#888888',
+                    }}
+                  >
+                    {viewingOrder.status.toUpperCase().replace('_', ' ')}
+                  </span>
+                </div>
+
+                {/* 12-Char Access Code Section */}
+                <div style={{ backgroundColor: '#0F0F0F', padding: '1rem', border: '1px solid rgba(197, 160, 89, 0.3)' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#C5A059', textTransform: 'uppercase', letterSpacing: '0.08em' }}>12-Character Access Code Key</div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
+                    <div style={{ fontFamily: 'monospace', fontSize: '1.2rem', color: '#FFF', letterSpacing: '0.12em', fontWeight: '600' }}>
+                      {viewingOrder.accessCode}
+                    </div>
+                    <button
+                      onClick={() => {
+                        if (typeof window !== 'undefined' && navigator.clipboard) {
+                          navigator.clipboard.writeText(viewingOrder.accessCode);
+                          setCopiedCode(true);
+                          setTimeout(() => setCopiedCode(false), 2000);
+                        }
+                      }}
+                      style={{
+                        fontSize: '0.75rem',
+                        padding: '0.4rem 0.9rem',
+                        backgroundColor: copiedCode ? '#66BB6A' : 'rgba(255, 255, 255, 0.1)',
+                        color: '#FFF',
+                        border: '1px solid rgba(255, 255, 255, 0.2)',
+                        borderRadius: '9999px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                      }}
+                    >
+                      {copiedCode ? <Check size={12} /> : <Copy size={12} />}
+                      {copiedCode ? 'Copied!' : 'Copy Code'}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Purchaser & Recipient Details */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div style={{ backgroundColor: '#0F0F0F', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <div style={{ fontSize: '0.72rem', color: '#888', textTransform: 'uppercase' }}>Purchaser Information</div>
+                    <div style={{ fontSize: '0.9rem', color: '#FFF', marginTop: '4px', fontWeight: '500' }}>{viewingOrder.purchaserName}</div>
+                    <div style={{ fontSize: '0.8rem', color: '#AAA', marginTop: '2px' }}>{viewingOrder.purchaserEmail}</div>
+                  </div>
+                  <div style={{ backgroundColor: '#0F0F0F', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                    <div style={{ fontSize: '0.72rem', color: '#888', textTransform: 'uppercase' }}>Recipient Destination</div>
+                    {viewingOrder.recipientName ? (
+                      <>
+                        <div style={{ fontSize: '0.9rem', color: '#C5A059', marginTop: '4px', fontWeight: '500' }}>Gift Recipient: {viewingOrder.recipientName}</div>
+                        <div style={{ fontSize: '0.8rem', color: '#AAA', marginTop: '2px' }}>{viewingOrder.recipientEmail || 'Digital Delivery'}</div>
+                      </>
+                    ) : (
+                      <div style={{ fontSize: '0.88rem', color: '#AAA', marginTop: '4px' }}>Self Purchase (Purchaser is Recipient)</div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Package Items Breakdown */}
+                <div>
+                  <div style={{ fontSize: '0.78rem', color: '#888', textTransform: 'uppercase', marginBottom: '8px' }}>Package Items Breakdown</div>
+                  <div style={{ backgroundColor: '#0F0F0F', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '0.75rem 1rem' }}>
+                    {viewingOrder.items && viewingOrder.items.length > 0 ? (
+                      viewingOrder.items.map((item, idx) => (
+                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', borderBottom: idx < viewingOrder.items.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none' }}>
+                          <span style={{ fontSize: '0.85rem', color: '#FFF' }}>{item.title || item.name} {item.quantity > 1 ? `x${item.quantity}` : ''}</span>
+                          <span style={{ fontSize: '0.85rem', color: '#AAA' }}>₦{(item.price * (item.quantity || 1)).toLocaleString()}</span>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{ fontSize: '0.85rem', color: '#AAA' }}>Keepsake Custom Package</div>
+                    )}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.75rem', marginTop: '0.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.15)', fontWeight: '600' }}>
+                      <span style={{ color: '#FFF' }}>Total Order Value</span>
+                      <span style={{ color: '#C5A059' }}>₦{viewingOrder.totalAmount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Controls */}
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
+                  {viewingOrder.status === 'in_production' && (
+                    <button
+                      onClick={() => {
+                        handleOrderStatusToggle(viewingOrder.id, 'ready');
+                        setViewingOrder({ ...viewingOrder, status: 'ready' });
+                      }}
+                      style={{
+                        fontSize: '0.8rem',
+                        padding: '0.6rem 1.2rem',
+                        backgroundColor: '#C5A059',
+                        color: '#000',
+                        border: 'none',
+                        borderRadius: '9999px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Mark Ready & Send Email
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleSendNotification(viewingOrder.id)}
+                    style={{
+                      fontSize: '0.8rem',
+                      padding: '0.6rem 1.2rem',
+                      backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                      color: '#FFF',
+                      border: '1px solid rgba(255, 255, 255, 0.2)',
+                      borderRadius: '9999px',
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Resend Email Notification
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
