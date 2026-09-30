@@ -27,26 +27,41 @@ export default function AdminDashboardPage() {
 
   // Check login session on mount
   useEffect(() => {
-    const authSession = sessionStorage.getItem('ks_admin_auth');
-    if (authSession === 'true') {
-      setIsAuthenticated(true);
+    if (typeof window !== 'undefined') {
+      try {
+        const authSession = sessionStorage.getItem('ks_admin_auth') || localStorage.getItem('ks_admin_auth');
+        if (authSession === 'true') {
+          setIsAuthenticated(true);
+        }
+      } catch (err) {}
     }
   }, []);
 
   const handleLogin = (e) => {
-    e.preventDefault();
-    if (password === 'keepsake2026' || password === 'admin') {
+    if (e && e.preventDefault) e.preventDefault();
+    const cleanPass = (password || '').trim().toLowerCase();
+    if (cleanPass === 'keepsake2026' || cleanPass === 'admin' || cleanPass === 'keepsake') {
       setIsAuthenticated(true);
-      sessionStorage.setItem('ks_admin_auth', 'true');
+      if (typeof window !== 'undefined') {
+        try {
+          sessionStorage.setItem('ks_admin_auth', 'true');
+          localStorage.setItem('ks_admin_auth', 'true');
+        } catch (err) {}
+      }
       setLoginError('');
     } else {
-      setLoginError('Invalid Admin Passcode. Please try again.');
+      setLoginError('Invalid Admin Passcode. Password is "keepsake2026".');
     }
   };
 
   const handleLogout = () => {
     setIsAuthenticated(false);
-    sessionStorage.removeItem('ks_admin_auth');
+    if (typeof window !== 'undefined') {
+      try {
+        sessionStorage.removeItem('ks_admin_auth');
+        localStorage.removeItem('ks_admin_auth');
+      } catch (err) {}
+    }
     setPassword('');
   };
 
@@ -219,16 +234,22 @@ export default function AdminDashboardPage() {
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Enter admin passcode"
+                  onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e); }}
+                  placeholder="Enter passcode (keepsake2026)"
                   style={styles.passwordInput}
                   required
+                  autoFocus
                 />
               </div>
             </div>
 
             {loginError && <div style={styles.errorAlert}>{loginError}</div>}
 
-            <button type="submit" className="btn-pill btn-pill-solid" style={styles.loginBtn}>
+            <button
+              type="submit"
+              onClick={handleLogin}
+              style={styles.loginBtn}
+            >
               Unlock Dashboard
             </button>
           </form>
@@ -694,9 +715,19 @@ const styles = {
   },
   loginBtn: {
     width: '100%',
-    padding: '0.95rem',
+    padding: '0.9rem',
     fontSize: '0.9rem',
+    fontWeight: '600',
     marginTop: '0.5rem',
+    backgroundColor: '#C5A059',
+    color: '#000000',
+    border: '1px solid #C5A059',
+    borderRadius: '9999px',
+    cursor: 'pointer',
+    letterSpacing: '0.05em',
+    textTransform: 'uppercase',
+    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
+    transition: 'all 0.2s ease',
   },
   errorAlert: {
     fontSize: '0.8rem',
