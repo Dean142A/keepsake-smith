@@ -7,7 +7,7 @@ import { Experience } from './Experience';
 import { UI } from './UI';
 import { playBackgroundMusic, pauseBackgroundMusic } from './backgroundMusic';
 
-export default function BookViewer({ personalization }) {
+export default function BookViewer({ personalization, onExit }) {
   const [mounted, setMounted] = useState(false);
   const [musicActive, setMusicActive] = useState(false);
 
@@ -28,34 +28,41 @@ export default function BookViewer({ personalization }) {
     };
   }, []);
 
+  const toggleMusic = () => {
+    if (musicActive) {
+      pauseBackgroundMusic();
+      setMusicActive(false);
+    } else {
+      playBackgroundMusic();
+      setMusicActive(true);
+    }
+  };
+
   if (!mounted) return null;
 
   return (
     <div style={styles.viewerContainer}>
-      <UI personalization={personalization} />
+      <UI
+        personalization={personalization}
+        onExit={onExit}
+        musicActive={musicActive}
+        onToggleMusic={toggleMusic}
+      />
       <Loader />
-      
-      {/* Audio Indicator Badge */}
-      <div style={styles.audioPill} onClick={() => {
-        if (musicActive) {
-          pauseBackgroundMusic();
-          setMusicActive(false);
-        } else {
-          playBackgroundMusic();
-          setMusicActive(true);
-        }
-      }}>
-        <span>{musicActive ? '🔊 Music On' : '🔈 Tap for Music'}</span>
-      </div>
 
       <Canvas
         shadows
         camera={{
-          position: [-50, 30, typeof window !== 'undefined' && window.innerWidth > 800 ? -30 : -40],
+          position: [0, 1.5, 5.5],
           fov: 45,
+          near: 0.1,
+          far: 1000,
         }}
         style={{ width: '100%', height: '100%' }}
       >
+        <color attach="background" args={['#0D0D0D']} />
+        <ambientLight intensity={1.8} />
+        <directionalLight position={[4, 8, 4]} intensity={2.5} castShadow />
         <group position-y={0}>
           <Suspense fallback={null}>
             <Experience />
@@ -72,22 +79,7 @@ const styles = {
     inset: 0,
     width: '100vw',
     height: '100vh',
-    backgroundColor: '#0A0A0A',
+    backgroundColor: '#0D0D0D',
     zIndex: 50,
-  },
-  audioPill: {
-    position: 'fixed',
-    top: '2rem',
-    right: '2rem',
-    zIndex: 100,
-    backgroundColor: 'rgba(18, 18, 18, 0.85)',
-    backdropFilter: 'blur(12px)',
-    border: '1px solid rgba(255, 255, 255, 0.15)',
-    padding: '0.5rem 1rem',
-    borderRadius: '20px',
-    color: '#FFFFFF',
-    fontSize: '0.75rem',
-    cursor: 'pointer',
-    userSelect: 'none',
   },
 };

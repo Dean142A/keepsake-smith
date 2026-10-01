@@ -33,7 +33,7 @@ pages.push({
   back: 'book-back',
 });
 
-export const UI = ({ personalization }) => {
+export const UI = ({ personalization, onExit, musicActive, onToggleMusic }) => {
   const [page, setPage] = useAtom(pageAtom);
 
   useEffect(() => {
@@ -44,44 +44,56 @@ export const UI = ({ personalization }) => {
   }, [page]);
 
   return (
-    <>
-      <main style={styles.uiOverlay}>
-        {/* Recipient Greeting Banner */}
-        {personalization && (
-          <div style={styles.recipientBadge}>
-            <span style={styles.badgeSub}>PERSONALIZED KEEPSAKE FOR</span>
-            <span style={styles.badgeName}>{personalization.recipientName || 'Valued Recipient'}</span>
-          </div>
-        )}
+    <main style={styles.uiOverlay}>
+      {/* Top Header Bar */}
+      <div style={styles.topHeaderRow}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          {onExit && (
+            <button onClick={onExit} style={styles.exitBtn}>
+              ← Exit Portal
+            </button>
+          )}
 
-        {/* Page Switcher Navigation */}
-        <div style={styles.navRow}>
-          <div style={styles.navBar}>
-            {[...pages].map((_, index) => (
-              <button
-                key={index}
-                style={{
-                  ...styles.pageBtn,
-                  ...(index === page ? styles.pageBtnActive : styles.pageBtnInactive),
-                }}
-                onClick={() => setPage(index)}
-              >
-                {index === 0 ? 'Cover' : `Page ${index}`}
-              </button>
-            ))}
+          {personalization && (
+            <div style={styles.recipientBadge}>
+              <span style={styles.badgeSub}>PERSONALIZED KEEPSAKE FOR</span>
+              <span style={styles.badgeName}>{personalization.recipientName || 'Valued Recipient'}</span>
+            </div>
+          )}
+        </div>
+
+        <button onClick={onToggleMusic} style={styles.audioPill}>
+          {musicActive ? '🔊 Music On' : '🔈 Tap for Music'}
+        </button>
+      </div>
+
+      {/* Page Switcher Navigation */}
+      <div style={styles.navRow}>
+        <div style={styles.navBar}>
+          {[...pages].map((_, index) => (
             <button
+              key={index}
               style={{
                 ...styles.pageBtn,
-                ...(page === pages.length ? styles.pageBtnActive : styles.pageBtnInactive),
+                ...(index === page ? styles.pageBtnActive : styles.pageBtnInactive),
               }}
-              onClick={() => setPage(pages.length)}
+              onClick={() => setPage(index)}
             >
-              Back Cover
+              {index === 0 ? 'Cover' : `Page ${index}`}
             </button>
-          </div>
+          ))}
+          <button
+            style={{
+              ...styles.pageBtn,
+              ...(page === pages.length ? styles.pageBtnActive : styles.pageBtnInactive),
+            }}
+            onClick={() => setPage(pages.length)}
+          >
+            Back Cover
+          </button>
         </div>
-      </main>
-    </>
+      </div>
+    </main>
   );
 };
 
@@ -91,33 +103,59 @@ const styles = {
     inset: 0,
     pointerEvents: 'none',
     userSelect: 'none',
-    zIndex: 10,
+    zIndex: 100,
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
     padding: '2rem',
   },
-  recipientBadge: {
+  topHeaderRow: {
+    width: '100%',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     pointerEvents: 'auto',
-    alignSelf: 'flex-start',
+  },
+  exitBtn: {
+    padding: '0.6rem 1.25rem',
+    borderRadius: '20px',
+    backgroundColor: 'rgba(18, 18, 18, 0.85)',
+    backdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    color: '#FFFFFF',
+    fontSize: '0.78rem',
+    cursor: 'pointer',
+  },
+  recipientBadge: {
     backgroundColor: 'rgba(18, 18, 18, 0.85)',
     backdropFilter: 'blur(12px)',
     border: '1px solid rgba(255, 255, 255, 0.15)',
-    padding: '0.75rem 1.25rem',
-    borderRadius: '0px',
+    padding: '0.5rem 1rem',
+    borderRadius: '8px',
     display: 'flex',
     flexDirection: 'column',
     gap: '2px',
   },
   badgeSub: {
-    fontSize: '0.65rem',
+    fontSize: '0.6rem',
     letterSpacing: '0.12em',
     color: '#A88653',
   },
   badgeName: {
-    fontSize: '1.1rem',
+    fontSize: '0.95rem',
     color: '#FFFFFF',
     fontWeight: '300',
+  },
+  audioPill: {
+    backgroundColor: 'rgba(18, 18, 18, 0.85)',
+    backdropFilter: 'blur(12px)',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    padding: '0.6rem 1.2rem',
+    borderRadius: '20px',
+    color: '#FFFFFF',
+    fontSize: '0.75rem',
+    cursor: 'pointer',
+    userSelect: 'none',
   },
   navRow: {
     width: '100%',

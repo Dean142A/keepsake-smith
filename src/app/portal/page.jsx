@@ -137,18 +137,10 @@ export default function PortalPage() {
           </>
         ) : (
           /* Interactive R3F 3D Animated Book Experience */
-          <div>
-            <div style={styles.exitBar}>
-              <button
-                onClick={() => setExperienceData(null)}
-                className="btn-pill"
-                style={{ padding: '0.5rem 1.4rem', fontSize: '0.8rem' }}
-              >
-                ← Exit Experience
-              </button>
-            </div>
-            <BookViewer personalization={experienceData.personalization} />
-          </div>
+          <BookViewer
+            personalization={experienceData.personalization}
+            onExit={() => setExperienceData(null)}
+          />
         )}
       </div>
     </div>
