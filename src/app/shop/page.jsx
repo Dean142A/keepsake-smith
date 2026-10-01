@@ -59,8 +59,33 @@ export default function ShopPage() {
     }));
   };
 
+  const shopItemListJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'ItemList',
+    itemListElement: products.map((prod, index) => ({
+      '@type': 'ListItem',
+      position: index + 1,
+      item: {
+        '@type': 'Product',
+        name: prod.title,
+        description: prod.subtitle || 'Luxury Keepsake Card & 3D Experience',
+        image: prod.image,
+        offers: {
+          '@type': 'Offer',
+          priceCurrency: 'NGN',
+          price: prod.price,
+          availability: 'https://schema.org/InStock',
+        },
+      },
+    })),
+  };
+
   return (
     <div style={styles.page}>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(shopItemListJsonLd) }}
+      />
       <div className="container">
         {/* Header Title */}
         <div style={styles.headerArea}>

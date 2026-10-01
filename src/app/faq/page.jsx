@@ -132,8 +132,27 @@ export default function FAQPage() {
     return { ...cat, items: matchingItems };
   }).filter((cat) => cat.items.length > 0);
 
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: FAQ_DATA.flatMap((cat) =>
+      cat.items.map((item) => ({
+        '@type': 'Question',
+        name: item.question,
+        acceptedAnswer: {
+          '@type': 'Answer',
+          text: item.answer,
+        },
+      }))
+    ),
+  };
+
   return (
     <div className="faq-page">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
       <div className="faq-container">
         {/* Header */}
         <header className="faq-header">
