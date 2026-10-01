@@ -17,23 +17,6 @@ export default function HomePage() {
         {/* HERO SECTION 1 */}
         <section style={styles.heroSection}>
           <div style={styles.heroTopContent}>
-            <div style={styles.heroHeaderRow}>
-              <h1 className="heading-xl" style={styles.heroTitle}>
-                we craft gifts that <br />
-                are <span>memorable.</span>
-              </h1>
-              <div style={styles.emblemBadge}>
-                <svg width="60" height="60" viewBox="0 0 100 100" fill="none" opacity="0.6">
-                  <circle cx="50" cy="50" r="46" stroke="#FFFFFF" strokeWidth="1.5" />
-                  <path d="M50 15 C30 15, 15 30, 15 50 C15 70, 30 85, 50 85" stroke="#FFFFFF" strokeWidth="1.5" />
-                  <path d="M50 25 C36 25, 25 36, 25 50 C25 64, 36 75, 50 75" stroke="#FFFFFF" strokeWidth="1.5" />
-                </svg>
-                <p style={styles.emblemSubtext}>
-                  this explains color systems and color usages so they are used the way to brand identity portrays
-                </p>
-              </div>
-            </div>
-
             {/* Live Countdown Timer */}
             <CountdownTimer />
           </div>
@@ -278,38 +261,17 @@ export default function HomePage() {
 
 const styles = {
   page: {
-    paddingTop: '2rem',
+    paddingTop: '0px',
   },
   heroSection: {
     marginBottom: '5rem',
   },
   heroTopContent: {
-    height: '800px',
+    minHeight: 'calc(800px - 180px)',
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-end',
     marginBottom: '1.5rem',
-  },
-  heroHeaderRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    flexWrap: 'wrap',
-    gap: '2rem',
-  },
-  heroTitle: {
-    maxWidth: '780px',
-  },
-  emblemBadge: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-    maxWidth: '320px',
-  },
-  emblemSubtext: {
-    fontSize: '0.7rem',
-    color: '#888888',
-    lineHeight: '1.4',
   },
   heroImgBanner: {
     width: '100%',
