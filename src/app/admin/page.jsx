@@ -42,6 +42,12 @@ export default function AdminDashboardPage() {
   const [catName, setCatName] = useState('');
   const [catDescription, setCatDescription] = useState('');
 
+  // Live Timer Settings State
+  const [timerHours, setTimerHours] = useState(22);
+  const [timerMinutes, setTimerMinutes] = useState(7);
+  const [timerSeconds, setTimerSeconds] = useState(46);
+  const [savingTimer, setSavingTimer] = useState(false);
+
   // Check login session on mount
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -85,22 +91,55 @@ export default function AdminDashboardPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [resProd, resOrd, resCat] = await Promise.all([
+      const [resProd, resOrd, resCat, resTimer] = await Promise.all([
         fetch('/api/admin/products'),
         fetch('/api/admin/orders'),
         fetch('/api/admin/categories'),
+        fetch('/api/admin/settings'),
       ]);
       const dataProd = await resProd.json();
       const dataOrd = await resOrd.json();
       const dataCat = await resCat.json();
+      const dataTimer = await resTimer.json();
 
       if (dataProd.success) setProducts(dataProd.products || []);
       if (dataOrd.success) setOrders(dataOrd.orders || []);
       if (dataCat.success) setCategories(dataCat.categories || []);
+      if (dataTimer.success && dataTimer.settings) {
+        setTimerHours(dataTimer.settings.timerHours ?? 22);
+        setTimerMinutes(dataTimer.settings.timerMinutes ?? 7);
+        setTimerSeconds(dataTimer.settings.timerSeconds ?? 46);
+      }
     } catch (err) {
       console.error('Error fetching admin data:', err);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleSaveTimerSettings = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setSavingTimer(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          timerHours: Number(timerHours),
+          timerMinutes: Number(timerMinutes),
+          timerSeconds: Number(timerSeconds),
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStatusMsg('Live Homepage Countdown Timer updated and saved to database!');
+      } else {
+        setStatusMsg('Error: ' + (data.error || 'Failed to update timer settings.'));
+      }
+    } catch (err) {
+      setStatusMsg('Network error updating timer settings.');
+    } finally {
+      setSavingTimer(false);
     }
   };
 
@@ -440,6 +479,16 @@ export default function AdminDashboardPage() {
               }}
             >
               Categories ({categories.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('timer')}
+              style={{
+                ...styles.navTabBtn,
+                color: activeTab === 'timer' ? '#FFFFFF' : '#888888',
+                borderBottom: activeTab === 'timer' ? '2px solid #C5A059' : '2px solid transparent',
+              }}
+            >
+              Timer Settings
             </button>
           </div>
 
@@ -1123,6 +1172,68 @@ export default function AdminDashboardPage() {
                     }}
                   >
                     {editingCategory ? 'Save Changes' : 'Create Category'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* LIVE COUNTDOWN TIMER SETTINGS TAB */}
+        {activeTab === 'timer' && (
+          <div>
+            <div style={styles.pageTitleRow}>
+              <div>
+                <h1 style={styles.headingTitle}>Live Homepage Countdown Timer Settings</h1>
+                <p style={styles.headingSub}>Set up the countdown hours, minutes, and seconds stored in the database for the live homepage timer</p>
+              </div>
+            </div>
+
+            <div style={{ maxWidth: '640px', backgroundColor: '#161616', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '20px', padding: '2.5rem', marginTop: '2rem' }}>
+              <form onSubmit={handleSaveTimerSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.8rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '0.75rem', color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: '0.08em' }}>HOURS</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={999}
+                      value={timerHours}
+                      onChange={(e) => setTimerHours(e.target.value)}
+                      style={{ padding: '1rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '12px', color: '#FFF', fontSize: '1.4rem', textAlign: 'center', outline: 'none' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '0.75rem', color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: '0.08em' }}>MINUTES</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={59}
+                      value={timerMinutes}
+                      onChange={(e) => setTimerMinutes(e.target.value)}
+                      style={{ padding: '1rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '12px', color: '#FFF', fontSize: '1.4rem', textAlign: 'center', outline: 'none' }}
+                    />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <label style={{ fontSize: '0.75rem', color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: '0.08em' }}>SECONDS</label>
+                    <input
+                      type="number"
+                      min={0}
+                      max={59}
+                      value={timerSeconds}
+                      onChange={(e) => setTimerSeconds(e.target.value)}
+                      style={{ padding: '1rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '12px', color: '#FFF', fontSize: '1.4rem', textAlign: 'center', outline: 'none' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
+                  <button
+                    type="submit"
+                    disabled={savingTimer}
+                    style={{ padding: '0.9rem 2.2rem', backgroundColor: '#C5A059', color: '#000', border: 'none', borderRadius: '9999px', fontWeight: '600', fontSize: '0.9rem', cursor: 'pointer' }}
+                  >
+                    {savingTimer ? 'Saving to Database...' : 'Save & Update Homepage Timer'}
                   </button>
                 </div>
               </form>
