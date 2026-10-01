@@ -284,7 +284,11 @@ const styles = {
     marginBottom: '5rem',
   },
   heroTopContent: {
-    marginBottom: '2rem',
+    height: '800px',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    marginBottom: '1.5rem',
   },
   heroHeaderRow: {
     display: 'flex',
@@ -292,7 +296,6 @@ const styles = {
     alignItems: 'flex-start',
     flexWrap: 'wrap',
     gap: '2rem',
-    marginBottom: '2.5rem',
   },
   heroTitle: {
     maxWidth: '780px',
@@ -313,7 +316,7 @@ const styles = {
     height: '600px',
     borderRadius: '24px',
     overflow: 'hidden',
-    marginTop: '1.5rem',
+    marginTop: '0px',
   },
   fullImg: {
     width: '100%',
