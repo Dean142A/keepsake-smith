@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Lock, Sparkles, Box, ArrowRight, RefreshCw, ShieldCheck } from 'lucide-react';
+import { Lock, Sparkles, Box, ArrowRight, RefreshCw } from 'lucide-react';
 
 export default function PortalPage() {
   const [code, setCode] = useState('');
@@ -72,11 +72,7 @@ export default function PortalPage() {
         {/* Header Title */}
         <div style={styles.headerRow}>
           <div>
-            <div style={styles.subdomainTag}>app.thekeepsakesmith.com</div>
             <h1 className="heading-xl">3D Keepsake Portal</h1>
-          </div>
-          <div style={styles.shieldBadge}>
-            <ShieldCheck size={16} color="#C5A059" /> NO ACCOUNT REQUIRED
           </div>
         </div>
 
