@@ -41,7 +41,7 @@ export const Experience = () => {
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
-        shadow-bias={-0.0001}
+        shadow-bias={0.00005}
       />
       <directionalLight position={[-4, 5, -4]} intensity={1.0} />
       <Environment preset="studio" />
