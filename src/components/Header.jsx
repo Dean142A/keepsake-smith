@@ -16,7 +16,14 @@ export default function Header() {
     )
   );
 
-  if (isAdmin) {
+  const isPortal = pathname?.startsWith('/portal') || (
+    typeof window !== 'undefined' && (
+      window.location.hostname.startsWith('app.') ||
+      window.location.hostname.includes('app.')
+    )
+  );
+
+  if (isAdmin || isPortal) {
     return null;
   }
 
