@@ -210,12 +210,15 @@ const Page = ({ number, front, back, page, opened, bookClosed, ...props }) => {
       }
     }
 
-    easing.dampAngle(
-      targetRotation,
-      group.current ? group.current.rotation.y : 0,
-      easingFactor,
-      delta
-    );
+    if (group.current) {
+      easing.dampAngle(
+        group.current.rotation,
+        'y',
+        targetRotation,
+        easingFactor,
+        delta
+      );
+    }
 
     const foldIntensity =
       number === 0
