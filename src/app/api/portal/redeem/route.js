@@ -1,26 +1,27 @@
 import { NextResponse } from 'next/server';
+import fs from 'fs';
+import path from 'path';
 
-// Mock DB of ready access codes for testing & demonstration
-const ACCESS_CODES_DB = {
-  'KPSK-892F-37A1': {
-    id: 'code-1',
-    orderId: 'ord-101',
-    packageId: 'pkg-88',
-    purchaserName: 'Alexander Smith',
-    recipientName: 'Jane Forster',
-    template: 'Anniversary Scene v1',
-    buildPath: 'https://packages.thekeepsakesmith.com/builds/anniversary-v1/',
-    personalization: {
-      photo: 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
-      message: 'Happy Anniversary my love! Forever & always.',
-      sender: 'Alex',
-    },
-    status: 'ready',
-  },
-};
+const ordersFilePath = path.join(process.cwd(), 'src', 'data', 'orders.json');
+
+// In-memory rate limiting map: ipOrCode -> { attempts: number, lockUntil: number }
+const FAILED_ATTEMPTS = new Map();
+const MAX_FAILED_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 15 * 60 * 1000; // 15 minutes
+
+function readOrders() {
+  try {
+    if (!fs.existsSync(ordersFilePath)) return [];
+    return JSON.parse(fs.readFileSync(ordersFilePath, 'utf8') || '[]');
+  } catch (err) {
+    console.error('Error reading orders file:', err);
+    return [];
+  }
+}
 
 export async function POST(req) {
   try {
+    const clientIp = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
     const body = await req.json();
     const { code } = body;
 
@@ -32,40 +33,73 @@ export async function POST(req) {
     }
 
     const cleanCode = code.trim().toUpperCase();
+    const rateLimitKey = `${clientIp}:${cleanCode}`;
+    const now = Date.now();
 
-    // Check if code exists in DB
-    const accessData = ACCESS_CODES_DB[cleanCode];
+    // Check rate limit status
+    const attemptRecord = FAILED_ATTEMPTS.get(rateLimitKey);
+    if (attemptRecord && attemptRecord.lockUntil > now) {
+      const minutesRemaining = Math.ceil((attemptRecord.lockUntil - now) / 60000);
+      return NextResponse.json(
+        {
+          error: `Too many failed attempts. Code access locked for security. Please try again in ${minutesRemaining} minute(s).`,
+          locked: true,
+        },
+        { status: 429 }
+      );
+    }
 
-    if (!accessData) {
-      // Allow any well-formatted code starting with KPSK- for demonstration
-      if (cleanCode.length >= 10) {
-        return NextResponse.json({
-          success: true,
-          code: cleanCode,
-          package: {
-            id: 'pkg-demo',
-            template: 'Keepsake Luxury 3D Scene v1',
-            buildPath: 'https://packages.thekeepsakesmith.com/builds/default-v1/',
-            personalization: {
-              photo: 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
-              message: 'You have received a personalized 3D Keepsake Experience.',
-              recipientName: 'Valued Recipient',
-            },
-            status: 'ready',
-          },
-        });
+    // Read live orders DB
+    const orders = readOrders();
+    const matchingOrder = orders.find(
+      (o) => o.accessCode && o.accessCode.trim().toUpperCase() === cleanCode
+    );
+
+    if (!matchingOrder) {
+      // Record failed attempt
+      const attempts = (attemptRecord?.attempts || 0) + 1;
+      let lockUntil = 0;
+      if (attempts >= MAX_FAILED_ATTEMPTS) {
+        lockUntil = now + LOCKOUT_DURATION_MS;
       }
+      FAILED_ATTEMPTS.set(rateLimitKey, { attempts, lockUntil });
+
+      const attemptsLeft = Math.max(0, MAX_FAILED_ATTEMPTS - attempts);
+      const remainingMsg = attemptsLeft > 0
+        ? ` (${attemptsLeft} attempt(s) remaining before temporary lockout)`
+        : ' Access locked for 15 minutes.';
 
       return NextResponse.json(
-        { error: 'Invalid access code. Please check your card or email and try again.' },
+        { error: `Invalid 12-character access code. Please check your card or email and try again.${remainingMsg}` },
         { status: 404 }
       );
     }
 
+    // Reset rate limiter on successful code entry
+    FAILED_ATTEMPTS.delete(rateLimitKey);
+
+    // Extract item details & dynamic 3D WebGL package configuration
+    const primaryItem = matchingOrder.items?.[0] || { title: 'Keepsake 3D Experience' };
+    
     return NextResponse.json({
       success: true,
       code: cleanCode,
-      package: accessData,
+      package: {
+        id: matchingOrder.id,
+        template: primaryItem.title || 'Keepsake Luxury 3D Scene v1',
+        buildPath: 'https://packages.thekeepsakesmith.com/builds/default-v1/',
+        fulfillmentType: matchingOrder.fulfillmentType,
+        status: matchingOrder.status,
+        purchaserName: matchingOrder.purchaserName,
+        recipientName: matchingOrder.recipientName || matchingOrder.purchaserName,
+        personalization: {
+          recipientName: matchingOrder.recipientName || matchingOrder.purchaserName,
+          sender: matchingOrder.purchaserName,
+          message: matchingOrder.customMessage || 'Happy Anniversary my love! Forever & always.',
+          photo: matchingOrder.customPhoto || 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
+          audioUrl: 'https://packages.thekeepsakesmith.com/audio/sample-ambient.mp3',
+        },
+      },
     });
   } catch (err) {
     return NextResponse.json(
