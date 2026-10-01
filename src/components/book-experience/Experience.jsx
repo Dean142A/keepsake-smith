@@ -34,15 +34,17 @@ export const Experience = () => {
       >
         <Book />
       </Float>
-      <Environment preset="studio" />
+      <ambientLight intensity={1.5} />
       <directionalLight
-        position={[2, 5, 2]}
+        position={[4, 8, 4]}
         intensity={2.5}
         castShadow
         shadow-mapSize-width={2048}
         shadow-mapSize-height={2048}
         shadow-bias={-0.0001}
       />
+      <directionalLight position={[-4, 5, -4]} intensity={1.0} />
+      <Environment preset="studio" />
       <mesh position-y={-1.5} rotation-x={-Math.PI / 2} receiveShadow>
         <planeGeometry args={[100, 100]} />
         <shadowMaterial transparent opacity={0.2} />

@@ -95,8 +95,16 @@ const Page = ({ number, front, back, page, opened, bookClosed, ...props }) => {
       : []),
   ]);
 
-  if (picture) picture.colorSpace = SRGBColorSpace;
-  if (picture2) picture2.colorSpace = SRGBColorSpace;
+  useEffect(() => {
+    if (picture) {
+      picture.colorSpace = SRGBColorSpace;
+      picture.needsUpdate = true;
+    }
+    if (picture2) {
+      picture2.colorSpace = SRGBColorSpace;
+      picture2.needsUpdate = true;
+    }
+  }, [picture, picture2]);
 
   const group = useRef();
   const turnedAt = useRef(0);
