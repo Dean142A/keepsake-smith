@@ -190,29 +190,23 @@ const Page = ({ number, front, back, page, opened, bookClosed, ...props }) => {
 
     turningTime = Math.sin(turningTime * Math.PI);
 
-    let targetRotation = opened ? -Math.PI / 2 : Math.PI / 2;
+    let targetRotation = opened ? -Math.PI : 0;
     if (!bookClosed) {
-      targetRotation += opened ? number * 0.005 : -number * 0.005;
+      if (opened) {
+        targetRotation = -Math.PI + (pages.length - number) * 0.005;
+      } else {
+        targetRotation = -number * 0.005;
+      }
+    } else {
+      targetRotation = opened ? -Math.PI : 0;
     }
 
     const bones = skinnedMeshRef.current.skeleton.bones;
-    let foldRotationAngle =
-      MathUtils.degToRad(Math.sin(turningTime * Math.PI) * 50) *
-      (opened ? -1 : 1);
 
-    if (bookClosed) {
-      if (opened) {
-        targetRotation = -Math.PI;
-        foldRotationAngle = 0;
-      } else {
-        targetRotation = 0;
-        foldRotationAngle = 0;
-      }
-    }
-
-    if (group.current) {
+    // Animate root bone Y rotation smoothly
+    if (bones[0]) {
       easing.dampAngle(
-        group.current.rotation,
+        bones[0].rotation,
         'y',
         targetRotation,
         easingFactor,
@@ -220,21 +214,13 @@ const Page = ({ number, front, back, page, opened, bookClosed, ...props }) => {
       );
     }
 
-    const foldIntensity =
-      number === 0
-        ? Math.sin(turningTime * Math.PI) * 0.2
-        : number === pages.length - 1
-        ? Math.sin(turningTime * Math.PI) * 0.2
-        : 1;
+    // Bend inner page segment bones into organic parabolic arc during flip
+    const foldIntensity = Math.sin(turningTime * Math.PI);
 
     bones.forEach((bone, index) => {
-      if (index === 0) {
-        bone.rotation.y = group.current ? group.current.rotation.y : 0;
-        return;
-      }
+      if (index === 0) return;
 
-      let rotationAngle =
-        insideCurveStrength * Math.sin(index * 0.2 + turningTime * Math.PI);
+      let rotationAngle = insideCurveStrength * Math.sin(index * 0.15) * (opened ? -0.4 : 0.4);
 
       if (bookClosed) {
         rotationAngle = 0;
