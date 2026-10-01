@@ -283,8 +283,16 @@ export default function CheckoutPage() {
         }
 
         .checkout-container {
-          width: min(100% - 40px, 1160px);
+          width: 100%;
+          max-width: 100%;
           margin: 0 auto;
+          padding: 0 clamp(1.5rem, 3.5vw, 3.5rem);
+        }
+
+        @media (max-width: 768px) {
+          .checkout-container {
+            padding: 0 1.25rem;
+          }
         }
 
         .checkout-header {
