@@ -58,50 +58,9 @@ export default function CartDrawer() {
   if (isAdmin || !isCartOpen) return null;
 
   const handleCheckout = async () => {
-    if (cart.length === 0 || submitting) return;
-    setSubmitting(true);
-    setCheckoutError('');
-
-    // Extract custom personalization payload if present in cart
-    const customItem = cart.find((i) => i.personalization);
-    const personalization = customItem?.personalization || {};
-
-    const payload = {
-      purchaserName: 'Alexander Smith',
-      purchaserEmail: 'alexander@example.com',
-      recipientType: personalization.recipientName ? 'gift' : 'self',
-      recipientName: personalization.recipientName || 'Alexander Smith',
-      recipientEmail: 'alexander@example.com',
-      fulfillmentType: 'physical_card',
-      totalAmount: cartTotal,
-      items: cart.map((i) => ({
-        title: i.title,
-        price: i.price,
-        quantity: i.quantity,
-      })),
-      customMessage: personalization.message || 'Happy Anniversary my love! Forever & always.',
-      customPhoto: personalization.photo || null,
-    };
-
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-      const data = await res.json();
-      if (data.success && data.accessCode) {
-        if (clearCart) clearCart();
-        setIsCartOpen(false);
-        router.push(`/thank-you?code=${encodeURIComponent(data.accessCode)}&orderId=${encodeURIComponent(data.order.id)}`);
-      } else {
-        setCheckoutError(data.error || 'Checkout failed. Please try again.');
-        setSubmitting(false);
-      }
-    } catch (err) {
-      setCheckoutError('Network error completing checkout.');
-      setSubmitting(false);
-    }
+    if (cart.length === 0) return;
+    setIsCartOpen(false);
+    router.push('/checkout');
   };
 
   return (

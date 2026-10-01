@@ -534,20 +534,26 @@ export default function AdminDashboardPage() {
             {/* Stats Grid */}
             <div style={styles.statsGrid}>
               <div style={styles.statCard}>
+                <span style={styles.statLabel}>Total Revenue</span>
+                <span style={styles.statVal}>
+                  NGN {orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0).toLocaleString()}
+                </span>
+              </div>
+              <div style={styles.statCard}>
                 <span style={styles.statLabel}>Total Orders</span>
                 <span style={styles.statVal}>{orders.length}</span>
               </div>
               <div style={styles.statCard}>
-                <span style={styles.statLabel}>Physical Card Packages</span>
+                <span style={styles.statLabel}>3D Portal Redemption Rate</span>
+                <span style={styles.statVal}>
+                  {orders.length > 0
+                    ? `${Math.round((orders.filter((o) => o.redeemed || o.status === 'redeemed' || o.redemptionCount > 0).length / orders.length) * 100)}%`
+                    : '0%'}
+                </span>
+              </div>
+              <div style={styles.statCard}>
+                <span style={styles.statLabel}>Physical Cards / Gift Boxes</span>
                 <span style={styles.statVal}>{orders.filter((o) => o.fulfillmentType === 'physical_card').length}</span>
-              </div>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Digital-Only Orders</span>
-                <span style={styles.statVal}>{orders.filter((o) => o.fulfillmentType === 'digital_only').length}</span>
-              </div>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Gift Purchases</span>
-                <span style={styles.statVal}>{orders.filter((o) => o.recipientType === 'gift').length}</span>
               </div>
             </div>
 
