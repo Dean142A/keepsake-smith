@@ -4,49 +4,22 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
-import { Lock, ShieldCheck, ArrowRight, CheckCircle, Package, Sparkles, CreditCard, RefreshCw } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 
 export default function CheckoutPage() {
   const router = useRouter();
   const { cart, cartTotal, clearCart } = useCart();
 
-  // Purchaser Details
-  const [purchaserName, setPurchaserName] = useState('');
-  const [purchaserEmail, setPurchaserEmail] = useState('');
-  const [purchaserPhone, setPurchaserPhone] = useState('');
+  // Form Fields matching exact Figma designs (Cart-4.png & Cart-2.png)
+  const [email, setEmail] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [addressLine1, setAddressLine1] = useState('');
+  const [organizationName, setOrganizationName] = useState('');
+  const [additionalInfo, setAdditionalInfo] = useState('');
 
-  // Recipient Details
-  const [isGift, setIsGift] = useState(true);
-  const [recipientName, setRecipientName] = useState('');
-  const [recipientEmail, setRecipientEmail] = useState('');
-
-  // Custom Message
-  const [customMessage, setCustomMessage] = useState('');
-
-  // Fulfillment Options
-  const [fulfillmentType, setFulfillmentType] = useState('physical_card'); // 'physical_card' or 'digital_only'
-  
-  // Shipping Address
-  const [streetAddress, setStreetAddress] = useState('');
-  const [city, setCity] = useState('');
-  const [stateRegion, setStateRegion] = useState('Lagos');
-
-  // Payment & Status State
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-
-  // Pre-fill from custom cart payload if available
-  useEffect(() => {
-    const customItem = cart.find((i) => i.personalization);
-    if (customItem && customItem.personalization) {
-      if (customItem.personalization.recipientName) {
-        setRecipientName(customItem.personalization.recipientName);
-      }
-      if (customItem.personalization.message) {
-        setCustomMessage(customItem.personalization.message);
-      }
-    }
-  }, [cart]);
+  // Payment State
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
   // Load Paystack Inline script dynamically
   useEffect(() => {
@@ -61,93 +34,80 @@ export default function CheckoutPage() {
     };
   }, []);
 
-  const shippingFee = fulfillmentType === 'physical_card' ? 2500 : 0;
-  const grandTotal = cartTotal + shippingFee;
-
-  const handlePaystackPayment = async (e) => {
-    e.preventDefault();
+  const handlePaystackCheckout = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
 
     if (cart.length === 0) {
-      setError('Your shopping bag is empty.');
+      setErrorMessage('Your bag is currently empty.');
       return;
     }
 
-    if (!purchaserName.trim() || !purchaserEmail.trim()) {
-      setError('Please provide your name and email address.');
+    if (!email.trim() || !phoneNumber.trim()) {
+      setErrorMessage('Please provide your email address and phone number.');
       return;
     }
 
-    if (fulfillmentType === 'physical_card' && (!streetAddress.trim() || !city.trim())) {
-      setError('Please fill in your shipping delivery address.');
-      return;
-    }
-
-    setLoading(true);
-    setError('');
+    setSubmitting(true);
+    setErrorMessage('');
 
     const orderPayload = {
-      purchaserName: purchaserName.trim(),
-      purchaserEmail: purchaserEmail.trim(),
-      purchaserPhone: purchaserPhone.trim(),
-      recipientType: isGift ? 'gift' : 'self',
-      recipientName: recipientName.trim() || purchaserName.trim(),
-      recipientEmail: recipientEmail.trim() || purchaserEmail.trim(),
-      fulfillmentType,
+      purchaserName: email.split('@')[0] || 'Customer',
+      purchaserEmail: email.trim(),
+      purchaserPhone: phoneNumber.trim(),
+      recipientType: 'gift',
+      recipientName: email.split('@')[0] || 'Customer',
+      recipientEmail: email.trim(),
+      fulfillmentType: 'physical_card',
       shippingAddress: {
-        street: streetAddress.trim(),
-        city: city.trim(),
-        state: stateRegion.trim(),
+        addressLine1: addressLine1.trim(),
+        organizationName: organizationName.trim(),
       },
-      customMessage: customMessage.trim(),
+      additionalInfo: additionalInfo.trim(),
       items: cart.map((i) => ({
         id: i.id,
-        title: i.title,
-        subtitle: i.subtitle,
+        title: i.title || 'CUSTOM CARD',
+        subtitle: i.subtitle || 'XL 1',
         price: i.price,
         quantity: i.quantity,
       })),
-      totalAmount: grandTotal,
+      totalAmount: cartTotal,
     };
 
-    // Initialize Paystack Inline Modal
     const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_KEY || 'pk_test_894321908ab9741295c10';
 
     if (typeof window !== 'undefined' && window.PaystackPop) {
       try {
         const handler = window.PaystackPop.setup({
           key: paystackKey,
-          email: purchaserEmail.trim(),
-          amount: grandTotal * 100, // Paystack operates in Kobo
+          email: email.trim(),
+          amount: cartTotal * 100, // Amount in kobo
           currency: 'NGN',
           ref: `KPSK-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           metadata: {
             custom_fields: [
-              { display_name: "Purchaser Name", variable_name: "purchaser_name", value: purchaserName },
-              { display_name: "Recipient Name", variable_name: "recipient_name", value: recipientName || purchaserName },
-              { display_name: "Fulfillment", variable_name: "fulfillment_type", value: fulfillmentType },
+              { display_name: "Customer Email", variable_name: "customer_email", value: email },
+              { display_name: "Phone Number", variable_name: "phone_number", value: phoneNumber },
+              { display_name: "Organization", variable_name: "organization", value: organizationName },
             ],
           },
           onClose: () => {
-            setLoading(false);
+            setSubmitting(false);
           },
           callback: (response) => {
-            // Verify payment on backend & create order
-            verifyPaymentAndFulfill(response.reference, orderPayload);
+            verifyAndRedirect(response.reference, orderPayload);
           },
         });
         handler.openIframe();
       } catch (err) {
-        console.error('Paystack Inline Error:', err);
-        // Fallback to direct backend order creation for development/test mode
-        verifyPaymentAndFulfill(`SIMULATED-${Date.now()}`, orderPayload);
+        console.error('Paystack error:', err);
+        verifyAndRedirect(`SIMULATED-${Date.now()}`, orderPayload);
       }
     } else {
-      // Fallback if Paystack script blocked
-      verifyPaymentAndFulfill(`SIMULATED-${Date.now()}`, orderPayload);
+      verifyAndRedirect(`SIMULATED-${Date.now()}`, orderPayload);
     }
   };
 
-  const verifyPaymentAndFulfill = async (reference, orderPayload) => {
+  const verifyAndRedirect = async (reference, orderPayload) => {
     try {
       const res = await fetch('/api/paystack/verify', {
         method: 'POST',
@@ -157,560 +117,418 @@ export default function CheckoutPage() {
           ...orderPayload,
         }),
       });
-
       const data = await res.json();
-
       if (data.success && data.accessCode) {
         if (clearCart) clearCart();
         router.push(`/thank-you?code=${encodeURIComponent(data.accessCode)}&orderId=${encodeURIComponent(data.order.id)}`);
       } else {
-        setError(data.error || 'Payment verification failed. Please try again.');
-        setLoading(false);
+        setErrorMessage(data.error || 'Payment processing failed. Please try again.');
+        setSubmitting(false);
       }
     } catch (err) {
-      console.error('Payment Verification Network Exception:', err);
-      setError('Network error verifying payment. Please check your connection.');
-      setLoading(false);
+      setErrorMessage('Network error completing payment verification.');
+      setSubmitting(false);
     }
   };
 
   return (
-    <div style={styles.page}>
-      <div className="container" style={styles.container}>
-        {/* Header Breadcrumb */}
-        <div style={styles.headerRow}>
-          <Link href="/cart" style={styles.backLink}>
-            ← Back to Bag
-          </Link>
-          <div style={styles.secureTag}>
-            <ShieldCheck size={16} color="#C5A059" />
-            <span>Encrypted 256-Bit SSL Paystack Checkout</span>
+    <div className="checkout-page">
+      <div className="checkout-container">
+        {/* Header Navigation */}
+        <header className="checkout-header">
+          <h1 className="checkout-title">checkout</h1>
+          <p className="checkout-subtext-top">
+            this explains color systems and color usages so they are used the way to brand identity portrays
+          </p>
+        </header>
+
+        <form onSubmit={handlePaystackCheckout} className="checkout-grid">
+          {/* Left Column: Form Fields */}
+          <div className="checkout-fields">
+            <div className="form-group">
+              <label className="field-label">Email Address</label>
+              <input
+                type="email"
+                required
+                placeholder="Jane Forster"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="field-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="field-label">Phone Number</label>
+              <input
+                type="tel"
+                required
+                placeholder="+234 000 0000 000"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                className="field-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="field-label">Address Line 1</label>
+              <input
+                type="text"
+                placeholder="No 1 webber street"
+                value={addressLine1}
+                onChange={(e) => setAddressLine1(e.target.value)}
+                className="field-input"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="field-label">Name of Organization</label>
+              <input
+                type="text"
+                placeholder="e.g Google"
+                value={organizationName}
+                onChange={(e) => setOrganizationName(e.target.value)}
+                className="field-input"
+              />
+            </div>
+
+            <p className="field-subtext">
+              this explains color systems and color usages so they are used the way to brand identity portrays
+            </p>
+
+            <div className="form-group" style={{ marginTop: '2rem' }}>
+              <label className="field-label">Additional Information</label>
+              <textarea
+                rows={4}
+                placeholder="Let us know additional information you want to add"
+                value={additionalInfo}
+                onChange={(e) => setAdditionalInfo(e.target.value)}
+                className="field-textarea"
+              />
+            </div>
           </div>
-        </div>
 
-        <h1 style={styles.pageTitle}>Complete Your Keepsake Order</h1>
-
-        <div style={styles.checkoutGrid}>
-          {/* Left Column: Information & Payment Form */}
-          <form onSubmit={handlePaystackPayment} style={styles.formCol}>
-            {/* Step 1: Purchaser Contact Info */}
-            <div style={styles.cardSection}>
-              <h2 style={styles.sectionHeading}>
-                <span style={styles.stepNum}>1</span> Purchaser Information
-              </h2>
-              <div style={styles.fieldGrid2}>
-                <div style={styles.inputGroup}>
-                  <label style={styles.label}>FULL NAME *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Alexander Smith"
-                    value={purchaserName}
-                    onChange={(e) => setPurchaserName(e.target.value)}
-                    style={styles.input}
-                  />
-                </div>
-                <div style={styles.inputGroup}>
-                  <label style={styles.label}>EMAIL ADDRESS *</label>
-                  <input
-                    type="email"
-                    required
-                    placeholder="alexander@example.com"
-                    value={purchaserEmail}
-                    onChange={(e) => setPurchaserEmail(e.target.value)}
-                    style={styles.input}
-                  />
-                </div>
-              </div>
-              <div style={styles.inputGroup} style={{ marginTop: '1rem' }}>
-                <label style={styles.label}>PHONE NUMBER</label>
-                <input
-                  type="tel"
-                  placeholder="+234 800 000 0000"
-                  value={purchaserPhone}
-                  onChange={(e) => setPurchaserPhone(e.target.value)}
-                  style={styles.input}
-                />
-              </div>
-            </div>
-
-            {/* Step 2: Gift Recipient & 3D Experience Details */}
-            <div style={styles.cardSection}>
-              <h2 style={styles.sectionHeading}>
-                <span style={styles.stepNum}>2</span> Gift Recipient & 3D Portal Badge
-              </h2>
-              <p style={styles.sectionSub}>
-                The recipient name will be custom embossed on your physical keepsake card and embedded directly inside the 3D Animated WebGL portal experience.
-              </p>
-
-              <div style={styles.fieldGrid2}>
-                <div style={styles.inputGroup}>
-                  <label style={styles.label}>RECIPIENT NAME *</label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Alexander Forster"
-                    value={recipientName}
-                    onChange={(e) => setRecipientName(e.target.value)}
-                    style={styles.input}
-                  />
-                </div>
-                <div style={styles.inputGroup}>
-                  <label style={styles.label}>RECIPIENT EMAIL (OPTIONAL)</label>
-                  <input
-                    type="email"
-                    placeholder="forster@example.com"
-                    value={recipientEmail}
-                    onChange={(e) => setRecipientEmail(e.target.value)}
-                    style={styles.input}
-                  />
-                </div>
-              </div>
-
-              <div style={{ marginTop: '1rem' }}>
-                <label style={styles.label}>HANDWRITTEN MESSAGE EMBOSSED ON CARD & 3D BOOK</label>
-                <textarea
-                  rows={3}
-                  placeholder="e.g. Happy Anniversary my love! Forever & always."
-                  value={customMessage}
-                  onChange={(e) => setCustomMessage(e.target.value)}
-                  style={styles.textarea}
-                />
-              </div>
-            </div>
-
-            {/* Step 3: Fulfillment & Shipping Options */}
-            <div style={styles.cardSection}>
-              <h2 style={styles.sectionHeading}>
-                <span style={styles.stepNum}>3</span> Fulfillment & Delivery
-              </h2>
-
-              <div style={styles.fulfillmentOptionsRow}>
-                <div
-                  style={{
-                    ...styles.fulfillmentCard,
-                    ...(fulfillmentType === 'physical_card' ? styles.fulfillmentCardActive : {}),
-                  }}
-                  onClick={() => setFulfillmentType('physical_card')}
-                >
-                  <Package size={22} color={fulfillmentType === 'physical_card' ? '#C5A059' : '#888888'} />
-                  <div style={styles.fulfillmentTitle}>Physical Card Box + 3D Portal</div>
-                  <div style={styles.fulfillmentDesc}>Crafted physical keepsake card delivered in luxury box + 3D WebGL portal key</div>
-                  <div style={styles.fulfillmentPrice}>+ NGN 2,500 Shipping</div>
-                </div>
-
-                <div
-                  style={{
-                    ...styles.fulfillmentCard,
-                    ...(fulfillmentType === 'digital_only' ? styles.fulfillmentCardActive : {}),
-                  }}
-                  onClick={() => setFulfillmentType('digital_only')}
-                >
-                  <Sparkles size={22} color={fulfillmentType === 'digital_only' ? '#C5A059' : '#888888'} />
-                  <div style={styles.fulfillmentTitle}>Digital 3D Portal Only</div>
-                  <div style={styles.fulfillmentDesc}>Instant digital access code generated & dispatched via email</div>
-                  <div style={styles.fulfillmentPrice}>FREE Instant Delivery</div>
-                </div>
-              </div>
-
-              {fulfillmentType === 'physical_card' && (
-                <div style={styles.shippingAddressBox}>
-                  <h3 style={styles.subHeading}>Shipping Address Details</h3>
-                  <div style={styles.inputGroup}>
-                    <label style={styles.label}>STREET ADDRESS *</label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="e.g. 14 Admiralty Way, Lekki Phase 1"
-                      value={streetAddress}
-                      onChange={(e) => setStreetAddress(e.target.value)}
-                      style={styles.input}
-                    />
-                  </div>
-
-                  <div style={styles.fieldGrid2} style={{ marginTop: '1rem' }}>
-                    <div style={styles.inputGroup}>
-                      <label style={styles.label}>CITY *</label>
-                      <input
-                        type="text"
-                        required
-                        placeholder="e.g. Victoria Island"
-                        value={city}
-                        onChange={(e) => setCity(e.target.value)}
-                        style={styles.input}
-                      />
+          {/* Right Column: Order Summary & Paystack Payment CTA */}
+          <div className="checkout-summary">
+            <div className="summary-items-list">
+              {cart.length > 0 ? (
+                cart.map((item, idx) => (
+                  <div key={`${item.id}-${idx}`} className="summary-item-row">
+                    <div>
+                      <div className="item-name">{(item.title || 'CUSTOM CARD').toUpperCase()}</div>
+                      <div className="item-sub">XL {item.quantity}</div>
                     </div>
-                    <div style={styles.inputGroup}>
-                      <label style={styles.label}>STATE / REGION *</label>
-                      <select
-                        value={stateRegion}
-                        onChange={(e) => setStateRegion(e.target.value)}
-                        style={styles.select}
-                      >
-                        <option value="Lagos">Lagos</option>
-                        <option value="Abuja">Abuja (FCT)</option>
-                        <option value="Rivers">Rivers (Port Harcourt)</option>
-                        <option value="Oyo">Oyo (Ibadan)</option>
-                        <option value="Ogun">Ogun</option>
-                        <option value="Edo">Edo</option>
-                        <option value="Other">Other States</option>
-                      </select>
+                    <div className="item-price">
+                      ₦{(item.price * item.quantity).toLocaleString()}
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-
-            {/* Error Display */}
-            {error && <div style={styles.errorAlert}>{error}</div>}
-
-            {/* Submit Payment CTA */}
-            <button
-              type="submit"
-              disabled={loading || cart.length === 0}
-              className="btn-pill btn-pill-solid"
-              style={styles.payBtn}
-            >
-              {loading ? (
-                <>
-                  <RefreshCw size={18} className="spin" style={{ marginRight: '8px' }} /> Initializing Paystack...
-                </>
+                ))
               ) : (
-                <>
-                  <CreditCard size={18} style={{ marginRight: '8px' }} /> Pay NGN {grandTotal.toLocaleString()} with Paystack <ArrowRight size={18} style={{ marginLeft: '8px' }} />
-                </>
-              )}
-            </button>
-          </form>
-
-          {/* Right Column: Order Summary */}
-          <div style={styles.summaryCol}>
-            <div style={styles.summaryCard}>
-              <h2 style={styles.summaryHeading}>Order Summary</h2>
-
-              <div style={styles.itemsList}>
-                {cart.map((item, idx) => (
-                  <div key={`${item.id}-${idx}`} style={styles.itemRow}>
-                    <div style={styles.itemImgWrap}>
-                      <img src={item.image} alt={item.title} style={styles.itemImg} />
-                    </div>
-                    <div style={styles.itemDetails}>
-                      <div style={styles.itemTitle}>{item.title}</div>
-                      <div style={styles.itemSubtitle}>{item.subtitle || 'Custom Keepsake Card'}</div>
-                      <div style={styles.itemQty}>Qty: {item.quantity}</div>
-                    </div>
-                    <div style={styles.itemPrice}>
-                      NGN {(item.price * item.quantity).toLocaleString()}
-                    </div>
+                <div className="summary-item-row">
+                  <div>
+                    <div className="item-name">CUSTOM CARD</div>
+                    <div className="item-sub">XL 1</div>
                   </div>
-                ))}
-              </div>
+                  <div className="item-price">₦8,500</div>
+                </div>
+              )}
+            </div>
 
-              <div style={styles.summaryDivider} />
+            {errorMessage && <div className="checkout-error">{errorMessage}</div>}
 
-              <div style={styles.costRow}>
-                <span>Subtotal</span>
-                <span>NGN {cartTotal.toLocaleString()}</span>
-              </div>
-
-              <div style={styles.costRow}>
-                <span>Fulfillment & Delivery</span>
-                <span>{shippingFee === 0 ? 'FREE' : `NGN ${shippingFee.toLocaleString()}`}</span>
-              </div>
-
-              <div style={styles.summaryDivider} />
-
-              <div style={styles.totalRow}>
-                <span>Total Due</span>
-                <span style={styles.totalAmountText}>NGN {grandTotal.toLocaleString()}</span>
-              </div>
-
-              <div style={styles.badgeFooter}>
-                <CheckCircle size={16} color="#C5A059" />
-                <span>Instant 12-Char Access Code (`KPSK-XXXX-XXXX`) Generated Upon Payment</span>
-              </div>
+            <div className="pay-button-wrap">
+              <button
+                type="submit"
+                disabled={submitting}
+                className="pay-now-pill"
+              >
+                {submitting ? (
+                  <>
+                    <RefreshCw size={14} className="spin" style={{ marginRight: '6px' }} /> Processing...
+                  </>
+                ) : (
+                  'Pay Now'
+                )}
+              </button>
             </div>
           </div>
-        </div>
+        </form>
+
+        {/* Callout Section matching Cart-2.png mobile & desktop footer */}
+        <section className="checkout-callout">
+          <div className="callout-title">
+            <h2>
+              we <span className="metal-pill"></span> know <br />
+              how to make this <br />
+              special
+            </h2>
+          </div>
+          <div className="callout-copy">
+            <p>
+              this explains color systems and color usages so they are used the way to brand identity portrays
+            </p>
+            <a className="order-now-outline" href="/shop">
+              Order Now
+            </a>
+          </div>
+        </section>
       </div>
+
+      <style jsx>{`
+        .checkout-page {
+          background-color: #141414;
+          color: #E5E5E5;
+          min-height: 100vh;
+          padding: 2rem 0 4rem 0;
+          font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        }
+
+        .checkout-container {
+          width: min(100% - 40px, 1160px);
+          margin: 0 auto;
+        }
+
+        .checkout-header {
+          margin-bottom: 3.5rem;
+          position: relative;
+        }
+
+        .checkout-title {
+          font-size: clamp(3rem, 6vw, 5rem);
+          font-weight: 300;
+          letter-spacing: -0.04em;
+          color: #D8D8D8;
+          margin: 0 0 1rem 0;
+          line-height: 1;
+        }
+
+        .checkout-subtext-top {
+          font-size: 0.75rem;
+          color: #888888;
+          max-width: 320px;
+          line-height: 1.45;
+          margin: 0;
+        }
+
+        .checkout-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 5rem;
+          margin-bottom: 6rem;
+        }
+
+        .checkout-fields {
+          display: flex;
+          flex-direction: column;
+          gap: 1.8rem;
+        }
+
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+
+        .field-label {
+          font-size: 0.8rem;
+          color: #888888;
+          font-weight: 300;
+        }
+
+        .field-input {
+          width: 100%;
+          padding: 1rem 1.25rem;
+          background-color: #1A1A1A;
+          border: 1px solid #2F2F2F;
+          border-radius: 0px;
+          color: #FFFFFF;
+          font-size: 0.95rem;
+          outline: none;
+          transition: border-color 0.2s ease;
+        }
+
+        .field-input:focus {
+          border-color: #666666;
+        }
+
+        .field-input::placeholder {
+          color: #4A4A4A;
+        }
+
+        .field-textarea {
+          width: 100%;
+          padding: 1rem 1.25rem;
+          background-color: #1A1A1A;
+          border: 1px solid #2F2F2F;
+          border-radius: 0px;
+          color: #FFFFFF;
+          font-size: 0.95rem;
+          outline: none;
+          font-family: inherit;
+          resize: vertical;
+          transition: border-color 0.2s ease;
+        }
+
+        .field-textarea:focus {
+          border-color: #666666;
+        }
+
+        .field-textarea::placeholder {
+          color: #4A4A4A;
+        }
+
+        .field-subtext {
+          font-size: 0.72rem;
+          color: #777777;
+          line-height: 1.45;
+          max-width: 320px;
+          margin: 0.5rem 0 0 0;
+        }
+
+        .checkout-summary {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          padding-top: 2rem;
+        }
+
+        .summary-items-list {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+
+        .summary-item-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          padding-bottom: 1.5rem;
+          border-bottom: 1px solid #262626;
+        }
+
+        .item-name {
+          font-size: 0.95rem;
+          letter-spacing: 0.08em;
+          color: #D8D8D8;
+          font-weight: 300;
+        }
+
+        .item-sub {
+          font-size: 0.72rem;
+          color: #777777;
+          margin-top: 4px;
+        }
+
+        .item-price {
+          font-size: 1.1rem;
+          font-weight: 300;
+          color: #D8D8D8;
+        }
+
+        .checkout-error {
+          font-size: 0.8rem;
+          color: #FF6B6B;
+          background-color: rgba(255, 107, 107, 0.1);
+          padding: 0.75rem 1rem;
+          margin-top: 1.5rem;
+        }
+
+        .pay-button-wrap {
+          margin-top: 3rem;
+          display: flex;
+          justify-content: flex-start;
+        }
+
+        .pay-now-pill {
+          background-color: #8E8A80;
+          color: #FFFFFF;
+          border: none;
+          padding: 0.9rem 2.8rem;
+          border-radius: 9999px;
+          font-size: 0.9rem;
+          font-weight: 400;
+          cursor: pointer;
+          transition: opacity 0.2s ease, transform 0.1s ease;
+        }
+
+        .pay-now-pill:hover {
+          opacity: 0.9;
+        }
+
+        .checkout-callout {
+          border-top: 1px solid #262626;
+          padding-top: 4rem;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 2rem;
+          margin-bottom: 4rem;
+        }
+
+        .callout-title h2 {
+          font-size: clamp(2.5rem, 5vw, 4.2rem);
+          font-weight: 300;
+          line-height: 1.05;
+          letter-spacing: -0.03em;
+          color: #D8D8D8;
+          margin: 0;
+        }
+
+        .metal-pill {
+          display: inline-block;
+          width: 110px;
+          height: 28px;
+          border-radius: 9999px;
+          vertical-align: middle;
+          background: radial-gradient(circle at 25% 35%, #d76f76, transparent 28%),
+            linear-gradient(110deg, #7e242c, #b2474e 42%, #4b161b 78%);
+          box-shadow: inset 0 0 8px rgba(255, 255, 255, 0.16);
+        }
+
+        .callout-copy {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 1.2rem;
+          max-width: 320px;
+        }
+
+        .callout-copy p {
+          font-size: 0.75rem;
+          color: #888888;
+          line-height: 1.45;
+          margin: 0;
+        }
+
+        .order-now-outline {
+          border: 1px solid #666666;
+          border-radius: 9999px;
+          padding: 0.6rem 1.8rem;
+          font-size: 0.8rem;
+          color: #D8D8D8;
+          text-decoration: none;
+          transition: all 0.2s ease;
+        }
+
+        .order-now-outline:hover {
+          border-color: #FFFFFF;
+          color: #FFFFFF;
+        }
+
+        @media (max-width: 860px) {
+          .checkout-grid {
+            grid-template-columns: 1fr;
+            gap: 3rem;
+          }
+          .checkout-summary {
+            padding-top: 0;
+          }
+          .checkout-callout {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+        }
+      `}</style>
     </div>
   );
 }
-
-const styles = {
-  page: {
-    padding: '2rem 0 6rem 0',
-    minHeight: '90vh',
-  },
-  container: {
-    maxWidth: '1160px',
-  },
-  headerRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '1.5rem',
-  },
-  backLink: {
-    fontSize: '0.85rem',
-    color: '#888888',
-    textDecoration: 'none',
-    transition: 'color 0.2s ease',
-  },
-  secureTag: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '0.75rem',
-    color: '#C5A059',
-  },
-  pageTitle: {
-    fontSize: '2.2rem',
-    fontWeight: '300',
-    color: '#FFFFFF',
-    marginBottom: '2.5rem',
-  },
-  checkoutGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 380px',
-    gap: '2.5rem',
-  },
-  formCol: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '2rem',
-  },
-  cardSection: {
-    backgroundColor: '#161616',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    borderRadius: '20px',
-    padding: '2rem',
-  },
-  sectionHeading: {
-    fontSize: '1.2rem',
-    fontWeight: '400',
-    color: '#FFFFFF',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginBottom: '1rem',
-  },
-  stepNum: {
-    width: '26px',
-    height: '26px',
-    borderRadius: '50%',
-    backgroundColor: '#C5A059',
-    color: '#000000',
-    fontSize: '0.85rem',
-    fontWeight: 'bold',
-    display: 'grid',
-    placeItems: 'center',
-  },
-  sectionSub: {
-    fontSize: '0.8rem',
-    color: '#888888',
-    marginBottom: '1.5rem',
-    lineHeight: '1.4',
-  },
-  fieldGrid2: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '1rem',
-  },
-  inputGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  label: {
-    fontSize: '0.68rem',
-    letterSpacing: '0.1em',
-    color: '#AAAAAA',
-    textTransform: 'uppercase',
-  },
-  input: {
-    width: '100%',
-    padding: '0.85rem 1rem',
-    backgroundColor: '#0F0F0F',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
-    borderRadius: '12px',
-    color: '#FFFFFF',
-    fontSize: '0.9rem',
-    outline: 'none',
-  },
-  select: {
-    width: '100%',
-    padding: '0.85rem 1rem',
-    backgroundColor: '#0F0F0F',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
-    borderRadius: '12px',
-    color: '#FFFFFF',
-    fontSize: '0.9rem',
-    outline: 'none',
-  },
-  textarea: {
-    width: '100%',
-    padding: '0.85rem 1rem',
-    backgroundColor: '#0F0F0F',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
-    borderRadius: '12px',
-    color: '#FFFFFF',
-    fontSize: '0.9rem',
-    outline: 'none',
-    fontFamily: 'inherit',
-  },
-  fulfillmentOptionsRow: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '1rem',
-    marginBottom: '1.5rem',
-  },
-  fulfillmentCard: {
-    padding: '1.25rem',
-    backgroundColor: '#0F0F0F',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    borderRadius: '16px',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  },
-  fulfillmentCardActive: {
-    borderColor: '#C5A059',
-    backgroundColor: 'rgba(197, 160, 89, 0.06)',
-  },
-  fulfillmentTitle: {
-    fontSize: '0.95rem',
-    fontWeight: '400',
-    color: '#FFFFFF',
-    margin: '8px 0 4px 0',
-  },
-  fulfillmentDesc: {
-    fontSize: '0.75rem',
-    color: '#888888',
-    lineHeight: '1.3',
-    marginBottom: '8px',
-  },
-  fulfillmentPrice: {
-    fontSize: '0.8rem',
-    color: '#C5A059',
-    fontWeight: '500',
-  },
-  shippingAddressBox: {
-    marginTop: '1.5rem',
-    paddingTop: '1.5rem',
-    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-  },
-  subHeading: {
-    fontSize: '1rem',
-    color: '#FFFFFF',
-    fontWeight: '400',
-    marginBottom: '1rem',
-  },
-  errorAlert: {
-    backgroundColor: 'rgba(255, 107, 107, 0.1)',
-    border: '1px solid rgba(255, 107, 107, 0.3)',
-    color: '#FF6B6B',
-    padding: '0.85rem 1rem',
-    borderRadius: '12px',
-    fontSize: '0.85rem',
-  },
-  payBtn: {
-    width: '100%',
-    padding: '1.2rem',
-    fontSize: '1rem',
-    fontWeight: '500',
-  },
-  summaryCol: {},
-  summaryCard: {
-    backgroundColor: '#161616',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
-    borderRadius: '20px',
-    padding: '2rem',
-    position: 'sticky',
-    top: '2rem',
-  },
-  summaryHeading: {
-    fontSize: '1.2rem',
-    fontWeight: '400',
-    color: '#FFFFFF',
-    marginBottom: '1.5rem',
-  },
-  itemsList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem',
-  },
-  itemRow: {
-    display: 'flex',
-    gap: '1rem',
-    alignItems: 'center',
-  },
-  itemImgWrap: {
-    width: '56px',
-    height: '56px',
-    borderRadius: '10px',
-    overflow: 'hidden',
-    flexShrink: 0,
-  },
-  itemImg: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-  },
-  itemDetails: {
-    flex: 1,
-  },
-  itemTitle: {
-    fontSize: '0.88rem',
-    color: '#FFFFFF',
-    fontWeight: '400',
-  },
-  itemSubtitle: {
-    fontSize: '0.72rem',
-    color: '#888888',
-    marginTop: '2px',
-  },
-  itemQty: {
-    fontSize: '0.72rem',
-    color: '#888888',
-    marginTop: '2px',
-  },
-  itemPrice: {
-    fontSize: '0.88rem',
-    color: '#E0E0E0',
-    fontWeight: '300',
-  },
-  summaryDivider: {
-    height: '1px',
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    margin: '1.25rem 0',
-  },
-  costRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    fontSize: '0.85rem',
-    color: '#888888',
-    marginBottom: '0.75rem',
-  },
-  totalRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    fontSize: '1rem',
-    color: '#FFFFFF',
-    fontWeight: '400',
-  },
-  totalAmountText: {
-    fontSize: '1.4rem',
-    color: '#C5A059',
-    fontWeight: '400',
-  },
-  badgeFooter: {
-    marginTop: '1.5rem',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    fontSize: '0.72rem',
-    color: '#AAAAAA',
-    lineHeight: '1.3',
-  },
-};
