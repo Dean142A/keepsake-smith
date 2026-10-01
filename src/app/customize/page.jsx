@@ -1,16 +1,67 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Upload, Image as ImageIcon } from 'lucide-react';
+import { Upload, Image as ImageIcon, CheckCircle, AlertCircle } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
+
+const DEFAULT_PRODUCTS = [
+  {
+    id: 'prod-1',
+    title: 'Handwritten Cards',
+    subtitle: 'maquette dé keepsake',
+    price: 30000,
+    image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
+    category: 'CARDS',
+  },
+  {
+    id: 'prod-2',
+    title: 'Handwritten Cards (Black Envelope)',
+    subtitle: 'black envelope luxury edition',
+    price: 30000,
+    image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop',
+    category: 'CARDS',
+  },
+  {
+    id: 'prod-3',
+    title: 'Digital 3D Maquette Experience',
+    subtitle: 'virtual memorial & keepsake 3D WebGL',
+    price: 15000,
+    image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=800&auto=format&fit=crop',
+    category: 'DIGITAL',
+  }
+];
 
 export default function CustomizePage() {
   const { addToCart, setIsCartOpen } = useCart();
+  const [productsList, setProductsList] = useState(DEFAULT_PRODUCTS);
+  const [selectedProductId, setSelectedProductId] = useState('');
   const [recipientName, setRecipientName] = useState('Jane Forster');
   const [recipientPhone, setRecipientPhone] = useState('+234 000 0000 000');
   const [cardMessage, setCardMessage] = useState('Happy Anniversary my love! Forever & always.');
   const [photoPreview, setPhotoPreview] = useState(null);
+  const [validationError, setValidationError] = useState('');
+
+  // Fetch available products from catalog API on mount
+  useEffect(() => {
+    async function loadCatalog() {
+      try {
+        const res = await fetch('/api/admin/products');
+        const data = await res.json();
+        if (data.success && data.products && data.products.length > 0) {
+          const customizable = data.products.filter(p => p.allowsCustomization !== false);
+          if (customizable.length > 0) {
+            setProductsList(customizable);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading catalog products for customization:', err);
+      }
+    }
+    loadCatalog();
+  }, []);
+
+  const selectedProduct = productsList.find((p) => p.id === selectedProductId) || null;
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
@@ -23,20 +74,34 @@ export default function CustomizePage() {
     }
   };
 
+  const CUSTOMIZATION_FEE = 5000;
+  const totalPrice = selectedProduct ? selectedProduct.price + CUSTOMIZATION_FEE : 0;
+
   const handleAddToCart = () => {
+    if (!selectedProduct) {
+      setValidationError('Please select a product to customize from the dropdown first.');
+      return;
+    }
+
+    setValidationError('');
+
     addToCart({
-      id: `custom-gift-${Date.now()}`,
-      title: 'Custom Keepsake 3D Card',
-      subtitle: `For ${recipientName || 'Recipient'}`,
-      price: 8500,
+      id: `${selectedProduct.id}-custom-${Date.now()}`,
+      title: selectedProduct.title,
+      subtitle: `Customized for ${recipientName || 'Recipient'}`,
+      price: totalPrice,
       quantity: 1,
-      image: photoPreview || 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=600&auto=format&fit=crop',
+      image: photoPreview || selectedProduct.image,
       size: 'CUSTOM 3D',
       personalization: {
+        productId: selectedProduct.id,
+        productTitle: selectedProduct.title,
+        productBasePrice: selectedProduct.price,
+        customizationFee: CUSTOMIZATION_FEE,
         recipientName,
         recipientPhone,
         message: cardMessage,
-        photo: photoPreview,
+        photo: photoPreview || selectedProduct.image,
       },
     });
     if (setIsCartOpen) setIsCartOpen(true);
@@ -61,11 +126,17 @@ export default function CustomizePage() {
           {/* Left Column: Live Preview Box */}
           <div style={styles.previewContainer}>
             <div style={styles.previewBox}>
-              {photoPreview ? (
+              {photoPreview || selectedProduct ? (
                 <div style={styles.liveCardWrap}>
-                  <img src={photoPreview} alt="Recipient Preview" style={styles.previewImage} />
+                  <img
+                    src={photoPreview || selectedProduct?.image}
+                    alt="Recipient Preview"
+                    style={styles.previewImage}
+                  />
                   <div style={styles.cardOverlayText}>
-                    <div style={styles.cardHeaderSmall}>THE KEEPSAKE SMITH</div>
+                    <div style={styles.cardHeaderSmall}>
+                      THE KEEPSAKE SMITH {selectedProduct ? `• ${selectedProduct.title.toUpperCase()}` : ''}
+                    </div>
                     <div style={styles.cardName}>{recipientName || 'Recipient Name'}</div>
                     <p style={styles.cardMsgPreview}>
                       "{cardMessage || 'Your custom handwritten message will appear here in gold foil typography.'}"
@@ -76,7 +147,7 @@ export default function CustomizePage() {
                 <div style={styles.previewPlaceholder}>
                   <ImageIcon size={48} color="#666" style={{ marginBottom: '1rem' }} />
                   <h3 style={styles.previewTitle}>See Live Preview</h3>
-                  <p style={styles.previewSub}>See updates as you edit and make changes</p>
+                  <p style={styles.previewSub}>Select a product to view dynamic 3D card updates</p>
                   
                   {/* Dynamic text preview */}
                   <div style={styles.cardTextDisplay}>
@@ -93,13 +164,32 @@ export default function CustomizePage() {
               )}
             </div>
             <p style={styles.columnSubtext}>
-              this explains color systems and color usages so they are used the way to brand identity portrays
-              this explains color systems and color usages so they are used the way to brand identity portrays
+              Custom 3D WebGL experiences are linked directly to your access code key upon checkout.
             </p>
           </div>
 
           {/* Right Column: Personalization Form */}
           <div style={styles.formContainer}>
+            {/* Product Selector Field */}
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Select Product to Customize *</label>
+              <select
+                value={selectedProductId}
+                onChange={(e) => {
+                  setSelectedProductId(e.target.value);
+                  setValidationError('');
+                }}
+                style={styles.selectInput}
+              >
+                <option value="">-- Choose a product to customize --</option>
+                {productsList.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.title} — ₦{p.price.toLocaleString()}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {/* Recipient Photo Upload */}
             <div style={styles.formGroup}>
               <label style={styles.label}>Recipient Photo</label>
@@ -145,17 +235,19 @@ export default function CustomizePage() {
             <div style={styles.formGroup}>
               <label style={styles.label}>Card Message</label>
               <textarea
-                rows={5}
+                rows={4}
                 value={cardMessage}
                 onChange={(e) => setCardMessage(e.target.value)}
-                placeholder="Write a message"
+                placeholder="Write a custom message"
                 style={styles.textarea}
               />
             </div>
 
-            <p style={styles.formSubtext}>
-              this explains color systems and color usages so they are used the way to brand identity portrays
-            </p>
+            {validationError && (
+              <div style={styles.errorBanner}>
+                <AlertCircle size={16} color="#FF6B6B" /> {validationError}
+              </div>
+            )}
           </div>
         </div>
 
@@ -163,7 +255,14 @@ export default function CustomizePage() {
         <div style={styles.totalsBar}>
           <div>
             <div style={styles.totalsLabel}>TOTALS</div>
-            <div style={styles.totalsValue}>₦8,500</div>
+            <div style={styles.totalsValue}>
+              ₦{totalPrice.toLocaleString()}
+            </div>
+            {selectedProduct && (
+              <div style={{ fontSize: '0.75rem', color: '#888888', marginTop: '4px' }}>
+                Base ₦{selectedProduct.price.toLocaleString()} + ₦{CUSTOMIZATION_FEE.toLocaleString()} Customization
+              </div>
+            )}
           </div>
 
           <button
@@ -191,9 +290,6 @@ export default function CustomizePage() {
             >
               Order Now
             </button>
-            <p className="text-muted">
-              this explains color systems and color usages so they are used the way to brand identity portrays
-            </p>
           </div>
         </section>
       </div>
@@ -333,6 +429,26 @@ const styles = {
   uploadText: {
     fontSize: '0.8rem',
     color: '#888888',
+  },
+  selectInput: {
+    width: '100%',
+    padding: '1.1rem 1.25rem',
+    backgroundColor: '#161616',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '0px',
+    color: '#FFFFFF',
+    fontSize: '0.9rem',
+    outline: 'none',
+    cursor: 'pointer',
+  },
+  errorBanner: {
+    padding: '0.75rem 1rem',
+    backgroundColor: 'rgba(255, 107, 107, 0.1)',
+    border: '1px solid rgba(255, 107, 107, 0.3)',
+    color: '#FF6B6B',
+    fontSize: '0.85rem',
+    gap: '0.5rem',
+    marginTop: '0.5rem',
   },
   input: {
     width: '100%',
