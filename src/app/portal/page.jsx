@@ -13,8 +13,14 @@ export default function PortalPage() {
 
   const handleFormatCode = (val) => {
     // Keep uppercase letters & numbers
-    const clean = val.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    setCode(clean);
+    const raw = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
+    let formatted = raw;
+    if (raw.length > 4 && raw.length <= 8) {
+      formatted = `${raw.slice(0, 4)}-${raw.slice(4)}`;
+    } else if (raw.length > 8) {
+      formatted = `${raw.slice(0, 4)}-${raw.slice(4, 8)}-${raw.slice(8, 12)}`;
+    }
+    setCode(formatted);
     setError('');
   };
 

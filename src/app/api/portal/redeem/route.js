@@ -32,7 +32,8 @@ export async function POST(req) {
       );
     }
 
-    const cleanCode = code.trim().toUpperCase();
+    const normalizeCode = (str) => (str || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    const cleanCode = normalizeCode(code);
     const rateLimitKey = `${clientIp}:${cleanCode}`;
     const now = Date.now();
 
@@ -52,7 +53,7 @@ export async function POST(req) {
     // Read live orders DB
     const orders = readOrders();
     const matchingOrder = orders.find(
-      (o) => o.accessCode && o.accessCode.trim().toUpperCase() === cleanCode
+      (o) => o.accessCode && normalizeCode(o.accessCode) === cleanCode
     );
 
     if (!matchingOrder) {
