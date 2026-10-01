@@ -4,6 +4,12 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { Lock, Sparkles, Box, ArrowRight, RefreshCw } from 'lucide-react';
 
+import dynamic from 'next/dynamic';
+
+const BookViewer = dynamic(() => import('@/components/book-experience/BookViewer'), {
+  ssr: false,
+});
+
 export default function PortalPage() {
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
@@ -12,7 +18,6 @@ export default function PortalPage() {
   const [progress, setProgress] = useState(0);
 
   const handleFormatCode = (val) => {
-    // Keep uppercase letters & numbers
     const raw = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
     let formatted = raw;
     if (raw.length > 4 && raw.length <= 8) {
@@ -49,17 +54,16 @@ export default function PortalPage() {
         return;
       }
 
-      // Simulate 3D WebGL build streaming & loading progress
       let p = 0;
       const interval = setInterval(() => {
-        p += 15;
+        p += 20;
         setProgress(Math.min(100, p));
         if (p >= 100) {
           clearInterval(interval);
           setExperienceData(data.package);
           setLoading(false);
         }
-      }, 150);
+      }, 120);
     } catch (err) {
       setError('Network error validating code. Please try again.');
       setLoading(false);
@@ -69,109 +73,81 @@ export default function PortalPage() {
   return (
     <div style={styles.page}>
       <div className="container">
-        {/* Header Title */}
-        <div style={styles.headerRow}>
-          <div>
-            <h1 className="heading-xl">3D Keepsake Portal</h1>
-          </div>
-        </div>
-
-        {/* Access Code Input / Experience Container */}
         {!experienceData ? (
-          <div style={styles.cardContainer}>
-            <div style={styles.cardHeader}>
-              <Box size={32} color="#C5A059" style={{ marginBottom: '1rem' }} />
-              <h2 style={styles.cardTitle}>Enter Your 12-Character Access Code</h2>
-              <p style={styles.cardSub}>
-                Enter the access code printed on your physical keepsake card or received in your gift email to launch your interactive 3D WebGL experience.
-              </p>
+          <>
+            {/* Header Title */}
+            <div style={styles.headerRow}>
+              <div>
+                <h1 className="heading-xl">3D Keepsake Portal</h1>
+              </div>
             </div>
 
-            <form onSubmit={handleRedeem} style={styles.form}>
-              <div style={styles.inputWrapper}>
-                <input
-                  type="text"
-                  maxLength={16}
-                  value={code}
-                  onChange={(e) => handleFormatCode(e.target.value)}
-                  placeholder="KPSK-892F-37A1"
-                  style={styles.codeInput}
-                  disabled={loading}
-                />
+            {/* Access Code Input */}
+            <div style={styles.cardContainer}>
+              <div style={styles.cardHeader}>
+                <Box size={32} color="#C5A059" style={{ marginBottom: '1rem' }} />
+                <h2 style={styles.cardTitle}>Enter Your 12-Character Access Code</h2>
+                <p style={styles.cardSub}>
+                  Enter the access code printed on your physical keepsake card or received in your gift email to launch your interactive 3D WebGL experience.
+                </p>
               </div>
 
-              {error && <div style={styles.errorAlert}>{error}</div>}
-
-              {loading && (
-                <div style={styles.progressWrap}>
-                  <div style={styles.progressTrack}>
-                    <div style={{ ...styles.progressBar, width: `${progress}%` }} />
-                  </div>
-                  <span style={styles.progressText}>Streaming 3D WebGL Experience... {progress}%</span>
+              <form onSubmit={handleRedeem} style={styles.form}>
+                <div style={styles.inputWrapper}>
+                  <input
+                    type="text"
+                    maxLength={16}
+                    value={code}
+                    onChange={(e) => handleFormatCode(e.target.value)}
+                    placeholder="KPSK-892F-37A1"
+                    style={styles.codeInput}
+                    disabled={loading}
+                  />
                 </div>
-              )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="btn-pill btn-pill-solid"
-                style={styles.submitBtn}
-              >
-                {loading ? (
-                  <>
-                    <RefreshCw size={16} className="spin" style={{ marginRight: '8px' }} /> Loading...
-                  </>
-                ) : (
-                  <>
-                    Unlock 3D Experience <ArrowRight size={16} style={{ marginLeft: '8px' }} />
-                  </>
+                {error && <div style={styles.errorAlert}>{error}</div>}
+
+                {loading && (
+                  <div style={styles.progressWrap}>
+                    <div style={styles.progressTrack}>
+                      <div style={{ ...styles.progressBar, width: `${progress}%` }} />
+                    </div>
+                    <span style={styles.progressText}>Streaming 3D WebGL Experience... {progress}%</span>
+                  </div>
                 )}
-              </button>
-            </form>
-          </div>
+
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="btn-pill btn-pill-solid"
+                  style={styles.submitBtn}
+                >
+                  {loading ? (
+                    <>
+                      <RefreshCw size={16} className="spin" style={{ marginRight: '8px' }} /> Loading...
+                    </>
+                  ) : (
+                    <>
+                      Unlock 3D Experience <ArrowRight size={16} style={{ marginLeft: '8px' }} />
+                    </>
+                  )}
+                </button>
+              </form>
+            </div>
+          </>
         ) : (
-          /* Interactive 3D WebGL Experience Showcase Viewer */
-          <div style={styles.viewerContainer}>
-            <div style={styles.viewerHeader}>
-              <div>
-                <span style={styles.templateTag}>{experienceData.template || 'Keepsake 3D Scene'}</span>
-                <h2 style={styles.experienceTitle}>
-                  For {experienceData.personalization?.recipientName || experienceData.recipientName || 'Jane Forster'}
-                </h2>
-              </div>
+          /* Interactive R3F 3D Animated Book Experience */
+          <div>
+            <div style={styles.exitBar}>
               <button
                 onClick={() => setExperienceData(null)}
                 className="btn-pill"
-                style={{ padding: '0.4rem 1.2rem', fontSize: '0.78rem' }}
+                style={{ padding: '0.5rem 1.4rem', fontSize: '0.8rem' }}
               >
-                Enter Another Code
+                ← Exit Experience
               </button>
             </div>
-
-            {/* 3D Canvas Scene Simulation */}
-            <div style={styles.webglCanvasContainer}>
-              <div style={styles.canvas3DCard}>
-                <div style={styles.foilBorder} />
-                <img
-                  src={experienceData.personalization?.photo || 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop'}
-                  alt="3D Keepsake Photo"
-                  style={styles.canvasPhoto}
-                />
-                <div style={styles.card3DOverlay}>
-                  <div style={styles.goldBrandLogo}>THE KEEPSAKE SMITH</div>
-                  <p style={styles.canvasMessage}>
-                    "{experienceData.personalization?.message || 'Your personalized keepsake message.'}"
-                  </p>
-                  <div style={styles.senderSign}>
-                    With love, {experienceData.personalization?.sender || experienceData.purchaserName || 'The Keepsake Smith'}
-                  </div>
-                </div>
-              </div>
-
-              <div style={styles.canvasControlsHint}>
-                <Sparkles size={14} color="#C5A059" /> Interactive 3D WebGL Scene — Drag mouse/touch to rotate view 360°
-              </div>
-            </div>
+            <BookViewer personalization={experienceData.personalization} />
           </div>
         )}
       </div>
@@ -183,6 +159,12 @@ const styles = {
   page: {
     minHeight: '80vh',
     paddingTop: '2rem',
+  },
+  exitBar: {
+    position: 'fixed',
+    top: '2rem',
+    left: '2rem',
+    zIndex: 100,
   },
   headerRow: {
     display: 'flex',
