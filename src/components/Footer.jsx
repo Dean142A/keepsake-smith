@@ -35,9 +35,9 @@ export default function Footer() {
           <div style={styles.leftNav}>
             <a href={`${mainSite}/#services`} style={styles.link}>SERVICES</a>
             <a href={`${mainSite}/shop`} style={styles.link}>SHOP</a>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" style={styles.link}>INSTAGRAM</a>
             <a href={`${mainSite}/customize`} style={styles.link}>CUSTOM</a>
-            <a href={`${mainSite}/cart`} style={styles.link}>CART(0)</a>
+            <a href={`${mainSite}/track`} style={styles.link}>TRACK ORDER</a>
+            <a href={`${mainSite}/faq`} style={styles.link}>FAQ / HELP</a>
           </div>
           <div style={styles.rightNav}>
             <a href={`${mainSite}/#privacy`} style={styles.link}>PRIVACY</a>

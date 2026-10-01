@@ -1,0 +1,24 @@
+[
+  {
+    "id": "coup-1",
+    "code": "KEEPSAKE10",
+    "discountType": "percentage",
+    "discountValue": 10,
+    "active": true,
+    "expiryDate": null,
+    "usageCount": 14,
+    "maxUses": 100,
+    "createdAt": "2026-10-01T22:00:00.000Z"
+  },
+  {
+    "id": "coup-2",
+    "code": "WELCOME5000",
+    "discountType": "fixed",
+    "discountValue": 5000,
+    "active": true,
+    "expiryDate": null,
+    "usageCount": 5,
+    "maxUses": 50,
+    "createdAt": "2026-10-01T22:00:00.000Z"
+  }
+]

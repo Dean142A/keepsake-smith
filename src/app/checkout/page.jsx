@@ -21,6 +21,68 @@ export default function CheckoutPage() {
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
+  // Promo Code State
+  const [couponCodeInput, setCouponCodeInput] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
+  const [couponSuccessMsg, setCouponSuccessMsg] = useState('');
+  const [couponErrorMsg, setCouponErrorMsg] = useState('');
+  const [validatingCoupon, setValidatingCoupon] = useState(false);
+
+  // Computed discount and final total
+  const baseTotal = cart.length > 0 ? cartTotal : 8500;
+  const discountAmount = appliedCoupon ? appliedCoupon.discountAmount : 0;
+  const finalPayTotal = Math.max(0, baseTotal - discountAmount);
+
+  // Handle promo code application
+  const handleApplyCoupon = async (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    setCouponSuccessMsg('');
+    setCouponErrorMsg('');
+
+    if (!couponCodeInput.trim()) {
+      setCouponErrorMsg('Please enter a promo code.');
+      return;
+    }
+
+    setValidatingCoupon(true);
+
+    try {
+      const res = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          code: couponCodeInput.trim(),
+          amount: baseTotal,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (data.valid) {
+        setAppliedCoupon({
+          code: data.code,
+          discountType: data.discountType,
+          discountValue: data.discountValue,
+          discountAmount: data.discountAmount,
+        });
+        setCouponSuccessMsg(data.message || `Promo code ${data.code} applied!`);
+        setCouponCodeInput('');
+      } else {
+        setCouponErrorMsg(data.message || 'Invalid or expired promo code.');
+      }
+    } catch (err) {
+      setCouponErrorMsg('Network error validating promo code.');
+    } finally {
+      setValidatingCoupon(false);
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponSuccessMsg('');
+    setCouponErrorMsg('');
+  };
+
   // Load Paystack Inline script dynamically
   useEffect(() => {
     const script = document.createElement('script');
@@ -63,6 +125,8 @@ export default function CheckoutPage() {
         organizationName: organizationName.trim(),
       },
       additionalInfo: additionalInfo.trim(),
+      appliedCoupon: appliedCoupon ? appliedCoupon.code : null,
+      discountAmount: discountAmount,
       items: cart.map((i) => ({
         id: i.id,
         title: i.title || 'CUSTOM CARD',
@@ -70,7 +134,7 @@ export default function CheckoutPage() {
         price: i.price,
         quantity: i.quantity,
       })),
-      totalAmount: cartTotal,
+      totalAmount: finalPayTotal,
     };
 
     const paystackKey = process.env.NEXT_PUBLIC_PAYSTACK_KEY || 'pk_test_894321908ab9741295c10';
@@ -80,7 +144,7 @@ export default function CheckoutPage() {
         const handler = window.PaystackPop.setup({
           key: paystackKey,
           email: email.trim(),
-          amount: cartTotal * 100, // Amount in kobo
+          amount: finalPayTotal * 100, // Amount in kobo
           currency: 'NGN',
           ref: `KPSK-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
           metadata: {
@@ -88,6 +152,7 @@ export default function CheckoutPage() {
               { display_name: "Customer Email", variable_name: "customer_email", value: email },
               { display_name: "Phone Number", variable_name: "phone_number", value: phoneNumber },
               { display_name: "Organization", variable_name: "organization", value: organizationName },
+              { display_name: "Applied Coupon", variable_name: "coupon_code", value: appliedCoupon ? appliedCoupon.code : "None" },
             ],
           },
           onClose: () => {
@@ -231,6 +296,48 @@ export default function CheckoutPage() {
                   <div className="item-price">₦8,500</div>
                 </div>
               )}
+
+              {/* Promo Code Input & Discount Row */}
+              <div className="promo-code-box">
+                <div className="promo-input-row">
+                  <input
+                    type="text"
+                    placeholder="PROMO CODE (e.g. KEEPSAKE10)"
+                    value={couponCodeInput}
+                    onChange={(e) => setCouponCodeInput(e.target.value)}
+                    className="promo-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={validatingCoupon}
+                    className="promo-apply-btn"
+                  >
+                    {validatingCoupon ? '...' : 'Apply'}
+                  </button>
+                </div>
+
+                {couponSuccessMsg && <div className="promo-success">{couponSuccessMsg}</div>}
+                {couponErrorMsg && <div className="promo-error">{couponErrorMsg}</div>}
+
+                {appliedCoupon && (
+                  <div className="applied-coupon-row">
+                    <div>
+                      <span className="coupon-tag-badge">CODE: {appliedCoupon.code}</span>
+                      <button type="button" onClick={handleRemoveCoupon} className="coupon-remove-btn">
+                        Remove
+                      </button>
+                    </div>
+                    <div className="discount-value">- ₦{appliedCoupon.discountAmount.toLocaleString()}</div>
+                  </div>
+                )}
+              </div>
+
+              {/* Grand Total Row */}
+              <div className="summary-total-row">
+                <div className="total-label">TOTAL AMOUNT DUE</div>
+                <div className="total-amount">₦{finalPayTotal.toLocaleString()}</div>
+              </div>
             </div>
 
             {errorMessage && <div className="checkout-error">{errorMessage}</div>}
@@ -246,7 +353,7 @@ export default function CheckoutPage() {
                     <RefreshCw size={14} className="spin" style={{ marginRight: '6px' }} /> Processing...
                   </>
                 ) : (
-                  'Pay Now'
+                  `Pay ₦${finalPayTotal.toLocaleString()} Now`
                 )}
               </button>
             </div>
@@ -430,6 +537,115 @@ export default function CheckoutPage() {
           font-size: 1.1rem;
           font-weight: 300;
           color: #D8D8D8;
+        }
+
+        .promo-code-box {
+          margin-top: 1.5rem;
+          padding: 1.25rem;
+          background-color: #181818;
+          border: 1px solid #2A2A2A;
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .promo-input-row {
+          display: flex;
+          gap: 0.5rem;
+        }
+
+        .promo-input {
+          flex: 1;
+          padding: 0.75rem 1rem;
+          background-color: #111111;
+          border: 1px solid #333333;
+          color: #FFFFFF;
+          font-size: 0.82rem;
+          letter-spacing: 0.05em;
+          outline: none;
+          text-transform: uppercase;
+        }
+
+        .promo-input:focus {
+          border-color: #C5A059;
+        }
+
+        .promo-apply-btn {
+          padding: 0.75rem 1.4rem;
+          background-color: #C5A059;
+          color: #000000;
+          border: none;
+          font-size: 0.8rem;
+          font-weight: 600;
+          letter-spacing: 0.05em;
+          cursor: pointer;
+          transition: opacity 0.2s ease;
+        }
+
+        .promo-apply-btn:hover {
+          opacity: 0.9;
+        }
+
+        .promo-success {
+          font-size: 0.78rem;
+          color: #66BB6A;
+        }
+
+        .promo-error {
+          font-size: 0.78rem;
+          color: #FF6B6B;
+        }
+
+        .applied-coupon-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-top: 0.5rem;
+          border-top: 1px dashed #333333;
+        }
+
+        .coupon-tag-badge {
+          font-size: 0.75rem;
+          font-family: monospace;
+          color: #C5A059;
+          letter-spacing: 0.05em;
+        }
+
+        .coupon-remove-btn {
+          margin-left: 0.75rem;
+          background: transparent;
+          border: none;
+          color: #888888;
+          font-size: 0.72rem;
+          text-decoration: underline;
+          cursor: pointer;
+        }
+
+        .discount-value {
+          font-size: 0.95rem;
+          color: #66BB6A;
+          font-weight: 500;
+        }
+
+        .summary-total-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-top: 1.5rem;
+          padding-top: 1.25rem;
+          border-top: 2px solid #C5A059;
+        }
+
+        .total-label {
+          font-size: 0.85rem;
+          letter-spacing: 0.1em;
+          color: #AAAAAA;
+        }
+
+        .total-amount {
+          font-size: 1.5rem;
+          font-weight: 300;
+          color: #FFFFFF;
         }
 
         .checkout-error {
