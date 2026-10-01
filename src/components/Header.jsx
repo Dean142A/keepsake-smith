@@ -124,7 +124,7 @@ export default function Header() {
 const styles = {
   homepageHeader: {
     width: '100%',
-    paddingTop: '2.5rem',
+    paddingTop: '20px',
     paddingBottom: '1rem',
     position: 'relative',
     zIndex: 90,

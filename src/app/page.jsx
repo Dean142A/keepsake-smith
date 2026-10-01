@@ -267,7 +267,7 @@ const styles = {
     marginBottom: '5rem',
   },
   heroTopContent: {
-    minHeight: 'calc(800px - 180px)',
+    minHeight: 'calc(900px - 160px)',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'flex-end',
