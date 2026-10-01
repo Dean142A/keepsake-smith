@@ -30,36 +30,8 @@ export default function Header() {
   return (
     <header style={styles.header}>
       <div className="container" style={styles.headerContainer}>
-        {/* Brand Emblem Icon */}
-        <Link href="/" style={styles.logoLink} aria-label="Home">
-          <svg
-            width="32"
-            height="32"
-            viewBox="0 0 100 100"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            style={styles.logoSvg}
-          >
-            <circle cx="50" cy="50" r="46" stroke="#FFFFFF" strokeWidth="2" strokeOpacity="0.8" />
-            <path
-              d="M50 15 C30 15, 15 30, 15 50 C15 70, 30 85, 50 85 C65 85, 78 74, 82 60"
-              stroke="#FFFFFF"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-            <path
-              d="M50 25 C36 25, 25 36, 25 50 C25 64, 36 75, 50 75 C60 75, 68 68, 71 58"
-              stroke="#FFFFFF"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-            <path
-              d="M50 35 C42 35, 35 42, 35 50 C35 58, 42 65, 50 65"
-              stroke="#FFFFFF"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
+        {/* Brand Link */}
+        <Link href="/" style={styles.logoLink} aria-label="The Keepsake Smith Home">
           <span style={styles.logoText}>the keepsake smith</span>
         </Link>
 
