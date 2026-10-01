@@ -30,10 +30,8 @@ export default function Header() {
   return (
     <header style={styles.header}>
       <div className="container" style={styles.headerContainer}>
-        {/* Brand Link */}
-        <Link href="/" style={styles.logoLink} aria-label="The Keepsake Smith Home">
-          <span style={styles.logoText}>the keepsake smith</span>
-        </Link>
+        {/* Left Spacer */}
+        <div style={{ flex: 1 }} />
 
         {/* Navigation Items */}
         <nav style={styles.nav}>
