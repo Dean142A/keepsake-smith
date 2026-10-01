@@ -2,6 +2,7 @@
 
 import React, { useEffect } from 'react';
 import { atom, useAtom } from 'jotai';
+import { Volume2, VolumeX, ArrowLeft } from 'lucide-react';
 
 const defaultPictures = [
   'DSC00680',
@@ -45,25 +46,34 @@ export const UI = ({ personalization, onExit, musicActive, onToggleMusic }) => {
 
   return (
     <main style={styles.uiOverlay}>
-      {/* Top Header Bar */}
+      {/* Top Header Row */}
       <div style={styles.topHeaderRow}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
           {onExit && (
             <button onClick={onExit} style={styles.exitBtn}>
-              ← Exit Portal
+              <ArrowLeft size={14} style={{ marginRight: '6px' }} /> Exit Portal
             </button>
           )}
 
           {personalization && (
             <div style={styles.recipientBadge}>
-              <span style={styles.badgeSub}>PERSONALIZED KEEPSAKE FOR</span>
-              <span style={styles.badgeName}>{personalization.recipientName || 'Valued Recipient'}</span>
+              <span style={styles.badgeName}>
+                For {personalization.recipientName || 'Recipient'}
+              </span>
             </div>
           )}
         </div>
 
         <button onClick={onToggleMusic} style={styles.audioPill}>
-          {musicActive ? '🔊 Music On' : '🔈 Tap for Music'}
+          {musicActive ? (
+            <span style={styles.iconBtnInner}>
+              <Volume2 size={15} /> Music On
+            </span>
+          ) : (
+            <span style={styles.iconBtnInner}>
+              <VolumeX size={15} /> Tap for Music
+            </span>
+          )}
         </button>
       </div>
 
@@ -117,6 +127,8 @@ const styles = {
     pointerEvents: 'auto',
   },
   exitBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
     padding: '0.6rem 1.25rem',
     borderRadius: '20px',
     backgroundColor: 'rgba(18, 18, 18, 0.85)',
@@ -124,29 +136,27 @@ const styles = {
     border: '1px solid rgba(255, 255, 255, 0.2)',
     color: '#FFFFFF',
     fontSize: '0.78rem',
+    fontWeight: '400',
     cursor: 'pointer',
   },
   recipientBadge: {
     backgroundColor: 'rgba(18, 18, 18, 0.85)',
     backdropFilter: 'blur(12px)',
     border: '1px solid rgba(255, 255, 255, 0.15)',
-    padding: '0.5rem 1rem',
-    borderRadius: '8px',
+    padding: '0.6rem 1.25rem',
+    borderRadius: '20px',
     display: 'flex',
-    flexDirection: 'column',
-    gap: '2px',
-  },
-  badgeSub: {
-    fontSize: '0.6rem',
-    letterSpacing: '0.12em',
-    color: '#A88653',
+    alignItems: 'center',
   },
   badgeName: {
-    fontSize: '0.95rem',
+    fontSize: '0.85rem',
     color: '#FFFFFF',
-    fontWeight: '300',
+    fontWeight: '400',
+    letterSpacing: '0.02em',
   },
   audioPill: {
+    display: 'inline-flex',
+    alignItems: 'center',
     backgroundColor: 'rgba(18, 18, 18, 0.85)',
     backdropFilter: 'blur(12px)',
     border: '1px solid rgba(255, 255, 255, 0.15)',
@@ -154,8 +164,14 @@ const styles = {
     borderRadius: '20px',
     color: '#FFFFFF',
     fontSize: '0.75rem',
+    fontWeight: '400',
     cursor: 'pointer',
     userSelect: 'none',
+  },
+  iconBtnInner: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
   },
   navRow: {
     width: '100%',
@@ -178,9 +194,8 @@ const styles = {
   pageBtn: {
     padding: '0.5rem 1.25rem',
     borderRadius: '20px',
-    fontSize: '0.75rem',
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
+    fontSize: '0.8rem',
+    fontWeight: '400',
     border: '1px solid transparent',
     cursor: 'pointer',
     transition: 'all 0.3s ease',
@@ -189,10 +204,11 @@ const styles = {
   pageBtnActive: {
     backgroundColor: '#FFFFFF',
     color: '#111111',
-    fontWeight: '600',
+    fontWeight: '400',
   },
   pageBtnInactive: {
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     color: '#CCCCCC',
+    fontWeight: '400',
   },
 };
