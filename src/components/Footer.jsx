@@ -18,21 +18,31 @@ export default function Footer() {
     return null;
   }
 
+  // Determine main website URL base when hosted on app subdomain or /portal
+  const isPortal = pathname?.startsWith('/portal') || (
+    typeof window !== 'undefined' && (
+      window.location.hostname.startsWith('app.') ||
+      window.location.hostname.includes('app.')
+    )
+  );
+
+  const mainSite = isPortal ? 'https://thekeepsakesmith.com' : '';
+
   return (
     <footer style={styles.footer}>
       <div className="container">
         <div style={styles.navRow}>
           <div style={styles.leftNav}>
-            <Link href="/#services" style={styles.link}>SERVICES</Link>
-            <Link href="/shop" style={styles.link}>SHOP</Link>
+            <a href={`${mainSite}/#services`} style={styles.link}>SERVICES</a>
+            <a href={`${mainSite}/shop`} style={styles.link}>SHOP</a>
             <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" style={styles.link}>INSTAGRAM</a>
-            <Link href="/customize" style={styles.link}>CUSTOM</Link>
-            <Link href="/cart" style={styles.link}>CART(0)</Link>
+            <a href={`${mainSite}/customize`} style={styles.link}>CUSTOM</a>
+            <a href={`${mainSite}/cart`} style={styles.link}>CART(0)</a>
           </div>
           <div style={styles.rightNav}>
-            <Link href="/#privacy" style={styles.link}>PRIVACY</Link>
-            <Link href="/#cookies" style={styles.link}>COOKIES</Link>
-            <Link href="/#returns" style={styles.link}>RETURNS</Link>
+            <a href={`${mainSite}/#privacy`} style={styles.link}>PRIVACY</a>
+            <a href={`${mainSite}/#cookies`} style={styles.link}>COOKIES</a>
+            <a href={`${mainSite}/#returns`} style={styles.link}>RETURNS</a>
           </div>
         </div>
 

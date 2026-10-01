@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Lock, Sparkles, Box, ArrowRight, RefreshCw } from 'lucide-react';
+import { ArrowRight, RefreshCw } from 'lucide-react';
 
 import dynamic from 'next/dynamic';
 
@@ -85,7 +85,6 @@ export default function PortalPage() {
             {/* Access Code Input */}
             <div style={styles.cardContainer}>
               <div style={styles.cardHeader}>
-                <Box size={32} color="#C5A059" style={{ marginBottom: '1rem' }} />
                 <h2 style={styles.cardTitle}>Enter Your 12-Character Access Code</h2>
                 <p style={styles.cardSub}>
                   Enter the access code printed on your physical keepsake card or received in your gift email to launch your interactive 3D WebGL experience.
