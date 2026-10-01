@@ -1,11 +1,11 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useCart } from '@/context/CartContext';
-import { X, Plus, Trash2 } from 'lucide-react';
+import { X, Plus, Trash2, RefreshCw } from 'lucide-react';
 
 const ADDONS = [
   {
@@ -33,6 +33,7 @@ const ADDONS = [
 
 export default function CartDrawer() {
   const pathname = usePathname();
+  const router = useRouter();
   const {
     cart,
     isCartOpen,
@@ -40,8 +41,12 @@ export default function CartDrawer() {
     removeFromCart,
     updateQuantity,
     addToCart,
+    clearCart,
     cartTotal,
   } = useCart();
+
+  const [submitting, setSubmitting] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('');
 
   const isAdmin = pathname?.startsWith('/admin') || (
     typeof window !== 'undefined' && (
@@ -51,6 +56,53 @@ export default function CartDrawer() {
   );
 
   if (isAdmin || !isCartOpen) return null;
+
+  const handleCheckout = async () => {
+    if (cart.length === 0 || submitting) return;
+    setSubmitting(true);
+    setCheckoutError('');
+
+    // Extract custom personalization payload if present in cart
+    const customItem = cart.find((i) => i.personalization);
+    const personalization = customItem?.personalization || {};
+
+    const payload = {
+      purchaserName: 'Alexander Smith',
+      purchaserEmail: 'alexander@example.com',
+      recipientType: personalization.recipientName ? 'gift' : 'self',
+      recipientName: personalization.recipientName || 'Alexander Smith',
+      recipientEmail: 'alexander@example.com',
+      fulfillmentType: 'physical_card',
+      totalAmount: cartTotal,
+      items: cart.map((i) => ({
+        title: i.title,
+        price: i.price,
+        quantity: i.quantity,
+      })),
+      customMessage: personalization.message || 'Happy Anniversary my love! Forever & always.',
+      customPhoto: personalization.photo || null,
+    };
+
+    try {
+      const res = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (data.success && data.accessCode) {
+        if (clearCart) clearCart();
+        setIsCartOpen(false);
+        router.push(`/thank-you?code=${encodeURIComponent(data.accessCode)}&orderId=${encodeURIComponent(data.order.id)}`);
+      } else {
+        setCheckoutError(data.error || 'Checkout failed. Please try again.');
+        setSubmitting(false);
+      }
+    } catch (err) {
+      setCheckoutError('Network error completing checkout.');
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div style={styles.overlay} onClick={() => setIsCartOpen(false)}>
@@ -171,14 +223,26 @@ export default function CartDrawer() {
             </span>
           </div>
 
-          <Link
-            href="/thank-you"
-            onClick={() => setIsCartOpen(false)}
+          {checkoutError && (
+            <div style={{ fontSize: '0.8rem', color: '#FF6B6B', marginBottom: '0.75rem', textAlign: 'center' }}>
+              {checkoutError}
+            </div>
+          )}
+
+          <button
+            onClick={handleCheckout}
+            disabled={submitting || cart.length === 0}
             className="btn-pill btn-pill-solid"
             style={styles.checkoutBtn}
           >
-            Continue to checkout
-          </Link>
+            {submitting ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: '8px' }}>
+                <RefreshCw size={14} className="spin" /> Generating Access Code...
+              </span>
+            ) : (
+              'Continue to checkout'
+            )}
+          </button>
         </div>
       </div>
     </div>

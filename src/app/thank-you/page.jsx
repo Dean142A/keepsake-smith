@@ -4,20 +4,31 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Mail, CheckCircle2, ArrowRight, Copy } from 'lucide-react';
 
-export default function ThankYouPage() {
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+
+function ThankYouContent() {
+  const searchParams = useSearchParams();
+  const queryCode = searchParams?.get('code');
+  const queryOrderId = searchParams?.get('orderId');
+
   const [accessCode, setAccessCode] = useState('');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
-    // Generate 12-char access code (excluding ambiguous chars 0, O, 1, I, l)
-    const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-    let code = 'KPSK-';
-    for (let i = 0; i < 8; i++) {
-      if (i === 4) code += '-';
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    if (queryCode) {
+      setAccessCode(queryCode.toUpperCase());
+    } else {
+      // Fallback 12-char access code generator
+      const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+      let code = 'KPSK-';
+      for (let i = 0; i < 8; i++) {
+        if (i === 4) code += '-';
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      setAccessCode(code);
     }
-    setAccessCode(code);
-  }, []);
+  }, [queryCode]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(accessCode);
@@ -43,8 +54,7 @@ export default function ThankYouPage() {
         </h1>
 
         <p style={styles.subtext}>
-          this explains color systems and color usages so they are used the way to brand identity portrays
-          this explains color systems and color usages so they are used the way to brand identity portrays
+          Thank you for your order with The Keepsake Smith. Your personalized experience is being assembled by our artisan team.
         </p>
 
         {/* Generated Access Code Card */}
@@ -81,6 +91,14 @@ export default function ThankYouPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function ThankYouPage() {
+  return (
+    <Suspense fallback={<div style={{ padding: '4rem', textAlign: 'center', color: '#FFF' }}>Loading order details...</div>}>
+      <ThankYouContent />
+    </Suspense>
   );
 }
 

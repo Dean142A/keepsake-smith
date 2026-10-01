@@ -6,35 +6,40 @@ import { Upload, Image as ImageIcon } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 export default function CustomizePage() {
-  const { addToCart } = useCart();
+  const { addToCart, setIsCartOpen } = useCart();
   const [recipientName, setRecipientName] = useState('Jane Forster');
   const [recipientPhone, setRecipientPhone] = useState('+234 000 0000 000');
-  const [cardMessage, setCardMessage] = useState('');
+  const [cardMessage, setCardMessage] = useState('Happy Anniversary my love! Forever & always.');
   const [photoPreview, setPhotoPreview] = useState(null);
 
   const handlePhotoUpload = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      const url = URL.createObjectURL(file);
-      setPhotoPreview(url);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPhotoPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleAddToCart = () => {
     addToCart({
       id: `custom-gift-${Date.now()}`,
-      title: 'Custom Keepsake Card',
+      title: 'Custom Keepsake 3D Card',
       subtitle: `For ${recipientName || 'Recipient'}`,
       price: 8500,
       quantity: 1,
       image: photoPreview || 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=600&auto=format&fit=crop',
       size: 'CUSTOM 3D',
       personalization: {
-        name: recipientName,
-        phone: recipientPhone,
+        recipientName,
+        recipientPhone,
         message: cardMessage,
+        photo: photoPreview,
       },
     });
+    if (setIsCartOpen) setIsCartOpen(true);
   };
 
   return (
