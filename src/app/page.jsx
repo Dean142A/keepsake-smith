@@ -253,8 +253,8 @@ export default function HomePage() {
                   borderRadius: '9999px',
                 }}
               />
-              <span style={{ color: '#989898' }}>know <br />how to make <br /></span>
-              <span style={{ color: '#D9D2C7' }}>this special</span>
+              <span style={{ color: '#989898' }}>know how <br /></span>
+              <span style={{ color: '#D9D2C7' }}>to make this special</span>
             </h2>
           </div>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'flex-start' }}>
