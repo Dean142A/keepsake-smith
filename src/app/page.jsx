@@ -34,7 +34,7 @@ export default function HomePage() {
         {/* HERO SECTION 2 */}
         <section style={styles.sectionPadding}>
           <div style={styles.twoColumnRow}>
-            <h2 className="heading-lg" style={{ flex: 1 }}>
+            <h2 className="heading-lg" style={{ flex: 1, fontSize: 'clamp(3.2rem, 7.2vw, 5.4rem)', fontWeight: '300', lineHeight: '1.05' }}>
               we craft gifts that <br />
               are memorable.
             </h2>
@@ -275,7 +275,7 @@ const styles = {
   },
   heroImgBanner: {
     width: '100%',
-    height: '600px',
+    height: '800px',
     borderRadius: '24px',
     overflow: 'hidden',
     marginTop: '0px',
@@ -303,6 +303,7 @@ const styles = {
   },
   sectionLabel: {
     fontSize: '0.8rem',
+    fontWeight: '300',
     letterSpacing: '0.12em',
     color: '#888888',
     textTransform: 'uppercase',
