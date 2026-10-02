@@ -1,15 +1,29 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { validateAdminRequest } from '@/lib/auth';
+
+const ALLOWED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.mp3', '.wav']);
 
 export async function POST(request) {
+  const authCheck = validateAdminRequest(request);
+  if (!authCheck.authenticated) return authCheck.response;
+
   try {
     const formData = await request.formData();
     const file = formData.get('file') || formData.get('image');
 
     if (!file || typeof file === 'string') {
       return NextResponse.json(
-        { success: false, error: 'No image file provided.' },
+        { success: false, error: 'No file provided.' },
+        { status: 400 }
+      );
+    }
+
+    const ext = (path.extname(file.name) || '.jpg').toLowerCase();
+    if (!ALLOWED_EXTENSIONS.has(ext)) {
+      return NextResponse.json(
+        { success: false, error: `Invalid file extension "${ext}". Allowed types: PNG, JPG, WEBP, GIF, SVG, MP3, WAV.` },
         { status: 400 }
       );
     }
@@ -23,9 +37,9 @@ export async function POST(request) {
       fs.mkdirSync(uploadsDir, { recursive: true });
     }
 
-    const ext = path.extname(file.name) || '.jpg';
     const cleanName = path.basename(file.name, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
     const safeFilename = `${Date.now()}-${cleanName}${ext}`;
+
     const filePath = path.join(uploadsDir, safeFilename);
 
     fs.writeFileSync(filePath, buffer);

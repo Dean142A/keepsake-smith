@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { sendEmail, getGiftReadyHtml } from '@/lib/mailer';
+import { validateAdminRequest } from '@/lib/auth';
 
 const ordersFilePath = path.join(process.cwd(), 'src', 'data', 'orders.json');
 
@@ -26,14 +27,21 @@ function writeOrders(orders) {
 }
 
 // GET /api/admin/orders - Get all orders queue
-export async function GET() {
+export async function GET(request) {
+  const authCheck = validateAdminRequest(request);
+  if (!authCheck.authenticated) return authCheck.response;
+
   const orders = readOrders();
   return NextResponse.json({ success: true, orders });
 }
 
 // PUT /api/admin/orders - Update status & production package assets
 export async function PUT(request) {
+  const authCheck = validateAdminRequest(request);
+  if (!authCheck.authenticated) return authCheck.response;
+
   try {
+
     const body = await request.json();
     const { id, status, sendNotification, packageUrl, personalizationNote, audioUrl, customPhoto } = body;
 

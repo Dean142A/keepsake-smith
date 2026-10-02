@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { validateAdminRequest } from '@/lib/auth';
 
 const settingsFilePath = path.join(process.cwd(), 'src', 'data', 'settings.json');
 
@@ -34,15 +35,19 @@ function writeSettings(settings) {
   }
 }
 
-// GET /api/admin/settings - Read current live timer settings
+// GET /api/admin/settings - Read current live timer settings (Public for CountdownTimer)
 export async function GET() {
   const settings = readSettings();
   return NextResponse.json({ success: true, settings });
 }
 
-// POST /api/admin/settings - Update live timer settings
+// POST /api/admin/settings - Update live timer settings (Protected)
 export async function POST(request) {
+  const authCheck = validateAdminRequest(request);
+  if (!authCheck.authenticated) return authCheck.response;
+
   try {
+
     const body = await request.json();
     const current = readSettings();
 

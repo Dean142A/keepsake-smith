@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { validateAdminRequest } from '@/lib/auth';
 
 const dataFilePath = path.join(process.cwd(), 'src', 'data', 'products.json');
 
@@ -30,14 +31,21 @@ function writeProducts(products) {
 }
 
 // GET /api/admin/products - List all products
-export async function GET() {
+export async function GET(request) {
+  const authCheck = validateAdminRequest(request);
+  if (!authCheck.authenticated) return authCheck.response;
+
   const products = readProducts();
   return NextResponse.json({ success: true, products });
 }
 
 // POST /api/admin/products - Add new product
 export async function POST(request) {
+  const authCheck = validateAdminRequest(request);
+  if (!authCheck.authenticated) return authCheck.response;
+
   try {
+
     const body = await request.json();
     const { title, subtitle, price, image, category, allowsCustomization } = body;
 
@@ -72,6 +80,9 @@ export async function POST(request) {
 
 // PUT /api/admin/products - Edit existing product
 export async function PUT(request) {
+  const authCheck = validateAdminRequest(request);
+  if (!authCheck.authenticated) return authCheck.response;
+
   try {
     const body = await request.json();
     const { id, title, subtitle, price, image, category, allowsCustomization, inStock } = body;
@@ -115,7 +126,11 @@ export async function PUT(request) {
 
 // DELETE /api/admin/products - Delete product by ID
 export async function DELETE(request) {
+  const authCheck = validateAdminRequest(request);
+  if (!authCheck.authenticated) return authCheck.response;
+
   try {
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 

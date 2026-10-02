@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
+import { validateAdminRequest } from '@/lib/auth';
 
 const categoriesFilePath = path.join(process.cwd(), 'src', 'data', 'categories.json');
 
@@ -30,14 +31,21 @@ function writeCategories(categories) {
 }
 
 // GET /api/admin/categories - List all categories
-export async function GET() {
+export async function GET(request) {
+  const authCheck = validateAdminRequest(request);
+  if (!authCheck.authenticated) return authCheck.response;
+
   const categories = readCategories();
   return NextResponse.json({ success: true, categories });
 }
 
 // POST /api/admin/categories - Create new category
 export async function POST(request) {
+  const authCheck = validateAdminRequest(request);
+  if (!authCheck.authenticated) return authCheck.response;
+
   try {
+
     const body = await request.json();
     const { name, description } = body;
 
@@ -78,6 +86,9 @@ export async function POST(request) {
 
 // PUT /api/admin/categories - Edit existing category
 export async function PUT(request) {
+  const authCheck = validateAdminRequest(request);
+  if (!authCheck.authenticated) return authCheck.response;
+
   try {
     const body = await request.json();
     const { id, name, description } = body;
@@ -119,7 +130,11 @@ export async function PUT(request) {
 
 // DELETE /api/admin/categories?id=XYZ - Delete category
 export async function DELETE(request) {
+  const authCheck = validateAdminRequest(request);
+  if (!authCheck.authenticated) return authCheck.response;
+
   try {
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
