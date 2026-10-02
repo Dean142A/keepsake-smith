@@ -239,10 +239,22 @@ export default function HomePage() {
         {/* CALLOUT BANNER */}
         <section style={styles.calloutBanner}>
           <div style={{ flex: 1.2 }}>
-            <h2 className="heading-xl" style={{ lineHeight: '1.1' }}>
-              we <span className="metallic-pill-badge" /> know <br />
-              how to make <br />
-              this special
+            <h2 className="heading-lg" style={{ fontSize: 'clamp(3.2rem, 7.2vw, 5.4rem)', fontWeight: '300', lineHeight: '1.05' }}>
+              <span style={{ color: '#989898' }}>we </span>
+              <img
+                src="/glden.png"
+                alt="glden"
+                style={{
+                  height: '0.65em',
+                  width: 'auto',
+                  display: 'inline-block',
+                  verticalAlign: 'middle',
+                  margin: '0 10px 4px 10px',
+                  borderRadius: '9999px',
+                }}
+              />
+              <span style={{ color: '#989898' }}>know <br />how to make <br /></span>
+              <span style={{ color: '#D9D2C7' }}>this special</span>
             </h2>
           </div>
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'flex-start' }}>
