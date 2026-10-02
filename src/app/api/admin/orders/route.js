@@ -31,15 +31,15 @@ export async function GET() {
   return NextResponse.json({ success: true, orders });
 }
 
-// PUT /api/admin/orders - Update status & trigger notification email
+// PUT /api/admin/orders - Update status & production package assets
 export async function PUT(request) {
   try {
     const body = await request.json();
-    const { id, status, sendNotification } = body;
+    const { id, status, sendNotification, packageUrl, personalizationNote, audioUrl, customPhoto } = body;
 
-    if (!id || !status) {
+    if (!id) {
       return NextResponse.json(
-        { success: false, error: 'Order ID and status required' },
+        { success: false, error: 'Order ID is required' },
         { status: 400 }
       );
     }
@@ -55,14 +55,19 @@ export async function PUT(request) {
     }
 
     const prevStatus = orders[index].status;
-    orders[index].status = status;
+    if (status) orders[index].status = status;
+    if (packageUrl !== undefined) orders[index].packageUrl = packageUrl;
+    if (personalizationNote !== undefined) orders[index].personalizationNote = personalizationNote;
+    if (audioUrl !== undefined) orders[index].audioUrl = audioUrl;
+    if (customPhoto !== undefined) orders[index].customPhoto = customPhoto;
+
     orders[index].updatedAt = new Date().toISOString();
     writeOrders(orders);
 
     let emailSent = false;
 
-    // Send "Gift Ready" notification email if marked as 'ready' or sendNotification requested
-    if ((status === 'ready' || sendNotification) && prevStatus !== 'ready') {
+    // Send "Gift Ready" notification email if status changed to 'ready' or sendNotification explicitly requested
+    if ((status === 'ready' || sendNotification) && (prevStatus !== 'ready' || sendNotification)) {
       const recipientEmail = orders[index].recipientEmail || orders[index].purchaserEmail;
       const recipientName = orders[index].recipientName || orders[index].purchaserName;
 

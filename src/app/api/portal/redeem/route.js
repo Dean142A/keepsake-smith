@@ -88,7 +88,7 @@ export async function POST(req) {
       package: {
         id: matchingOrder.id,
         template: primaryItem.title || 'Keepsake Luxury 3D Scene v1',
-        buildPath: 'https://packages.thekeepsakesmith.com/builds/default-v1/',
+        buildPath: matchingOrder.packageUrl || 'https://packages.thekeepsakesmith.com/builds/default-v1/',
         fulfillmentType: matchingOrder.fulfillmentType,
         status: matchingOrder.status,
         purchaserName: matchingOrder.purchaserName,
@@ -96,9 +96,9 @@ export async function POST(req) {
         personalization: {
           recipientName: matchingOrder.recipientName || matchingOrder.purchaserName,
           sender: matchingOrder.purchaserName,
-          message: matchingOrder.customMessage || 'Happy Anniversary my love! Forever & always.',
+          message: matchingOrder.personalizationNote || matchingOrder.customMessage || 'We craft gifts that are memorable.',
           photo: matchingOrder.customPhoto || 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
-          audioUrl: 'https://packages.thekeepsakesmith.com/audio/sample-ambient.mp3',
+          audioUrl: matchingOrder.audioUrl || 'https://packages.thekeepsakesmith.com/audio/sample-ambient.mp3',
         },
       },
     });

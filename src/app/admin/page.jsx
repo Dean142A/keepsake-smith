@@ -16,9 +16,49 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true);
   const [statusMsg, setStatusMsg] = useState('');
 
-  // Order Details Modal State
+  // Order Details Modal & WebGL Workspace State
   const [viewingOrder, setViewingOrder] = useState(null);
   const [copiedCode, setCopiedCode] = useState(false);
+  const [pkgUrl, setPkgUrl] = useState('');
+  const [pkgNote, setPkgNote] = useState('');
+  const [pkgAudio, setPkgAudio] = useState('');
+  const [savingPkgAssets, setSavingPkgAssets] = useState(false);
+
+  const handleOpenOrderDetails = (ord) => {
+    setViewingOrder(ord);
+    setPkgUrl(ord ? (ord.packageUrl || '') : '');
+    setPkgNote(ord ? (ord.personalizationNote || '') : '');
+    setPkgAudio(ord ? (ord.audioUrl || '') : '');
+  };
+
+  const handleSaveProductionAssets = async (orderId) => {
+    setSavingPkgAssets(true);
+    try {
+      const res = await fetch('/api/admin/orders', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: orderId,
+          packageUrl: pkgUrl,
+          personalizationNote: pkgNote,
+          audioUrl: pkgAudio,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStatusMsg(`Production WebGL assets saved for Order #${orderId}!`);
+        setViewingOrder(data.order);
+        fetchData();
+      } else {
+        setStatusMsg(data.error || 'Failed to save production assets');
+      }
+    } catch (err) {
+      console.error('Error saving production assets:', err);
+      setStatusMsg('Server error saving production assets.');
+    } finally {
+      setSavingPkgAssets(false);
+    }
+  };
 
   // Product Form State
   const [editingProduct, setEditingProduct] = useState(null);
@@ -886,7 +926,7 @@ export default function AdminDashboardPage() {
                           </td>
                           <td style={{ ...styles.td, textAlign: 'right' }}>
                             <button
-                              onClick={() => setViewingOrder(ord)}
+                              onClick={() => handleOpenOrderDetails(ord)}
                               className="btn-pill"
                               style={{
                                 fontSize: '0.78rem',
@@ -1703,6 +1743,66 @@ export default function AdminDashboardPage() {
                     <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.75rem', marginTop: '0.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.15)', fontWeight: '600' }}>
                       <span style={{ color: '#FFF' }}>Total Order Value</span>
                       <span style={{ color: '#C5A059' }}>₦{viewingOrder.totalAmount.toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Production WebGL Asset Builder Section */}
+                <div style={{ backgroundColor: '#0F0F0F', border: '1px solid rgba(197, 160, 89, 0.3)', padding: '1.2rem', marginTop: '0.5rem' }}>
+                  <div style={{ fontSize: '0.75rem', color: '#C5A059', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: '600', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <Package size={14} /> Production WebGL Scene & Personalization Assets
+                  </div>
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    <div>
+                      <label style={{ fontSize: '0.72rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>WebGL Build Package URL (packages.thekeepsakesmith.com)</label>
+                      <input
+                        type="text"
+                        value={pkgUrl}
+                        onChange={(e) => setPkgUrl(e.target.value)}
+                        placeholder="e.g. https://packages.thekeepsakesmith.com/builds/pkg_1001.json"
+                        style={{ width: '100%', padding: '0.6rem', backgroundColor: '#161616', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#FFF', fontSize: '0.82rem', fontFamily: 'monospace', outline: 'none' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.72rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Background Audio Track URL</label>
+                      <input
+                        type="text"
+                        value={pkgAudio}
+                        onChange={(e) => setPkgAudio(e.target.value)}
+                        placeholder="e.g. https://packages.thekeepsakesmith.com/audio/sample-ambient.mp3"
+                        style={{ width: '100%', padding: '0.6rem', backgroundColor: '#161616', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#FFF', fontSize: '0.82rem', fontFamily: 'monospace', outline: 'none' }}
+                      />
+                    </div>
+
+                    <div>
+                      <label style={{ fontSize: '0.72rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Personalization & Dedication Note</label>
+                      <textarea
+                        value={pkgNote}
+                        onChange={(e) => setPkgNote(e.target.value)}
+                        placeholder="Enter custom message injected into recipient 3D scene..."
+                        style={{ width: '100%', height: '70px', padding: '0.6rem', backgroundColor: '#161616', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#FFF', fontSize: '0.82rem', resize: 'vertical', outline: 'none' }}
+                      />
+                    </div>
+
+                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+                      <button
+                        onClick={() => handleSaveProductionAssets(viewingOrder.id)}
+                        disabled={savingPkgAssets}
+                        style={{
+                          fontSize: '0.78rem',
+                          padding: '0.5rem 1.2rem',
+                          backgroundColor: '#C5A059',
+                          color: '#000',
+                          border: 'none',
+                          borderRadius: '9999px',
+                          fontWeight: '600',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {savingPkgAssets ? 'Saving Assets...' : 'Save Production Assets'}
+                      </button>
                     </div>
                   </div>
                 </div>
