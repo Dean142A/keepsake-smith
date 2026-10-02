@@ -114,21 +114,21 @@ export default function HomePage() {
         <section style={styles.budgetBannerCard}>
           <div style={styles.budgetImgCol}>
             <img
-              src="https://images.unsplash.com/photo-1563241527-3004b7be0ffd?q=80&w=800&auto=format&fit=crop"
+              src="/front-view-bouquet-flowers-vase-with-gift-boxes 1.png"
               alt="Flower Bouquet & Gift Box"
               style={styles.budgetImg}
             />
           </div>
           <div style={styles.budgetContentCol}>
-            <h3 className="heading-lg">
-              unsure what to gift? <br />
-              just give us a budget.
+            <h3 className="heading-lg" style={{ fontSize: 'clamp(3.2rem, 7.2vw, 5.4rem)', fontWeight: '300', lineHeight: '1.05' }}>
+              <span style={{ color: '#989898' }}>unsure what to gift? <br /></span>
+              <span style={{ color: '#D9D2C7' }}>just give us a budget.</span>
             </h3>
-            <p className="text-muted" style={{ maxWidth: '420px' }}>
+            <p className="text-muted" style={{ maxWidth: '520px', fontSize: '1rem' }}>
               this explains color systems and color usages so they are used the way to brand identity portrays
               this explains color systems and color usages so they are used the way to brand identity portrays.
             </p>
-            <Link href="/customize" className="btn-pill btn-pill-solid" style={{ alignSelf: 'flex-start', marginTop: '1rem' }}>
+            <Link href="/customize" className="btn-pill btn-pill-solid" style={{ alignSelf: 'flex-start', marginTop: '1.5rem', padding: '0.8rem 2.4rem' }}>
               Order Now
             </Link>
           </div>
@@ -286,7 +286,7 @@ const styles = {
     objectFit: 'cover',
   },
   sectionPadding: {
-    padding: '4rem 0',
+    padding: '200px 0',
   },
   twoColumnRow: {
     display: 'flex',
@@ -347,18 +347,19 @@ const styles = {
     marginTop: '2px',
   },
   budgetBannerCard: {
-    margin: '4rem 0',
+    margin: '6rem 0',
     backgroundColor: '#161616',
-    borderRadius: '24px',
+    borderRadius: '28px',
     overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
     flexWrap: 'wrap',
+    minHeight: '840px',
   },
   budgetImgCol: {
     flex: 1,
-    minWidth: '320px',
-    height: '420px',
+    minWidth: '400px',
+    height: '840px',
   },
   budgetImg: {
     width: '100%',
@@ -367,10 +368,10 @@ const styles = {
   },
   budgetContentCol: {
     flex: 1.2,
-    padding: '3.5rem',
+    padding: '5rem 4rem',
     display: 'flex',
     flexDirection: 'column',
-    gap: '1.5rem',
+    gap: '2rem',
   },
   productGrid3: {
     display: 'grid',
