@@ -35,8 +35,8 @@ export default function Header() {
           {/* Left Column: Hero Title */}
           <div style={styles.heroTitleCol}>
             <h1 className="heading-xl" style={styles.heroTitle}>
-              we craft gifts that <br />
-              are <span>memorable.</span>
+              <span style={{ color: '#989898' }}>we craft gifts that <br />are </span>
+              <span style={{ color: '#D9D2C7' }}>memorable.</span>
             </h1>
           </div>
 
@@ -68,11 +68,13 @@ export default function Header() {
             </nav>
 
             <div style={styles.emblemBadge}>
-              <svg width="44" height="44" viewBox="0 0 100 100" fill="none" opacity="0.6">
-                <circle cx="50" cy="50" r="46" stroke="#FFFFFF" strokeWidth="1.5" />
-                <path d="M50 15 C30 15, 15 30, 15 50 C15 70, 30 85, 50 85" stroke="#FFFFFF" strokeWidth="1.5" />
-                <path d="M50 25 C36 25, 25 36, 25 50 C25 64, 36 75, 50 75" stroke="#FFFFFF" strokeWidth="1.5" />
-              </svg>
+              <img
+                src="/keepsake.svg"
+                alt="Keepsake Logo"
+                width="36"
+                height="36"
+                style={{ flexShrink: 0, opacity: 0.85 }}
+              />
               <p style={styles.emblemSubtext}>
                 this explains color systems and color usages so they are used the way to brand identity portrays
               </p>
@@ -188,16 +190,16 @@ const styles = {
   },
   navLink: {
     fontSize: '0.75rem',
-    fontWeight: '400',
+    fontWeight: '300',
     letterSpacing: '0.12em',
-    color: '#A0A0A0',
+    color: '#C9C9C9',
     transition: 'color 0.2s ease',
   },
   cartBtn: {
     fontSize: '0.75rem',
-    fontWeight: '400',
+    fontWeight: '300',
     letterSpacing: '0.12em',
-    color: '#FFFFFF',
+    color: '#C9C9C9',
     background: 'transparent',
     border: 'none',
     cursor: 'pointer',

@@ -71,7 +71,7 @@ export default function CountdownTimer() {
         {/* Hours Unit */}
         <div style={styles.unitCol}>
           <span style={styles.numDisplay}>{pad(timeLeft.hours)}</span>
-          <span style={styles.unitLabel}>HOURS</span>
+          <span style={styles.unitLabel}>hours</span>
         </div>
 
         <span style={styles.colon}>:</span>
@@ -79,7 +79,7 @@ export default function CountdownTimer() {
         {/* Minutes Unit */}
         <div style={styles.unitCol}>
           <span style={styles.numDisplay}>{pad(timeLeft.minutes)}</span>
-          <span style={styles.unitLabel}>MINUTES</span>
+          <span style={styles.unitLabel}>minutes</span>
         </div>
 
         <span style={styles.colon}>:</span>
@@ -87,7 +87,7 @@ export default function CountdownTimer() {
         {/* Seconds Unit */}
         <div style={styles.unitCol}>
           <span style={styles.numDisplay}>{pad(timeLeft.seconds)}</span>
-          <span style={styles.unitLabel}>SECONDS</span>
+          <span style={styles.unitLabel}>seconds</span>
         </div>
       </div>
 
@@ -133,15 +133,15 @@ const styles = {
     fontSize: '2rem',
     fontWeight: '300',
     letterSpacing: '0.04em',
-    color: '#FFFFFF',
+    color: '#D9D2C7',
     fontVariantNumeric: 'tabular-nums',
     lineHeight: '1',
   },
   unitLabel: {
     fontSize: '0.62rem',
-    fontWeight: '400',
+    fontWeight: '300',
     color: '#888888',
-    textTransform: 'uppercase',
+    textTransform: 'lowercase',
     letterSpacing: '0.08em',
     marginTop: '6px',
     textAlign: 'center',

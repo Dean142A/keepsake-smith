@@ -35,8 +35,8 @@ export default function HomePage() {
         <section style={styles.sectionPadding}>
           <div style={styles.twoColumnRow}>
             <h2 className="heading-lg" style={{ flex: 1, fontSize: 'clamp(3.2rem, 7.2vw, 5.4rem)', fontWeight: '300', lineHeight: '1.05' }}>
-              we craft gifts that <br />
-              are memorable.
+              <span style={{ color: '#989898' }}>we craft gifts that <br />are </span>
+              <span style={{ color: '#D9D2C7' }}>memorable.</span>
             </h2>
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'flex-start' }}>
               <p className="text-muted">
