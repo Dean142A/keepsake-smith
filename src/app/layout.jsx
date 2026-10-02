@@ -51,6 +51,11 @@ export const metadata = {
       'Personalized 3D WebGL digital experiences paired with custom handcrafted physical keepsake cards.',
     images: ['/og-image.png'],
   },
+  icons: {
+    icon: '/faviconkepsake.png',
+    shortcut: '/faviconkepsake.png',
+    apple: '/faviconkepsake.png',
+  },
   robots: {
     index: true,
     follow: true,
@@ -83,6 +88,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <head>
+        <link rel="icon" href="/faviconkepsake.png" type="image/png" sizes="any" />
+        <link rel="shortcut icon" href="/faviconkepsake.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/faviconkepsake.png" />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }}
