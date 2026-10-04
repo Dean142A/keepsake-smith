@@ -30,11 +30,8 @@ function writeProducts(products) {
   }
 }
 
-// GET /api/admin/products - List all products
-export async function GET(request) {
-  const authCheck = validateAdminRequest(request);
-  if (!authCheck.authenticated) return authCheck.response;
-
+// GET /api/admin/products - List all products (Public read)
+export async function GET() {
   const products = readProducts();
   return NextResponse.json({ success: true, products });
 }

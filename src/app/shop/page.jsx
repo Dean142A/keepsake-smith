@@ -10,6 +10,7 @@ const DEFAULT_PRODUCTS = [
     title: 'Handwritten Cards',
     subtitle: 'maquette dé keepsake',
     price: 30000,
+    category: 'CARDS',
     image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
   },
   {
@@ -17,31 +18,45 @@ const DEFAULT_PRODUCTS = [
     title: 'Handwritten Cards',
     subtitle: 'black envelope luxury edition',
     price: 30000,
+    category: 'CARDS',
     image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop',
   },
   {
     id: 'shop-3',
-    title: 'Handwritten Cards',
-    subtitle: 'linen texture finish',
-    price: 30000,
-    image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
+    title: 'Flower Bundle',
+    subtitle: 'fresh floral arrangement FLW - 23',
+    price: 15000,
+    category: 'FLOWERS',
+    image: 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?q=80&w=800&auto=format&fit=crop',
   },
   {
     id: 'shop-4',
-    title: 'Handwritten Cards',
-    subtitle: 'custom foil monogram',
-    price: 30000,
-    image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop',
+    title: 'Artisan Chocolates',
+    subtitle: 'artisan dark cocoa block CHLTE - 33',
+    price: 5900,
+    category: 'CHOCOLATES',
+    image: 'https://images.unsplash.com/photo-1549007994-cb92caebd54b?q=80&w=800&auto=format&fit=crop',
   },
+];
+
+const DEFAULT_CATEGORIES = [
+  { id: 'cat-cards', name: 'CARDS' },
+  { id: 'cat-flowers', name: 'FLOWERS' },
+  { id: 'cat-chocolates', name: 'CHOCOLATES' },
+  { id: 'cat-jewelry', name: 'JEWELRY' },
 ];
 
 export default function ShopPage() {
   const { addToCart } = useCart();
   const [products, setProducts] = useState(DEFAULT_PRODUCTS);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [sortBy, setSortBy] = useState('featured');
   const [quantities, setQuantities] = useState({});
   const [activePage, setActivePage] = useState(1);
 
   useEffect(() => {
+    // Load dynamic products
     fetch('/api/admin/products')
       .then((res) => res.json())
       .then((data) => {
@@ -50,6 +65,16 @@ export default function ShopPage() {
         }
       })
       .catch((err) => console.error('Error loading dynamic products:', err));
+
+    // Load dynamic categories
+    fetch('/api/admin/categories')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.categories && data.categories.length > 0) {
+          setCategories(data.categories);
+        }
+      })
+      .catch((err) => console.error('Error loading dynamic categories:', err));
   }, []);
 
   const handleQtyChange = (id, delta) => {
@@ -59,10 +84,33 @@ export default function ShopPage() {
     }));
   };
 
+  // Filter products by selected category
+  const filteredProducts = products.filter((prod) => {
+    if (!selectedCategory || selectedCategory === 'ALL') return true;
+    return (prod.category || '').toUpperCase() === selectedCategory.toUpperCase();
+  });
+
+  // Sort products according to selected sort option
+  const sortedProducts = [...filteredProducts].sort((a, b) => {
+    if (sortBy === 'name-asc') {
+      return a.title.localeCompare(b.title);
+    }
+    if (sortBy === 'name-desc') {
+      return b.title.localeCompare(a.title);
+    }
+    if (sortBy === 'price-asc') {
+      return Number(a.price) - Number(b.price);
+    }
+    if (sortBy === 'price-desc') {
+      return Number(b.price) - Number(a.price);
+    }
+    return 0; // default / featured
+  });
+
   const shopItemListJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'ItemList',
-    itemListElement: products.map((prod, index) => ({
+    itemListElement: sortedProducts.map((prod, index) => ({
       '@type': 'ListItem',
       position: index + 1,
       item: {
@@ -97,64 +145,119 @@ export default function ShopPage() {
           </p>
         </div>
 
-        {/* Toolbar Bar */}
+        {/* Dynamic Toolbar with Category & Sort By Dropdowns */}
         <div style={styles.toolbar}>
-          <span style={styles.countText}>{products.length} PRODUCTS FOUND</span>
-          <button className="btn-pill">Sort By:</button>
+          <span style={styles.countText}>{sortedProducts.length} PRODUCTS FOUND</span>
+
+          <div style={styles.filterControls}>
+            {/* Category Filter Dropdown */}
+            <div style={styles.selectWrapper}>
+              <label htmlFor="category-select" style={styles.selectLabel}>Category:</label>
+              <select
+                id="category-select"
+                value={selectedCategory}
+                onChange={(e) => {
+                  setSelectedCategory(e.target.value);
+                  setActivePage(1);
+                }}
+                style={styles.select}
+              >
+                <option value="ALL" style={styles.option}>All Categories</option>
+                {categories.map((cat) => (
+                  <option key={cat.id || cat.name} value={cat.name} style={styles.option}>
+                    {cat.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Sort By Dropdown */}
+            <div style={styles.selectWrapper}>
+              <label htmlFor="sort-select" style={styles.selectLabel}>Sort By:</label>
+              <select
+                id="sort-select"
+                value={sortBy}
+                onChange={(e) => {
+                  setSortBy(e.target.value);
+                  setActivePage(1);
+                }}
+                style={styles.select}
+              >
+                <option value="featured" style={styles.option}>Featured</option>
+                <option value="name-asc" style={styles.option}>Alphabetical (A - Z)</option>
+                <option value="name-desc" style={styles.option}>Alphabetical (Z - A)</option>
+                <option value="price-asc" style={styles.option}>Price: Lowest First</option>
+                <option value="price-desc" style={styles.option}>Price: Highest First</option>
+              </select>
+            </div>
+          </div>
         </div>
 
         {/* Products List (Strict 2x2 Desktop Grid) */}
-        <div className="shop-grid-2x2">
-          {products.map((prod) => (
-            <div key={prod.id} style={styles.card}>
-              <div style={styles.imgWrapper}>
-                <img src={prod.image} alt={prod.title} style={styles.img} />
-              </div>
-
-              <div style={styles.cardFooter}>
-                <div>
-                  <div style={styles.price}>NGN {prod.price.toLocaleString()}</div>
-                  <div style={styles.subtitle}>{prod.title} {prod.subtitle ? `(${prod.subtitle})` : ''}</div>
+        {sortedProducts.length === 0 ? (
+          <div style={styles.emptyState}>
+            <p style={{ color: '#888', fontSize: '1rem' }}>No products found in category "{selectedCategory}".</p>
+            <button
+              onClick={() => setSelectedCategory('ALL')}
+              className="btn-pill"
+              style={{ marginTop: '1rem' }}
+            >
+              Reset Category Filter
+            </button>
+          </div>
+        ) : (
+          <div className="shop-grid-2x2">
+            {sortedProducts.map((prod) => (
+              <div key={prod.id} style={styles.card}>
+                <div style={styles.imgWrapper}>
+                  <img src={prod.image} alt={prod.title} style={styles.img} />
                 </div>
 
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <div className="quantity-control">
-                    <button
-                      className="quantity-btn"
-                      onClick={() => handleQtyChange(prod.id, 1)}
-                    >
-                      +
-                    </button>
-                    <span className="quantity-val">{quantities[prod.id] || 1}</span>
-                    <button
-                      className="quantity-btn"
-                      onClick={() => handleQtyChange(prod.id, -1)}
-                    >
-                      -
-                    </button>
+                <div style={styles.cardFooter}>
+                  <div>
+                    <div style={styles.price}>NGN {prod.price.toLocaleString()}</div>
+                    <div style={styles.subtitle}>{prod.title} {prod.subtitle ? `(${prod.subtitle})` : ''}</div>
                   </div>
 
-                  <button
-                    onClick={() =>
-                      addToCart({
-                        id: prod.id,
-                        title: prod.title,
-                        subtitle: prod.subtitle || 'custom edition',
-                        price: prod.price,
-                        quantity: quantities[prod.id] || 1,
-                        image: prod.image,
-                      })
-                    }
-                    className="btn-pill"
-                    style={{ fontSize: '0.8rem' }}
-                  >
-                    Add to Bag
-                  </button>
+                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <div className="quantity-control">
+                      <button
+                        className="quantity-btn"
+                        onClick={() => handleQtyChange(prod.id, 1)}
+                      >
+                        +
+                      </button>
+                      <span className="quantity-val">{quantities[prod.id] || 1}</span>
+                      <button
+                        className="quantity-btn"
+                        onClick={() => handleQtyChange(prod.id, -1)}
+                      >
+                        -
+                      </button>
+                    </div>
+
+                    <button
+                      onClick={() =>
+                        addToCart({
+                          id: prod.id,
+                          title: prod.title,
+                          subtitle: prod.subtitle || 'custom edition',
+                          price: prod.price,
+                          quantity: quantities[prod.id] || 1,
+                          image: prod.image,
+                        })
+                      }
+                      className="btn-pill"
+                      style={{ fontSize: '0.8rem' }}
+                    >
+                      Add to Bag
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
 
         {/* Pagination Bar */}
         <div style={styles.pagination}>
@@ -228,6 +331,8 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: '1.5rem',
     marginBottom: '2.5rem',
     paddingBottom: '1.25rem',
   },
@@ -235,6 +340,45 @@ const styles = {
     fontSize: '0.78rem',
     letterSpacing: '0.1em',
     color: '#888888',
+  },
+  filterControls: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '1rem',
+    flexWrap: 'wrap',
+  },
+  selectWrapper: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '0.5rem',
+    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+    border: '1px solid rgba(255, 255, 255, 0.2)',
+    borderRadius: '9999px',
+    padding: '0.45rem 1.25rem',
+  },
+  selectLabel: {
+    fontSize: '0.75rem',
+    letterSpacing: '0.05em',
+    color: '#888888',
+    textTransform: 'uppercase',
+  },
+  select: {
+    backgroundColor: 'transparent',
+    border: 'none',
+    color: '#FFFFFF',
+    fontSize: '0.82rem',
+    fontFamily: 'inherit',
+    outline: 'none',
+    cursor: 'pointer',
+    paddingRight: '0.5rem',
+  },
+  option: {
+    backgroundColor: '#111111',
+    color: '#FFFFFF',
+  },
+  emptyState: {
+    textAlign: 'center',
+    padding: '5rem 0',
   },
   productGrid: {
     display: 'grid',
@@ -292,3 +436,4 @@ const styles = {
     gap: '3rem',
   },
 };
+

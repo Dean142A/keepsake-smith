@@ -30,11 +30,8 @@ function writeCategories(categories) {
   }
 }
 
-// GET /api/admin/categories - List all categories
-export async function GET(request) {
-  const authCheck = validateAdminRequest(request);
-  if (!authCheck.authenticated) return authCheck.response;
-
+// GET /api/admin/categories - List all categories (Public read)
+export async function GET() {
   const categories = readCategories();
   return NextResponse.json({ success: true, categories });
 }
