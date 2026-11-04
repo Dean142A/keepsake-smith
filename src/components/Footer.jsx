@@ -35,7 +35,10 @@ export default function Footer() {
       <div className="container">
         {/* Mobile Footer Links matching Home-1.png */}
         <div className="mobile-only">
-          <div className="mobile-footer-nav-1">
+          <div
+            className="mobile-footer-nav-1"
+            style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '1.25rem' }}
+          >
             <a href={`${mainSite}/#services`} className="mobile-footer-link">SERVICES</a>
             <a href={`${mainSite}/shop`} className="mobile-footer-link">SHOP</a>
             <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="mobile-footer-link">INSTAGRAM</a>
@@ -49,7 +52,10 @@ export default function Footer() {
             </button>
           </div>
 
-          <div className="mobile-footer-nav-2">
+          <div
+            className="mobile-footer-nav-2"
+            style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '2rem', width: '100%', marginBottom: '2rem' }}
+          >
             <a href={`${mainSite}/#privacy`} className="mobile-footer-link">PRIVACY</a>
             <a href={`${mainSite}/#cookies`} className="mobile-footer-link">COOKIES</a>
             <a href={`${mainSite}/#returns`} className="mobile-footer-link">RETURNS</a>

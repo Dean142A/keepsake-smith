@@ -304,11 +304,11 @@ input, textarea, select {
 
   /* Responsive Mobile Header Bar */
   .mobile-header-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    padding: 1.2rem 0 0.5rem 0;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    padding: 1.2rem 0 0.5rem 0 !important;
   }
 
   .mobile-nav-link {

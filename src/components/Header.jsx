@@ -33,16 +33,26 @@ export default function Header() {
       <header style={styles.homepageHeader}>
         <div className="container">
           {/* Mobile Top Navbar matching Home-1.png */}
-          <div className="mobile-header-bar mobile-only">
-            <Link href="/#services" className="mobile-nav-link">
+          <div
+            className="mobile-header-bar mobile-flex"
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              width: '100%',
+              padding: '1.2rem 0 0.5rem 0',
+            }}
+          >
+            <Link href="/#services" className="mobile-nav-link" style={{ textDecoration: 'none' }}>
               SERVICES
             </Link>
-            <Link href="/shop" className="mobile-nav-link">
+            <Link href="/shop" className="mobile-nav-link" style={{ textDecoration: 'none' }}>
               SHOP
             </Link>
             <button
               onClick={() => setIsCartOpen(true)}
               className="mobile-cart-btn"
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
               aria-label="View Bag"
             >
               CART({cartCount})
