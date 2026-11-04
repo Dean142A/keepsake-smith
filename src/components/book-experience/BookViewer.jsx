@@ -15,7 +15,7 @@ export default function BookViewer({ personalization, onExit }) {
     setMounted(true);
 
     const handleFirstInteraction = () => {
-      playBackgroundMusic();
+      playBackgroundMusic(personalization?.audioUrl);
       setMusicActive(true);
       window.removeEventListener('click', handleFirstInteraction);
     };
@@ -26,14 +26,14 @@ export default function BookViewer({ personalization, onExit }) {
       window.removeEventListener('click', handleFirstInteraction);
       pauseBackgroundMusic();
     };
-  }, []);
+  }, [personalization?.audioUrl]);
 
   const toggleMusic = () => {
     if (musicActive) {
       pauseBackgroundMusic();
       setMusicActive(false);
     } else {
-      playBackgroundMusic();
+      playBackgroundMusic(personalization?.audioUrl);
       setMusicActive(true);
     }
   };

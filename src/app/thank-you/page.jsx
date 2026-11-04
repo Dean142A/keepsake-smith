@@ -14,6 +14,7 @@ function ThankYouContent() {
 
   const [accessCode, setAccessCode] = useState('');
   const [copied, setCopied] = useState(false);
+  const [orderDetails, setOrderDetails] = useState(null);
 
   useEffect(() => {
     if (queryCode) {
@@ -28,7 +29,18 @@ function ThankYouContent() {
       }
       setAccessCode(code);
     }
-  }, [queryCode]);
+
+    if (queryOrderId) {
+      fetch(`/api/orders/track?query=${encodeURIComponent(queryOrderId)}`)
+        .then((res) => res.json())
+        .then((data) => {
+          if (data.success && data.order) {
+            setOrderDetails(data.order);
+          }
+        })
+        .catch(() => {});
+    }
+  }, [queryCode, queryOrderId]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(accessCode);
@@ -80,14 +92,43 @@ function ThankYouContent() {
           </div>
         )}
 
+        {/* Order Details Summary if available */}
+        {orderDetails && (
+          <div style={styles.orderSummaryCard}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
+              <span style={{ fontSize: '0.8rem', color: '#888', letterSpacing: '0.05em' }}>ORDER REFERENCE</span>
+              <span style={{ fontSize: '0.85rem', color: '#C5A059', fontWeight: '500' }}>#{orderDetails.id}</span>
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.8rem', color: '#888' }}>Total Paid:</span>
+              <span style={{ fontSize: '1.05rem', color: '#FFF', fontWeight: '400' }}>
+                NGN {Number(orderDetails.totalAmount || 0).toLocaleString()}
+              </span>
+            </div>
+          </div>
+        )}
+
         {/* Action Buttons */}
         <div style={styles.btnRow}>
-          <Link href="/" className="btn-pill btn-pill-dark" style={{ padding: '0.8rem 2.2rem' }}>
+          <Link href="/" className="btn-pill btn-pill-dark" style={{ padding: '0.8rem 2rem' }}>
             Back to Home
           </Link>
-          <Link href="/portal" className="btn-pill btn-pill-solid" style={{ padding: '0.8rem 2.2rem' }}>
+          <Link
+            href={accessCode ? `/portal?code=${encodeURIComponent(accessCode)}` : '/portal'}
+            className="btn-pill btn-pill-solid"
+            style={{ padding: '0.8rem 2.2rem' }}
+          >
             Enter 3D Portal <ArrowRight size={14} style={{ marginLeft: '6px' }} />
           </Link>
+          {queryOrderId && (
+            <Link
+              href={`/track?query=${encodeURIComponent(queryOrderId)}`}
+              className="btn-pill"
+              style={{ padding: '0.8rem 1.8rem', fontSize: '0.8rem' }}
+            >
+              Track Order
+            </Link>
+          )}
         </div>
       </div>
     </div>
@@ -180,6 +221,15 @@ const styles = {
     fontSize: '0.78rem',
     color: '#777777',
     lineHeight: '1.4',
+  },
+  orderSummaryCard: {
+    width: '100%',
+    backgroundColor: '#121212',
+    border: '1px solid rgba(197, 160, 89, 0.25)',
+    borderRadius: '16px',
+    padding: '1.25rem 1.5rem',
+    marginBottom: '2rem',
+    textAlign: 'left',
   },
   btnRow: {
     display: 'flex',

@@ -50,6 +50,9 @@ export async function POST(request) {
       fulfillmentType,
       shippingAddress,
       customMessage,
+      additionalInfo,
+      appliedCoupon,
+      discountAmount,
       items,
       totalAmount,
     } = body;
@@ -104,6 +107,9 @@ export async function POST(request) {
       fulfillmentType: fulfillmentType || 'physical_card',
       shippingAddress: shippingAddress || null,
       customMessage: customMessage || 'Happy Anniversary my love! Forever & always.',
+      additionalInfo: additionalInfo ? additionalInfo.trim() : '',
+      appliedCoupon: appliedCoupon || null,
+      discountAmount: Number(discountAmount) || 0,
       status: 'in_production',
       paymentStatus: 'paid',
       paymentGateway: 'Paystack',
@@ -115,6 +121,23 @@ export async function POST(request) {
 
     orders.unshift(newOrder);
     writeOrders(orders);
+
+    // Record coupon usage count
+    if (appliedCoupon) {
+      try {
+        const couponsFilePath = path.join(process.cwd(), 'src', 'data', 'coupons.json');
+        if (fs.existsSync(couponsFilePath)) {
+          const couponsData = JSON.parse(fs.readFileSync(couponsFilePath, 'utf8') || '[]');
+          const coupIdx = couponsData.findIndex((c) => c.code && c.code.toUpperCase() === appliedCoupon.toUpperCase());
+          if (coupIdx !== -1) {
+            couponsData[coupIdx].usedCount = (couponsData[coupIdx].usedCount || 0) + 1;
+            fs.writeFileSync(couponsFilePath, JSON.stringify(couponsData, null, 2), 'utf8');
+          }
+        }
+      } catch (err) {
+        console.warn('Could not update coupon count:', err);
+      }
+    }
 
     // Trigger Brevo Order Confirmation & Access Code Email Dispatch
     try {

@@ -426,6 +426,23 @@ export default function AdminDashboardPage() {
     }
   };
 
+  const handleToggleStock = async (prod) => {
+    try {
+      const res = await fetch('/api/admin/products', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: prod.id, inStock: prod.inStock === false }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStatusMsg(`Product "${prod.title}" marked as ${prod.inStock === false ? 'In Stock' : 'Out of Stock'}.`);
+        fetchData();
+      }
+    } catch (err) {
+      console.error('Error toggling product stock:', err);
+    }
+  };
+
   // CATEGORY MANAGEMENT HANDLERS
   const resetCategoryForm = () => {
     setCatName('');
@@ -620,6 +637,16 @@ export default function AdminDashboardPage() {
               }}
             >
               Orders CRM ({orders.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              style={{
+                ...styles.navTabBtn,
+                color: activeTab === 'analytics' ? '#FFFFFF' : '#888888',
+                borderBottom: activeTab === 'analytics' ? '2px solid #C5A059' : '2px solid transparent',
+              }}
+            >
+              Analytics & Insights
             </button>
             <button
               onClick={() => setActiveTab('products')}
@@ -958,6 +985,24 @@ export default function AdminDashboardPage() {
                                 Mark Ready & Send Email
                               </button>
                             )}
+                            {ord.status === 'ready' && (
+                              <button
+                                onClick={() => handleOrderStatusToggle(ord.id, 'delivered')}
+                                style={{
+                                  fontSize: '0.75rem',
+                                  padding: '0.35rem 0.8rem',
+                                  marginRight: '6px',
+                                  backgroundColor: '#66BB6A',
+                                  color: '#000',
+                                  border: 'none',
+                                  borderRadius: '9999px',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                Mark Delivered
+                              </button>
+                            )}
                             <button
                               onClick={() => handleSendNotification(ord.id)}
                               style={styles.actionBtn}
@@ -971,6 +1016,189 @@ export default function AdminDashboardPage() {
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {/* ANALYTICS & INSIGHTS TAB */}
+        {activeTab === 'analytics' && (
+          <div>
+            <div style={styles.pageTitleRow}>
+              <div>
+                <h1 style={styles.headingTitle}>Platform Analytics & Growth Metrics</h1>
+                <p style={styles.headingSub}>Real-time performance tracking: revenue, conversion funnel, 3D redemptions, and promo impact</p>
+              </div>
+            </div>
+
+            {/* Core KPI Cards */}
+            <div style={styles.statsGrid}>
+              <div style={styles.statCard}>
+                <span style={styles.statLabel}>Total Gross Revenue</span>
+                <span style={styles.statVal}>
+                  ₦{orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0).toLocaleString()}
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#66BB6A', marginTop: '4px' }}>Across {orders.length} orders</span>
+              </div>
+
+              <div style={styles.statCard}>
+                <span style={styles.statLabel}>Average Order Value (AOV)</span>
+                <span style={styles.statVal}>
+                  ₦{orders.length > 0
+                    ? Math.round(orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0) / orders.length).toLocaleString()
+                    : '0'}
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#C5A059', marginTop: '4px' }}>Per customer transaction</span>
+              </div>
+
+              <div style={styles.statCard}>
+                <span style={styles.statLabel}>3D Portal Redemptions</span>
+                <span style={styles.statVal}>
+                  {orders.filter((o) => o.redeemed || o.status === 'ready' || o.status === 'delivered').length} / {orders.length}
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#66BB6A', marginTop: '4px' }}>
+                  {orders.length > 0
+                    ? `${Math.round((orders.filter((o) => o.redeemed || o.status === 'ready' || o.status === 'delivered').length / orders.length) * 100)}% active rate`
+                    : '0%'}
+                </span>
+              </div>
+
+              <div style={styles.statCard}>
+                <span style={styles.statLabel}>Discounts & Savings Given</span>
+                <span style={styles.statVal}>
+                  ₦{orders.reduce((sum, o) => sum + (Number(o.discountAmount) || 0), 0).toLocaleString()}
+                </span>
+                <span style={{ fontSize: '0.72rem', color: '#C5A059', marginTop: '4px' }}>Via promo codes</span>
+              </div>
+            </div>
+
+            {/* Two-Column Analytics Layout */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
+              {/* Order Status Distribution Funnel */}
+              <div style={{ backgroundColor: '#161616', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '20px', padding: '1.75rem' }}>
+                <h3 style={{ fontSize: '1rem', color: '#FFF', fontWeight: '400', marginBottom: '1.25rem' }}>Order Pipeline Funnel</h3>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#AAA', marginBottom: '6px' }}>
+                      <span>In Production (Crafting)</span>
+                      <span style={{ color: '#FFB74D' }}>{orders.filter((o) => o.status === 'in_production').length} orders</span>
+                    </div>
+                    <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${orders.length ? (orders.filter((o) => o.status === 'in_production').length / orders.length) * 100 : 0}%`, height: '100%', backgroundColor: '#FFB74D' }} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#AAA', marginBottom: '6px' }}>
+                      <span>Ready for 3D Portal</span>
+                      <span style={{ color: '#C5A059' }}>{orders.filter((o) => o.status === 'ready').length} orders</span>
+                    </div>
+                    <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${orders.length ? (orders.filter((o) => o.status === 'ready').length / orders.length) * 100 : 0}%`, height: '100%', backgroundColor: '#C5A059' }} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#AAA', marginBottom: '6px' }}>
+                      <span>Delivered / Completed</span>
+                      <span style={{ color: '#66BB6A' }}>{orders.filter((o) => o.status === 'delivered' || o.status === 'completed').length} orders</span>
+                    </div>
+                    <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${orders.length ? (orders.filter((o) => o.status === 'delivered' || o.status === 'completed').length / orders.length) * 100 : 0}%`, height: '100%', backgroundColor: '#66BB6A' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Fulfillment Method Split */}
+              <div style={{ backgroundColor: '#161616', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '20px', padding: '1.75rem' }}>
+                <h3 style={{ fontSize: '1rem', color: '#FFF', fontWeight: '400', marginBottom: '1.25rem' }}>Fulfillment Classification Split</h3>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#AAA', marginBottom: '6px' }}>
+                      <span>Physical Cards & Boxes</span>
+                      <span style={{ color: '#FFF' }}>{orders.filter((o) => o.fulfillmentType === 'physical_card').length} ({orders.length ? Math.round((orders.filter((o) => o.fulfillmentType === 'physical_card').length / orders.length) * 100) : 0}%)</span>
+                    </div>
+                    <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${orders.length ? (orders.filter((o) => o.fulfillmentType === 'physical_card').length / orders.length) * 100 : 0}%`, height: '100%', backgroundColor: '#C5A059' }} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#AAA', marginBottom: '6px' }}>
+                      <span>Digital 3D Portal Only</span>
+                      <span style={{ color: '#FFF' }}>{orders.filter((o) => o.fulfillmentType === 'digital_only').length} ({orders.length ? Math.round((orders.filter((o) => o.fulfillmentType === 'digital_only').length / orders.length) * 100) : 0}%)</span>
+                    </div>
+                    <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${orders.length ? (orders.filter((o) => o.fulfillmentType === 'digital_only').length / orders.length) * 100 : 0}%`, height: '100%', backgroundColor: '#64B5F6' }} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#AAA', marginBottom: '6px' }}>
+                      <span>Direct Gifts to Recipient</span>
+                      <span style={{ color: '#FFF' }}>{orders.filter((o) => o.recipientType === 'gift').length} ({orders.length ? Math.round((orders.filter((o) => o.recipientType === 'gift').length / orders.length) * 100) : 0}%)</span>
+                    </div>
+                    <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
+                      <div style={{ width: `${orders.length ? (orders.filter((o) => o.recipientType === 'gift').length / orders.length) * 100 : 0}%`, height: '100%', backgroundColor: '#BA68C8' }} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Promo Codes & Coupons Performance Table */}
+            <div style={{ backgroundColor: '#161616', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '20px', padding: '1.75rem', marginBottom: '2.5rem' }}>
+              <h3 style={{ fontSize: '1rem', color: '#FFF', fontWeight: '400', marginBottom: '1rem' }}>Promo Code Conversion & Usage</h3>
+              <div style={styles.tableContainer}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr style={styles.trHeader}>
+                      <th style={styles.th}>Promo Code</th>
+                      <th style={styles.th}>Discount Rate</th>
+                      <th style={styles.th}>Status</th>
+                      <th style={styles.th}>Times Used</th>
+                      <th style={styles.th}>Max Cap</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {coupons.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>
+                          No promo codes created yet.
+                        </td>
+                      </tr>
+                    ) : (
+                      coupons.map((c) => (
+                        <tr key={c.id} style={styles.trBody}>
+                          <td style={styles.td}>
+                            <span style={{ color: '#C5A059', fontWeight: '600', letterSpacing: '0.08em', fontFamily: 'monospace' }}>
+                              {c.code}
+                            </span>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={{ color: '#FFF' }}>
+                              {c.discountType === 'percentage' ? `${c.discountValue}% OFF` : `₦${Number(c.discountValue).toLocaleString()} OFF`}
+                            </span>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={{ color: c.active !== false ? '#66BB6A' : '#FF6B6B', fontSize: '0.75rem', fontWeight: '600' }}>
+                              {c.active !== false ? 'ACTIVE' : 'INACTIVE'}
+                            </span>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={{ color: '#FFF' }}>{c.usedCount || c.usageCount || 0} times</span>
+                          </td>
+                          <td style={styles.td}>
+                            <span style={{ color: '#888' }}>{c.maxUses ? `${c.maxUses} uses` : 'Unlimited'}</span>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         )}
@@ -1008,6 +1236,7 @@ export default function AdminDashboardPage() {
                     <th style={styles.th}>Title & Subtitle</th>
                     <th style={styles.th}>Category</th>
                     <th style={styles.th}>Price</th>
+                    <th style={styles.th}>Stock Status</th>
                     <th style={styles.th}>Custom Order?</th>
                     <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
                   </tr>
@@ -1034,6 +1263,24 @@ export default function AdminDashboardPage() {
                         </td>
                         <td style={styles.td}>
                           <span style={{ color: '#FFF', fontWeight: '400' }}>₦{prod.price.toLocaleString()}</span>
+                        </td>
+                        <td style={styles.td}>
+                          <button
+                            onClick={() => handleToggleStock(prod)}
+                            style={{
+                              padding: '0.25rem 0.75rem',
+                              borderRadius: '9999px',
+                              fontSize: '0.72rem',
+                              fontWeight: '600',
+                              border: 'none',
+                              cursor: 'pointer',
+                              backgroundColor: prod.inStock !== false ? 'rgba(102, 187, 106, 0.2)' : 'rgba(255, 107, 107, 0.2)',
+                              color: prod.inStock !== false ? '#66BB6A' : '#FF6B6B',
+                            }}
+                            title="Click to toggle stock availability"
+                          >
+                            {prod.inStock !== false ? 'IN STOCK' : 'OUT OF STOCK'}
+                          </button>
                         </td>
                         <td style={styles.td}>
                           {prod.allowsCustomization ? (

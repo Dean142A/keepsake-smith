@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { ArrowRight, RefreshCw } from 'lucide-react';
 
 import dynamic from 'next/dynamic';
@@ -10,12 +11,21 @@ const BookViewer = dynamic(() => import('@/components/book-experience/BookViewer
   ssr: false,
 });
 
-export default function PortalPage() {
+function PortalContent() {
+  const searchParams = useSearchParams();
+  const initialCode = searchParams?.get('code') || '';
+
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [experienceData, setExperienceData] = useState(null);
   const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    if (initialCode) {
+      handleFormatCode(initialCode);
+    }
+  }, [initialCode]);
 
   const handleFormatCode = (val) => {
     const raw = val.toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 12);
@@ -30,7 +40,7 @@ export default function PortalPage() {
   };
 
   const handleRedeem = async (e) => {
-    e.preventDefault();
+    if (e && e.preventDefault) e.preventDefault();
     if (!code || code.length < 6) {
       setError('Please enter a valid 12-character access code.');
       return;
@@ -143,6 +153,14 @@ export default function PortalPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function PortalPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: '80vh', padding: '4rem', textAlign: 'center', color: '#FFF' }}>Loading 3D Keepsake Portal...</div>}>
+      <PortalContent />
+    </Suspense>
   );
 }
 
