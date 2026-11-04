@@ -578,17 +578,16 @@ const styles = {
     objectFit: 'cover',
   },
   sectionPadding: {
-    padding: '160px 0',
+    padding: '5rem 0',
   },
   sectionPaddingResponsive: {
-    padding: 'clamp(3.5rem, 8vw, 120px) 0',
+    padding: 'clamp(3rem, 6vw, 5rem) 0',
   },
   twoColumnRow: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: '4rem',
-    flexWrap: 'wrap',
   },
   sectionHeaderRow: {
     display: 'flex',
@@ -605,8 +604,8 @@ const styles = {
   },
   productGrid2: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(420px, 1fr))',
-    gap: '2rem',
+    gridTemplateColumns: 'repeat(2, 1fr)',
+    gap: '2.5rem',
   },
   featuredCard: {
     backgroundColor: 'transparent',
@@ -642,19 +641,17 @@ const styles = {
     marginTop: '2px',
   },
   budgetBannerCard: {
-    margin: '6rem 0',
+    margin: '5rem 0',
     backgroundColor: '#161616',
-    borderRadius: '28px',
+    borderRadius: '24px',
     overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
-    flexWrap: 'wrap',
-    minHeight: '840px',
+    minHeight: '640px',
   },
   budgetImgCol: {
     flex: 1,
-    minWidth: '400px',
-    height: '840px',
+    height: '640px',
   },
   budgetImg: {
     width: '100%',
@@ -662,15 +659,15 @@ const styles = {
     objectFit: 'cover',
   },
   budgetContentCol: {
-    flex: 1.2,
-    padding: '5rem 4rem',
+    flex: 1.15,
+    padding: '4rem 4.5rem',
     display: 'flex',
     flexDirection: 'column',
-    gap: '2rem',
+    gap: '1.8rem',
   },
   productGrid3: {
     display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+    gridTemplateColumns: 'repeat(3, 1fr)',
     gap: '2rem',
   },
   addonCardItem: {

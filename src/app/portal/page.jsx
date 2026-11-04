@@ -99,6 +99,16 @@ function PortalContent() {
                 <p style={styles.cardSub}>
                   Enter the access code printed on your physical keepsake card or received in your gift email to launch your interactive 3D WebGL experience.
                 </p>
+                <div style={styles.demoChipWrap}>
+                  <button
+                    type="button"
+                    onClick={() => handleFormatCode('KPSK892F37A1')}
+                    style={styles.demoChip}
+                    title="Click to fill sample code"
+                  >
+                    <span style={{ color: '#C5A059' }}>✦ Try Demo Code:</span> KPSK-892F-37A1
+                  </button>
+                </div>
               </div>
 
               <form onSubmit={handleRedeem} style={styles.form}>
@@ -206,8 +216,27 @@ const styles = {
     backgroundColor: '#161616',
     border: '1px solid rgba(255, 255, 255, 0.1)',
     borderRadius: '24px',
-    padding: '3rem 2.5rem',
+    padding: 'clamp(1.8rem, 5vw, 3rem) clamp(1rem, 4vw, 2.5rem)',
     textAlign: 'center',
+    boxSizing: 'border-box',
+    width: '100%',
+  },
+  demoChipWrap: {
+    marginTop: '0.9rem',
+  },
+  demoChip: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    backgroundColor: 'rgba(197, 160, 89, 0.08)',
+    border: '1px solid rgba(197, 160, 89, 0.28)',
+    borderRadius: '9999px',
+    padding: '0.45rem 1rem',
+    fontSize: '0.78rem',
+    color: '#D9D2C7',
+    fontFamily: 'monospace',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
   },
   cardHeader: {
     display: 'flex',
@@ -237,16 +266,18 @@ const styles = {
   },
   codeInput: {
     width: '100%',
+    maxWidth: '100%',
     textAlign: 'center',
-    fontSize: '1.6rem',
+    fontSize: 'clamp(1.05rem, 4.4vw, 1.55rem)',
     fontFamily: 'monospace',
-    letterSpacing: '0.2em',
-    padding: '1.1rem 1rem',
+    letterSpacing: 'clamp(0.06em, 1.6vw, 0.18em)',
+    padding: '1.1rem 0.5rem',
     backgroundColor: '#0F0F0F',
     border: '1px solid rgba(255, 255, 255, 0.18)',
     borderRadius: '16px',
     color: '#FFFFFF',
     outline: 'none',
+    boxSizing: 'border-box',
   },
   errorAlert: {
     fontSize: '0.8rem',

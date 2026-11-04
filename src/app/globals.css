@@ -273,33 +273,32 @@ input, textarea, select {
 }
 
 /* ========================================================
-   RESPONSIVE UTILITIES & FIGMA HOME-1 MOBILE ADAPTATIONS
+   RESPONSIVE UTILITIES & VISIBILITY CONTROLS
+   Preserve natural flex/grid/block layout rules when visible.
    ======================================================== */
-.mobile-only {
+.mobile-only,
+.mobile-flex,
+.mobile-grid {
   display: none !important;
-}
-.mobile-flex {
-  display: none !important;
-}
-.desktop-only {
-  display: block !important;
-}
-.desktop-flex {
-  display: flex !important;
 }
 
 @media (max-width: 768px) {
-  .mobile-only {
-    display: block !important;
+  .desktop-only,
+  .desktop-flex,
+  .desktop-grid {
+    display: none !important;
   }
+
+  .mobile-only {
+    display: block;
+  }
+
   .mobile-flex {
     display: flex !important;
   }
-  .desktop-only {
-    display: none !important;
-  }
-  .desktop-flex {
-    display: none !important;
+
+  .mobile-grid {
+    display: grid !important;
   }
 
   /* Responsive Mobile Header Bar */

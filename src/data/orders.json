@@ -1,1 +1,25 @@
-[]
+[
+  {
+    "id": "ORD-DEMO-001",
+    "purchaserName": "Arthur Vance",
+    "purchaserEmail": "arthur@example.com",
+    "recipientType": "partner",
+    "recipientName": "Eleanor Vance",
+    "recipientEmail": "eleanor@example.com",
+    "fulfillmentType": "digital_physical",
+    "status": "delivered",
+    "totalAmount": 29000,
+    "accessCode": "KPSK-892F-37A1",
+    "personalizationNote": "To Eleanor, every moment we share is a chapter I want to revisit forever. Happy Anniversary, my love.",
+    "customPhoto": "https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop",
+    "items": [
+      {
+        "id": "item-demo-1",
+        "title": "Interactive 3D Keepsake Book",
+        "price": 29000,
+        "quantity": 1
+      }
+    ],
+    "createdAt": "2026-11-04T12:00:00.000Z"
+  }
+]
