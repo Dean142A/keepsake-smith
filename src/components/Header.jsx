@@ -147,11 +147,6 @@ export default function Header() {
 
         {/* Desktop Header for non-homepage */}
         <div className="desktop-only" style={styles.headerContainer}>
-          {/* Left: Brand Logo / Text Link */}
-          <Link href="/" style={styles.logoLink}>
-            <span style={styles.logoText}>the keepsake smith</span>
-          </Link>
-
           {/* Right Navigation Items */}
           <nav style={styles.nav}>
             <Link href="/#services" style={styles.navLink}>
@@ -251,22 +246,7 @@ const styles = {
   headerContainer: {
     display: 'flex',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  logoLink: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-    color: '#FFFFFF',
-    textDecoration: 'none',
-  },
-  logoText: {
-    fontSize: '0.95rem',
-    fontWeight: '300',
-    letterSpacing: '0.08em',
-    textTransform: 'lowercase',
-    color: '#FFFFFF',
-    opacity: 0.9,
+    justifyContent: 'flex-end',
   },
   nav: {
     display: 'flex',
