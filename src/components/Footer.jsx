@@ -33,20 +33,31 @@ export default function Footer() {
   return (
     <footer style={styles.footer} className="mobile-footer-wrap">
       <div className="container">
-        {/* Mobile Footer Links matching Home-1.png */}
+        {/* =========================================================
+            MOBILE FOOTER (Figma Home-1.png strictly matched)
+            ========================================================= */}
         <div className="mobile-only">
           <div
             className="mobile-footer-nav-1"
             style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', marginBottom: '1.25rem' }}
           >
-            <a href={`${mainSite}/#services`} className="mobile-footer-link">SERVICES</a>
-            <a href={`${mainSite}/shop`} className="mobile-footer-link">SHOP</a>
-            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="mobile-footer-link">INSTAGRAM</a>
-            <a href={`${mainSite}/customize`} className="mobile-footer-link">CUSTOM</a>
+            <Link href={`${mainSite}/#services`} className="mobile-footer-link">
+              SERVICES
+            </Link>
+            <Link href={`${mainSite}/shop`} className="mobile-footer-link">
+              SHOP
+            </Link>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="mobile-footer-link">
+              INSTAGRAM
+            </a>
+            <Link href={`${mainSite}/customize`} className="mobile-footer-link">
+              CUSTOM
+            </Link>
             <button
               onClick={() => setIsCartOpen(true)}
               className="mobile-footer-link"
               style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+              aria-label="View Bag"
             >
               CART({cartCount})
             </button>
@@ -56,9 +67,15 @@ export default function Footer() {
             className="mobile-footer-nav-2"
             style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'center', gap: '2rem', width: '100%', marginBottom: '2rem' }}
           >
-            <a href={`${mainSite}/#privacy`} className="mobile-footer-link">PRIVACY</a>
-            <a href={`${mainSite}/#cookies`} className="mobile-footer-link">COOKIES</a>
-            <a href={`${mainSite}/#returns`} className="mobile-footer-link">RETURNS</a>
+            <Link href={`${mainSite}/#privacy`} className="mobile-footer-link">
+              PRIVACY
+            </Link>
+            <Link href={`${mainSite}/#cookies`} className="mobile-footer-link">
+              COOKIES
+            </Link>
+            <Link href={`${mainSite}/#returns`} className="mobile-footer-link">
+              RETURNS
+            </Link>
           </div>
 
           <div style={styles.divider} />
@@ -71,28 +88,55 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Desktop Footer Links */}
+        {/* =========================================================
+            DESKTOP FOOTER (Figma Home.png strictly matched)
+            ========================================================= */}
         <div className="desktop-only">
           <div style={styles.navRow}>
+            {/* Left Nav: SERVICES, SHOP, INSTAGRAM, CUSTOM, CART(0) */}
             <div style={styles.leftNav}>
-              <a href={`${mainSite}/#services`} style={styles.link}>SERVICES</a>
-              <a href={`${mainSite}/shop`} style={styles.link}>SHOP</a>
-              <a href={`${mainSite}/customize`} style={styles.link}>CUSTOM</a>
-              <a href={`${mainSite}/track`} style={styles.link}>TRACK ORDER</a>
-              <a href={`${mainSite}/faq`} style={styles.link}>FAQ / HELP</a>
+              <Link href={`${mainSite}/#services`} style={styles.link}>
+                SERVICES
+              </Link>
+              <Link href={`${mainSite}/shop`} style={styles.link}>
+                SHOP
+              </Link>
+              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" style={styles.link}>
+                INSTAGRAM
+              </a>
+              <Link href={`${mainSite}/customize`} style={styles.link}>
+                CUSTOM
+              </Link>
+              <button
+                onClick={() => setIsCartOpen(true)}
+                style={styles.cartBtn}
+                aria-label="View Bag"
+              >
+                CART({cartCount})
+              </button>
             </div>
+
+            {/* Right Nav: PRIVACY, COOKIES, RETURNS */}
             <div style={styles.rightNav}>
-              <a href={`${mainSite}/#privacy`} style={styles.link}>PRIVACY</a>
-              <a href={`${mainSite}/#cookies`} style={styles.link}>COOKIES</a>
-              <a href={`${mainSite}/#returns`} style={styles.link}>RETURNS</a>
+              <Link href={`${mainSite}/#privacy`} style={styles.link}>
+                PRIVACY
+              </Link>
+              <Link href={`${mainSite}/#cookies`} style={styles.link}>
+                COOKIES
+              </Link>
+              <Link href={`${mainSite}/#returns`} style={styles.link}>
+                RETURNS
+              </Link>
             </div>
           </div>
 
           <div style={styles.divider} />
 
           <div style={styles.disclaimerText}>
-            this explains color systems and color usages so they are used the way to brand identity portrays.
-            systems and color usages so they are used the way to brand identity portrays.
+            this explains color systems and color usages so they are used the way to brand identity portrays this explains color
+            systems and color usages so they are used the way to brand identity portrays this explains color systems and color
+            usages so they are used the way to brand identity portrays this explains color systems and color usages so they are
+            used the....systems and color usages so they are used the.
           </div>
         </div>
       </div>
@@ -117,12 +161,14 @@ const styles = {
   },
   leftNav: {
     display: 'flex',
-    gap: '2.2rem',
+    alignItems: 'center',
+    gap: '2.5rem',
     flexWrap: 'wrap',
   },
   rightNav: {
     display: 'flex',
-    gap: '2.2rem',
+    alignItems: 'center',
+    gap: '2.5rem',
     flexWrap: 'wrap',
   },
   link: {
@@ -131,17 +177,31 @@ const styles = {
     color: '#8A8A8A',
     textTransform: 'uppercase',
     transition: 'color 0.2s ease',
+    textDecoration: 'none',
+  },
+  cartBtn: {
+    fontSize: '0.75rem',
+    letterSpacing: '0.12em',
+    color: '#8A8A8A',
+    textTransform: 'uppercase',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    padding: 0,
+    fontFamily: 'inherit',
+    fontWeight: '300',
+    transition: 'color 0.2s ease',
   },
   divider: {
     width: '100%',
     height: '1px',
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     marginBottom: '2rem',
   },
   disclaimerText: {
     fontSize: '0.72rem',
     color: '#444444',
     lineHeight: '1.6',
-    maxWidth: '800px',
+    maxWidth: '820px',
   },
 };
