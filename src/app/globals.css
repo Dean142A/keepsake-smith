@@ -471,9 +471,9 @@ input, textarea, select {
     object-fit: cover;
   }
 
-  /* Mobile Section 2 */
+  /* Mobile Section 2 (Figma Home-1.png generous luxury spacing) */
   .mobile-section-2-wrap {
-    padding: 3.5rem 0 2rem 0 !important;
+    padding: 4.5rem 0 3.5rem 0 !important;
   }
 
   .mobile-section-2-title {
@@ -481,15 +481,16 @@ input, textarea, select {
     font-weight: 300 !important;
     line-height: 1.08 !important;
     letter-spacing: -0.02em !important;
-    margin-bottom: 1.5rem;
+    margin-bottom: clamp(8rem, 28vw, 14rem) !important;
   }
 
   .mobile-section-2-desc {
     font-size: 0.82rem !important;
     color: #888888 !important;
     line-height: 1.55 !important;
-    margin-bottom: 1.75rem !important;
+    margin-bottom: 2rem !important;
     font-weight: 300 !important;
+    max-width: 340px;
   }
 
   /* Mobile Featured Products */
