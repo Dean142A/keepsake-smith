@@ -667,3 +667,108 @@ input, textarea, select {
   }
 }
 
+/* =========================================================
+   LUXURY MICRO-INTERACTIONS & FLOATING FEEDBACK TOAST
+   ========================================================= */
+.btn-pill {
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+.btn-pill:hover {
+  border-color: rgba(197, 160, 89, 0.65) !important;
+  box-shadow: 0 0 16px rgba(197, 160, 89, 0.18) !important;
+  transform: translateY(-1px);
+}
+
+.btn-pill:active {
+  transform: translateY(0px) scale(0.98);
+}
+
+/* Luxury Floating Toast Notification */
+.cart-toast-pill {
+  position: fixed;
+  bottom: 2.2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1200;
+  background-color: #171717;
+  border: 1px solid rgba(197, 160, 89, 0.45);
+  color: #FFFFFF;
+  padding: 0.75rem 1.6rem;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.8), 0 0 24px rgba(197, 160, 89, 0.16);
+  font-size: 0.85rem;
+  cursor: pointer;
+  animation: toastFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  backdrop-filter: blur(14px);
+  max-width: 90vw;
+  user-select: none;
+  transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.cart-toast-pill:hover {
+  border-color: rgba(197, 160, 89, 0.8);
+  transform: translateX(-50%) translateY(-2px);
+}
+
+.toast-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #C5A059;
+  box-shadow: 0 0 8px #C5A059;
+  flex-shrink: 0;
+}
+
+.toast-action {
+  color: #C5A059;
+  font-size: 0.8rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 400;
+  margin-left: 0.4rem;
+  display: inline-flex;
+  align-items: center;
+}
+
+@keyframes toastFadeIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+/* Drawer Entry Animations */
+.cart-drawer-overlay {
+  animation: overlayFadeIn 0.25s ease-out;
+}
+
+.cart-drawer-panel {
+  animation: drawerSlideIn 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes overlayFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes drawerSlideIn {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+

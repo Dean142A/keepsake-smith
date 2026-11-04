@@ -6,8 +6,16 @@ const CartContext = createContext();
 
 export const CartProvider = ({ children }) => {
   const [cart, setCart] = useState([]);
-
   const [isCartOpen, setIsCartOpen] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message) => {
+    const id = Date.now();
+    setToast({ message, id });
+    setTimeout(() => {
+      setToast((current) => (current?.id === id ? null : current));
+    }, 3200);
+  };
 
   const addToCart = (item) => {
     setCart((prevCart) => {
@@ -19,6 +27,7 @@ export const CartProvider = ({ children }) => {
       }
       return [...prevCart, { ...item, quantity: item.quantity || 1 }];
     });
+    showToast(`“${item.title}” added to your bag`);
     setIsCartOpen(true);
   };
 
@@ -63,6 +72,8 @@ export const CartProvider = ({ children }) => {
         cartTotal,
         isCartOpen,
         setIsCartOpen,
+        toast,
+        showToast,
       }}
     >
       {children}

@@ -41,6 +41,23 @@ export default function CustomizePage() {
   const [cardMessage, setCardMessage] = useState('Happy Anniversary my love! Forever & always.');
   const [photoPreview, setPhotoPreview] = useState(null);
   const [validationError, setValidationError] = useState('');
+  const [cardSide, setCardSide] = useState('front'); // 'front' | 'inside'
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+
+  const handleMouseMove = (e) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -7;
+    const rotateY = ((x - centerX) / centerX) * 7;
+    setTilt({ x: rotateX, y: rotateY });
+  };
+
+  const handleMouseLeave = () => {
+    setTilt({ x: 0, y: 0 });
+  };
 
   // Fetch available products from catalog API on mount
   useEffect(() => {
@@ -125,46 +142,118 @@ export default function CustomizePage() {
         <div style={styles.customGrid}>
           {/* Left Column: Live Preview Box */}
           <div style={styles.previewContainer}>
-            <div style={styles.previewBox}>
+            {/* View Switcher Controls */}
+            {(photoPreview || selectedProduct) && (
+              <div style={styles.previewSwitcher}>
+                <button
+                  type="button"
+                  onClick={() => setCardSide('front')}
+                  style={{
+                    ...styles.switchBtn,
+                    backgroundColor: cardSide === 'front' ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
+                    borderColor: cardSide === 'front' ? '#C5A059' : 'rgba(255, 255, 255, 0.2)',
+                    color: cardSide === 'front' ? '#FFFFFF' : '#888888',
+                  }}
+                >
+                  Front Cover
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCardSide('inside')}
+                  style={{
+                    ...styles.switchBtn,
+                    backgroundColor: cardSide === 'inside' ? 'rgba(255, 255, 255, 0.12)' : 'transparent',
+                    borderColor: cardSide === 'inside' ? '#C5A059' : 'rgba(255, 255, 255, 0.2)',
+                    color: cardSide === 'inside' ? '#FFFFFF' : '#888888',
+                  }}
+                >
+                  Inside Letter
+                </button>
+              </div>
+            )}
+
+            <div
+              style={styles.previewBox}
+              onMouseMove={handleMouseMove}
+              onMouseLeave={handleMouseLeave}
+            >
               {photoPreview || selectedProduct ? (
-                <div style={styles.liveCardWrap}>
-                  <img
-                    src={photoPreview || selectedProduct?.image}
-                    alt="Recipient Preview"
-                    style={styles.previewImage}
-                  />
-                  <div style={styles.cardOverlayText}>
-                    <div style={styles.cardHeaderSmall}>
-                      THE KEEPSAKE SMITH {selectedProduct ? `• ${selectedProduct.title.toUpperCase()}` : ''}
+                <div
+                  style={{
+                    ...styles.cardPerspectiveWrap,
+                    transform: `perspective(1000px) rotateX(${tilt.x}deg) rotateY(${tilt.y}deg)`,
+                  }}
+                >
+                  {cardSide === 'front' ? (
+                    /* Front Cover View */
+                    <div style={styles.frontCard}>
+                      <div style={styles.frontImageWrap}>
+                        <img
+                          src={photoPreview || selectedProduct?.image}
+                          alt="Recipient Preview"
+                          style={styles.previewImage}
+                        />
+                      </div>
+                      <div style={styles.cardOverlayText}>
+                        <div style={styles.cardHeaderSmall}>
+                          THE KEEPSAKE SMITH • ARTISAN EDITION
+                        </div>
+                        <div style={styles.cardName}>{recipientName || 'Jane Forster'}</div>
+                        <div style={styles.cardBadgeTag}>
+                          {selectedProduct?.title || 'Handcrafted Keepsake'}
+                        </div>
+                      </div>
                     </div>
-                    <div style={styles.cardName}>{recipientName || 'Recipient Name'}</div>
-                    <p style={styles.cardMsgPreview}>
-                      "{cardMessage || 'Your custom handwritten message will appear here in gold foil typography.'}"
-                    </p>
-                  </div>
+                  ) : (
+                    /* Inside Letter View */
+                    <div style={styles.insideCard}>
+                      <div style={styles.letterHeader}>
+                        <div style={styles.cardHeaderSmall}>A BESPOKE KEEPSAKE DEDICATION</div>
+                        <div style={styles.letterTo}>To: {recipientName || 'Jane Forster'}</div>
+                      </div>
+                      <div style={styles.letterBody}>
+                        “{cardMessage || 'Happy Anniversary my love! Forever & always.'}”
+                      </div>
+                      <div style={styles.letterFooter}>
+                        <div style={styles.waxSeal}>
+                          <img
+                            src="/keepsake.svg"
+                            alt="Emblem"
+                            width="28"
+                            height="28"
+                            style={{ opacity: 0.9 }}
+                          />
+                        </div>
+                        <div style={styles.signatureText}>The Keepsake Smith</div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
+                /* Exact Figma Placeholder */
                 <div style={styles.previewPlaceholder}>
-                  <ImageIcon size={48} color="#666" style={{ marginBottom: '1rem' }} />
+                  <svg
+                    width="68"
+                    height="68"
+                    viewBox="0 0 64 64"
+                    fill="none"
+                    stroke="#555555"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    style={{ marginBottom: '1.25rem' }}
+                  >
+                    <rect x="8" y="8" width="48" height="48" rx="14" />
+                    <circle cx="25" cy="25" r="4.5" />
+                    <path d="M12 46 C22 34, 28 42, 38 32 C46 25, 52 40, 52 46" />
+                  </svg>
                   <h3 style={styles.previewTitle}>See Live Preview</h3>
-                  <p style={styles.previewSub}>Select a product to view dynamic 3D card updates</p>
-                  
-                  {/* Dynamic text preview */}
-                  <div style={styles.cardTextDisplay}>
-                    <div style={{ fontSize: '0.85rem', color: '#A0A0A0' }}>
-                      To: <span style={{ color: '#FFF' }}>{recipientName || 'Name'}</span>
-                    </div>
-                    {cardMessage && (
-                      <div style={{ fontSize: '0.8rem', color: '#888', marginTop: '0.5rem', fontStyle: 'italic' }}>
-                        "{cardMessage}"
-                      </div>
-                    )}
-                  </div>
+                  <p style={styles.previewSub}>See updates as you edit and make changes</p>
                 </div>
               )}
             </div>
             <p style={styles.columnSubtext}>
-              Custom 3D WebGL experiences are linked directly to your access code key upon checkout.
+              Interactive 3D preview tilt enabled. Access code is printed onto the physical wax keepsake upon dispatch.
             </p>
           </div>
 
@@ -302,17 +391,117 @@ const styles = {
     flexDirection: 'column',
     gap: '1rem',
   },
+  previewSwitcher: {
+    display: 'flex',
+    gap: '0.75rem',
+    marginBottom: '0.25rem',
+  },
+  switchBtn: {
+    padding: '0.45rem 1.1rem',
+    border: '1px solid',
+    borderRadius: '9999px',
+    fontSize: '0.75rem',
+    letterSpacing: '0.05em',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
   previewBox: {
     width: '100%',
-    height: '480px',
-    backgroundColor: '#141414',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    borderRadius: '0px',
+    height: '520px',
+    backgroundColor: '#121212',
+    border: '1px solid rgba(255, 255, 255, 0.15)',
+    borderRadius: '12px',
     overflow: 'hidden',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     position: 'relative',
+    perspective: '1200px',
+    padding: '1.5rem',
+  },
+  cardPerspectiveWrap: {
+    width: '100%',
+    maxWidth: '380px',
+    height: '100%',
+    maxHeight: '460px',
+    transition: 'transform 0.15s ease-out',
+    transformStyle: 'preserve-3d',
+  },
+  frontCard: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#171717',
+    border: '1px solid rgba(197, 160, 89, 0.35)',
+    borderRadius: '10px',
+    boxShadow: '0 24px 50px rgba(0, 0, 0, 0.85), inset 0 0 0 1px rgba(255, 255, 255, 0.05)',
+    overflow: 'hidden',
+    display: 'flex',
+    flexDirection: 'column',
+    position: 'relative',
+  },
+  frontImageWrap: {
+    width: '100%',
+    flex: 1,
+    overflow: 'hidden',
+    backgroundColor: '#0c0c0c',
+  },
+  insideCard: {
+    width: '100%',
+    height: '100%',
+    backgroundColor: '#161616',
+    border: '1px solid rgba(197, 160, 89, 0.35)',
+    borderRadius: '10px',
+    padding: '2rem 1.75rem',
+    boxShadow: '0 24px 50px rgba(0, 0, 0, 0.85)',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    backgroundImage: 'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.03) 0%, transparent 70%)',
+  },
+  letterHeader: {
+    borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+    paddingBottom: '0.85rem',
+  },
+  letterTo: {
+    fontSize: '1.25rem',
+    color: '#D9D2C7',
+    fontWeight: '300',
+    marginTop: '4px',
+    letterSpacing: '0.04em',
+  },
+  letterBody: {
+    flex: 1,
+    padding: '1.5rem 0',
+    fontSize: '0.95rem',
+    lineHeight: '1.7',
+    color: '#E0E0E0',
+    fontStyle: 'italic',
+    fontFamily: 'serif, Georgia, "Times New Roman"',
+    overflowY: 'auto',
+  },
+  letterFooter: {
+    borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+    paddingTop: '0.85rem',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  waxSeal: {
+    width: '38px',
+    height: '38px',
+    borderRadius: '50%',
+    backgroundColor: '#1A1814',
+    border: '1px solid rgba(197, 160, 89, 0.5)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    boxShadow: '0 4px 10px rgba(0, 0, 0, 0.4)',
+  },
+  signatureText: {
+    fontSize: '0.78rem',
+    letterSpacing: '0.08em',
+    color: '#A88653',
+    textTransform: 'lowercase',
   },
   previewPlaceholder: {
     textAlign: 'center',
@@ -322,27 +511,17 @@ const styles = {
     alignItems: 'center',
   },
   previewTitle: {
-    fontSize: '1.4rem',
+    fontSize: '1.45rem',
     fontWeight: '300',
     color: '#FFFFFF',
-    marginBottom: '4px',
+    marginBottom: '6px',
+    letterSpacing: '-0.01em',
   },
   previewSub: {
-    fontSize: '0.8rem',
+    fontSize: '0.82rem',
     color: '#777777',
-  },
-  cardTextDisplay: {
-    marginTop: '2rem',
-    padding: '1rem 1.5rem',
-    backgroundColor: 'transparent',
-    border: '1px solid rgba(255, 255, 255, 0.15)',
-    borderRadius: '0px',
-    maxWidth: '320px',
-  },
-  liveCardWrap: {
-    width: '100%',
-    height: '100%',
-    position: 'relative',
+    maxWidth: '260px',
+    lineHeight: '1.4',
   },
   previewImage: {
     width: '100%',
@@ -350,31 +529,27 @@ const styles = {
     objectFit: 'cover',
   },
   cardOverlayText: {
-    position: 'absolute',
-    bottom: '20px',
-    left: '20px',
-    right: '20px',
-    padding: '1.25rem',
-    backgroundColor: 'rgba(18, 18, 18, 0.85)',
-    borderRadius: '0px',
-    border: '1px solid rgba(255, 255, 255, 0.15)',
+    padding: '1.1rem 1.25rem',
+    backgroundColor: '#141414',
+    borderTop: '1px solid rgba(255, 255, 255, 0.1)',
   },
   cardHeaderSmall: {
     fontSize: '0.65rem',
-    letterSpacing: '0.1em',
+    letterSpacing: '0.12em',
     color: '#A88653',
     marginBottom: '4px',
+    textTransform: 'uppercase',
   },
   cardName: {
-    fontSize: '1.2rem',
+    fontSize: '1.15rem',
     color: '#FFFFFF',
     fontWeight: '400',
+    letterSpacing: '0.02em',
   },
-  cardMsgPreview: {
-    fontSize: '0.8rem',
-    color: '#CCCCCC',
-    marginTop: '4px',
-    fontStyle: 'italic',
+  cardBadgeTag: {
+    fontSize: '0.75rem',
+    color: '#888888',
+    marginTop: '2px',
   },
   columnSubtext: {
     fontSize: '0.72rem',

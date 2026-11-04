@@ -64,8 +64,16 @@ export default function CartDrawer() {
   };
 
   return (
-    <div style={styles.overlay} onClick={() => setIsCartOpen(false)}>
-      <div style={styles.drawer} onClick={(e) => e.stopPropagation()}>
+    <div
+      className="cart-drawer-overlay"
+      style={styles.overlay}
+      onClick={() => setIsCartOpen(false)}
+    >
+      <div
+        className="cart-drawer-panel"
+        style={styles.drawer}
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
         <div style={styles.headerRow}>
           <h2 style={styles.title}>your bag</h2>

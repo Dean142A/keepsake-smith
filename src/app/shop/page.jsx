@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useCart } from '@/context/CartContext';
+import { ChevronDown, Check } from 'lucide-react';
 
 const DEFAULT_PRODUCTS = [
   {
@@ -52,8 +53,27 @@ export default function ShopPage() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
   const [selectedCategory, setSelectedCategory] = useState('ALL');
   const [sortBy, setSortBy] = useState('featured');
+  const [isSortOpen, setIsSortOpen] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
   const [quantities, setQuantities] = useState({});
   const [activePage, setActivePage] = useState(1);
+
+  const sortRef = useRef(null);
+  const categoryRef = useRef(null);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (sortRef.current && !sortRef.current.contains(e.target)) {
+        setIsSortOpen(false);
+      }
+      if (categoryRef.current && !categoryRef.current.contains(e.target)) {
+        setIsCategoryOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   useEffect(() => {
     // Load dynamic products
@@ -150,45 +170,151 @@ export default function ShopPage() {
           <span style={styles.countText}>{sortedProducts.length} PRODUCTS FOUND</span>
 
           <div style={styles.filterControls}>
-            {/* Category Filter Dropdown */}
-            <div style={styles.selectWrapper}>
-              <label htmlFor="category-select" style={styles.selectLabel}>Category:</label>
-              <select
-                id="category-select"
-                value={selectedCategory}
-                onChange={(e) => {
-                  setSelectedCategory(e.target.value);
-                  setActivePage(1);
+            {/* Sort By Custom Pill Dropdown */}
+            <div style={{ position: 'relative' }} ref={sortRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSortOpen(!isSortOpen);
+                  setIsCategoryOpen(false);
                 }}
-                style={styles.select}
+                style={{
+                  ...styles.pillBtn,
+                  borderColor: isSortOpen ? '#C5A059' : 'rgba(255, 255, 255, 0.25)',
+                }}
+                aria-expanded={isSortOpen}
               >
-                <option value="ALL" style={styles.option}>All Categories</option>
-                {categories.map((cat) => (
-                  <option key={cat.id || cat.name} value={cat.name} style={styles.option}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
+                <span>
+                  {sortBy === 'featured'
+                    ? 'Sort By:'
+                    : `Sort By: ${
+                        sortBy === 'name-asc'
+                          ? 'A - Z'
+                          : sortBy === 'name-desc'
+                          ? 'Z - A'
+                          : sortBy === 'price-asc'
+                          ? 'Lowest Price'
+                          : 'Highest Price'
+                      }`}
+                </span>
+                <ChevronDown
+                  size={15}
+                  color={isSortOpen ? '#C5A059' : '#C9C9C9'}
+                  style={{
+                    transition: 'transform 0.2s ease',
+                    transform: isSortOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}
+                />
+              </button>
+
+              {isSortOpen && (
+                <div style={styles.dropdownPopover}>
+                  <div style={styles.dropdownHeader}>Sort Products</div>
+                  {[
+                    { value: 'featured', label: 'Featured' },
+                    { value: 'name-asc', label: 'Alphabetical (A - Z)' },
+                    { value: 'name-desc', label: 'Alphabetical (Z - A)' },
+                    { value: 'price-asc', label: 'Price: Lowest First' },
+                    { value: 'price-desc', label: 'Price: Highest First' },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => {
+                        setSortBy(opt.value);
+                        setIsSortOpen(false);
+                        setActivePage(1);
+                      }}
+                      style={{
+                        ...styles.dropdownItem,
+                        backgroundColor: sortBy === opt.value ? 'rgba(197, 160, 89, 0.12)' : 'transparent',
+                        color: sortBy === opt.value ? '#C5A059' : '#E5E5E5',
+                        fontWeight: sortBy === opt.value ? 400 : 300,
+                      }}
+                    >
+                      <span>{opt.label}</span>
+                      {sortBy === opt.value && <Check size={14} color="#C5A059" />}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Sort By Dropdown */}
-            <div style={styles.selectWrapper}>
-              <label htmlFor="sort-select" style={styles.selectLabel}>Sort By:</label>
-              <select
-                id="sort-select"
-                value={sortBy}
-                onChange={(e) => {
-                  setSortBy(e.target.value);
-                  setActivePage(1);
+            {/* Category Custom Pill Dropdown */}
+            <div style={{ position: 'relative' }} ref={categoryRef}>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsCategoryOpen(!isCategoryOpen);
+                  setIsSortOpen(false);
                 }}
-                style={styles.select}
+                style={{
+                  ...styles.pillBtn,
+                  borderColor: isCategoryOpen ? '#C5A059' : 'rgba(255, 255, 255, 0.25)',
+                }}
+                aria-expanded={isCategoryOpen}
               >
-                <option value="featured" style={styles.option}>Featured</option>
-                <option value="name-asc" style={styles.option}>Alphabetical (A - Z)</option>
-                <option value="name-desc" style={styles.option}>Alphabetical (Z - A)</option>
-                <option value="price-asc" style={styles.option}>Price: Lowest First</option>
-                <option value="price-desc" style={styles.option}>Price: Highest First</option>
-              </select>
+                <span>
+                  {selectedCategory === 'ALL'
+                    ? 'Category'
+                    : `Category: ${selectedCategory}`}
+                </span>
+                <ChevronDown
+                  size={15}
+                  color={isCategoryOpen ? '#C5A059' : '#C9C9C9'}
+                  style={{
+                    transition: 'transform 0.2s ease',
+                    transform: isCategoryOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}
+                />
+              </button>
+
+              {isCategoryOpen && (
+                <div style={styles.dropdownPopover}>
+                  <div style={styles.dropdownHeader}>Filter by Category</div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedCategory('ALL');
+                      setIsCategoryOpen(false);
+                      setActivePage(1);
+                    }}
+                    style={{
+                      ...styles.dropdownItem,
+                      backgroundColor: selectedCategory === 'ALL' ? 'rgba(197, 160, 89, 0.12)' : 'transparent',
+                      color: selectedCategory === 'ALL' ? '#C5A059' : '#E5E5E5',
+                      fontWeight: selectedCategory === 'ALL' ? 400 : 300,
+                    }}
+                  >
+                    <span>All Categories</span>
+                    {selectedCategory === 'ALL' && <Check size={14} color="#C5A059" />}
+                  </button>
+                  {categories.map((cat) => {
+                    const catName = cat.name || cat;
+                    const isSelected = selectedCategory.toUpperCase() === catName.toUpperCase();
+                    return (
+                      <button
+                        key={cat.id || catName}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCategory(catName);
+                          setIsCategoryOpen(false);
+                          setActivePage(1);
+                        }}
+                        style={{
+                          ...styles.dropdownItem,
+                          backgroundColor: isSelected ? 'rgba(197, 160, 89, 0.12)' : 'transparent',
+                          color: isSelected ? '#C5A059' : '#E5E5E5',
+                          fontWeight: isSelected ? 400 : 300,
+                        }}
+                      >
+                        <span>{catName}</span>
+                        {isSelected && <Check size={14} color="#C5A059" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -328,34 +454,55 @@ const styles = {
     gap: '1rem',
     flexWrap: 'wrap',
   },
-  selectWrapper: {
+  pillBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '0.65rem',
+    padding: '0.55rem 1.4rem',
+    border: '1px solid rgba(255, 255, 255, 0.25)',
+    borderRadius: '9999px',
+    backgroundColor: 'transparent',
+    color: '#FFFFFF',
+    fontSize: '0.84rem',
+    fontWeight: '300',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    userSelect: 'none',
+  },
+  dropdownPopover: {
+    position: 'absolute',
+    top: 'calc(100% + 8px)',
+    right: 0,
+    minWidth: '220px',
+    backgroundColor: '#161616',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    borderRadius: '12px',
+    padding: '0.45rem',
+    boxShadow: '0 20px 40px rgba(0, 0, 0, 0.75)',
+    zIndex: 100,
+    backdropFilter: 'blur(16px)',
+  },
+  dropdownHeader: {
+    fontSize: '0.68rem',
+    letterSpacing: '0.12em',
+    textTransform: 'uppercase',
+    color: '#777777',
+    padding: '0.5rem 0.75rem 0.35rem 0.75rem',
+    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+    marginBottom: '0.25rem',
+  },
+  dropdownItem: {
     display: 'flex',
     alignItems: 'center',
-    gap: '0.5rem',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    borderRadius: '9999px',
-    padding: '0.45rem 1.25rem',
-  },
-  selectLabel: {
-    fontSize: '0.75rem',
-    letterSpacing: '0.05em',
-    color: '#888888',
-    textTransform: 'uppercase',
-  },
-  select: {
-    backgroundColor: 'transparent',
+    justifyContent: 'space-between',
+    width: '100%',
+    padding: '0.6rem 0.85rem',
+    borderRadius: '8px',
     border: 'none',
-    color: '#FFFFFF',
     fontSize: '0.82rem',
-    fontFamily: 'inherit',
-    outline: 'none',
     cursor: 'pointer',
-    paddingRight: '0.5rem',
-  },
-  option: {
-    backgroundColor: '#111111',
-    color: '#FFFFFF',
+    textAlign: 'left',
+    transition: 'background-color 0.15s ease, color 0.15s ease',
   },
   emptyState: {
     textAlign: 'center',

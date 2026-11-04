@@ -5,10 +5,12 @@ import { usePathname } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import CartDrawer from '@/components/CartDrawer';
+import { useCart } from '@/context/CartContext';
 
 export default function ClientLayoutWrapper({ children }) {
   const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(false);
+  const { toast, setIsCartOpen } = useCart();
 
   useEffect(() => {
     const checkAdmin = () => {
@@ -57,6 +59,18 @@ export default function ClientLayoutWrapper({ children }) {
       <main>{children}</main>
       <CartDrawer />
       <Footer />
+      {toast && (
+        <div
+          className="cart-toast-pill"
+          onClick={() => setIsCartOpen(true)}
+          role="status"
+          aria-live="polite"
+        >
+          <div className="toast-dot" />
+          <span>{toast.message}</span>
+          <span className="toast-action">View Bag →</span>
+        </div>
+      )}
     </>
   );
 }
