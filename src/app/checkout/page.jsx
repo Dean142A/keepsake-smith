@@ -359,25 +359,6 @@ export default function CheckoutPage() {
             </div>
           </div>
         </form>
-
-        {/* Callout Section matching Cart-2.png mobile & desktop footer */}
-        <section className="checkout-callout">
-          <div className="callout-title">
-            <h2>
-              we <span className="metal-pill"></span> know <br />
-              how to make this <br />
-              special
-            </h2>
-          </div>
-          <div className="callout-copy">
-            <p>
-              this explains color systems and color usages so they are used the way to brand identity portrays
-            </p>
-            <a className="order-now-outline" href="/shop">
-              Order Now
-            </a>
-          </div>
-        </section>
       </div>
 
       <style jsx>{`

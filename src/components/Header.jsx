@@ -35,28 +35,28 @@ export default function Header() {
           {/* Mobile Top Navbar matching Home-1.png */}
           <div
             className="mobile-header-bar mobile-flex"
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              width: '100%',
-              padding: '1.2rem 0 0.5rem 0',
-            }}
+            style={styles.mobileHeaderBar}
           >
-            <Link href="/#services" className="mobile-nav-link" style={{ textDecoration: 'none' }}>
-              SERVICES
-            </Link>
-            <Link href="/shop" className="mobile-nav-link" style={{ textDecoration: 'none' }}>
-              SHOP
-            </Link>
-            <button
-              onClick={() => setIsCartOpen(true)}
-              className="mobile-cart-btn"
-              style={{ background: 'transparent', border: 'none', cursor: 'pointer' }}
-              aria-label="View Bag"
-            >
-              CART({cartCount})
-            </button>
+            <div style={{ flex: 1, textAlign: 'left' }}>
+              <Link href="/#services" className="mobile-nav-link" style={styles.mobileNavLink}>
+                SERVICES
+              </Link>
+            </div>
+            <div style={{ flex: 1, textAlign: 'center' }}>
+              <Link href="/shop" className="mobile-nav-link" style={styles.mobileNavLink}>
+                SHOP
+              </Link>
+            </div>
+            <div style={{ flex: 1, textAlign: 'right' }}>
+              <button
+                onClick={() => setIsCartOpen(true)}
+                className="mobile-cart-btn"
+                style={styles.mobileCartBtn}
+                aria-label="View Bag"
+              >
+                CART({cartCount})
+              </button>
+            </div>
           </div>
 
           {/* Desktop Homepage Header */}
@@ -117,43 +117,99 @@ export default function Header() {
 
   return (
     <header style={styles.header}>
-      <div className="container" style={styles.headerContainer}>
-        {/* Left: Brand Logo / Text Link */}
-        <Link href="/" style={styles.logoLink}>
-          <span style={styles.logoText}>the keepsake smith</span>
-        </Link>
+      <div className="container">
+        {/* Mobile Top Navbar matching Shop.png, Customize.png, Cart-1.png */}
+        <div
+          className="mobile-header-bar mobile-flex"
+          style={styles.mobileHeaderBar}
+        >
+          <div style={{ flex: 1, textAlign: 'left' }}>
+            <Link href="/#services" className="mobile-nav-link" style={styles.mobileNavLink}>
+              SERVICES
+            </Link>
+          </div>
+          <div style={{ flex: 1, textAlign: 'center' }}>
+            <Link href="/shop" className="mobile-nav-link" style={styles.mobileNavLink}>
+              SHOP
+            </Link>
+          </div>
+          <div style={{ flex: 1, textAlign: 'right' }}>
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="mobile-cart-btn"
+              style={styles.mobileCartBtn}
+              aria-label="View Bag"
+            >
+              CART({cartCount})
+            </button>
+          </div>
+        </div>
 
-        {/* Right Navigation Items */}
-        <nav style={styles.nav}>
-          <Link href="/#services" style={styles.navLink}>
-            SERVICES
+        {/* Desktop Header for non-homepage */}
+        <div className="desktop-only" style={styles.headerContainer}>
+          {/* Left: Brand Logo / Text Link */}
+          <Link href="/" style={styles.logoLink}>
+            <span style={styles.logoText}>the keepsake smith</span>
           </Link>
-          <Link href="/shop" style={styles.navLink}>
-            SHOP
-          </Link>
-          <Link href="/customize" style={styles.navLink}>
-            CUSTOM
-          </Link>
-          <Link href="/track" style={styles.navLink}>
-            TRACK
-          </Link>
-          <Link href="/faq" style={styles.navLink}>
-            FAQ
-          </Link>
-          <button
-            onClick={() => setIsCartOpen(true)}
-            style={styles.cartBtn}
-            aria-label="View Bag"
-          >
-            CART({cartCount})
-          </button>
-        </nav>
+
+          {/* Right Navigation Items */}
+          <nav style={styles.nav}>
+            <Link href="/#services" style={styles.navLink}>
+              SERVICES
+            </Link>
+            <Link href="/shop" style={styles.navLink}>
+              SHOP
+            </Link>
+            <Link href="/customize" style={styles.navLink}>
+              CUSTOM
+            </Link>
+            <Link href="/track" style={styles.navLink}>
+              TRACK
+            </Link>
+            <Link href="/faq" style={styles.navLink}>
+              FAQ
+            </Link>
+            <button
+              onClick={() => setIsCartOpen(true)}
+              style={styles.cartBtn}
+              aria-label="View Bag"
+            >
+              CART({cartCount})
+            </button>
+          </nav>
+        </div>
       </div>
     </header>
   );
 }
 
 const styles = {
+  mobileHeaderBar: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    padding: '1.2rem 0 0.5rem 0',
+  },
+  mobileNavLink: {
+    fontSize: '0.75rem',
+    fontWeight: '300',
+    letterSpacing: '0.12em',
+    color: '#C9C9C9',
+    textDecoration: 'none',
+    display: 'inline-block',
+  },
+  mobileCartBtn: {
+    fontSize: '0.75rem',
+    fontWeight: '300',
+    letterSpacing: '0.12em',
+    color: '#C9C9C9',
+    background: 'transparent',
+    border: 'none',
+    cursor: 'pointer',
+    padding: 0,
+    display: 'inline-block',
+  },
   homepageHeader: {
     width: '100%',
     paddingTop: '20px',

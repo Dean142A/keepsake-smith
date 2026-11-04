@@ -273,25 +273,6 @@ export default function CustomizePage() {
             Order Now
           </button>
         </div>
-
-        {/* Callout Section */}
-        <section style={styles.calloutBanner}>
-          <div style={{ flex: 1.2 }}>
-            <h2 className="heading-xl">
-              we <span className="metallic-pill-badge" /> know <br />
-              how to make this <br />
-              special
-            </h2>
-          </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'flex-start' }}>
-            <button
-              onClick={handleAddToCart}
-              className="btn-pill btn-pill-dark"
-            >
-              Order Now
-            </button>
-          </div>
-        </section>
       </div>
     </div>
   );

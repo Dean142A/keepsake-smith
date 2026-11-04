@@ -546,68 +546,6 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* =========================================================
-            CALLOUT BANNER ("we [badge] know how to make this special")
-            ========================================================= */}
-        {/* Mobile Callout Banner matching Home-1.png */}
-        <section className="mobile-only mobile-callout-wrap">
-          <h2 className="mobile-callout-title">
-            <span style={{ color: '#989898' }}>we </span>
-            <img
-              src="/glden.png"
-              alt="glden"
-              style={{
-                height: '0.62em',
-                width: 'auto',
-                display: 'inline-block',
-                verticalAlign: 'middle',
-                margin: '0 8px 4px 8px',
-                borderRadius: '9999px',
-              }}
-            />
-            <span style={{ color: '#989898' }}>know <br /></span>
-            <span style={{ color: '#D9D2C7' }}>how to make this <br />special</span>
-          </h2>
-          <div className="mobile-callout-bottom-row">
-            <p className="mobile-callout-desc">
-              this explains color systems and color usages so they are used the way to brand identity portrays
-            </p>
-            <Link href="/customize" className="btn-pill btn-pill-dark" style={{ padding: '0.65rem 1.8rem', fontSize: '0.85rem' }}>
-              Order Now
-            </Link>
-          </div>
-        </section>
-
-        {/* Desktop Callout Banner */}
-        <section className="desktop-only" style={styles.calloutBanner}>
-          <div style={{ flex: 1.2 }}>
-            <h2 className="heading-lg" style={{ fontSize: 'clamp(3.2rem, 7.2vw, 5.4rem)', fontWeight: '300', lineHeight: '1.05' }}>
-              <span style={{ color: '#989898' }}>we </span>
-              <img
-                src="/glden.png"
-                alt="glden"
-                style={{
-                  height: '0.65em',
-                  width: 'auto',
-                  display: 'inline-block',
-                  verticalAlign: 'middle',
-                  margin: '0 10px 4px 10px',
-                  borderRadius: '9999px',
-                }}
-              />
-              <span style={{ color: '#989898' }}>know how <br /></span>
-              <span style={{ color: '#D9D2C7' }}>to make this special</span>
-            </h2>
-          </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'flex-start' }}>
-            <Link href="/customize" className="btn-pill btn-pill-dark" style={{ padding: '0.8rem 2.2rem' }}>
-              Get Started
-            </Link>
-            <p className="text-muted" style={{ maxWidth: '380px' }}>
-              this explains color systems and color usages so they are used the way to brand identity portrays
-            </p>
-          </div>
-        </section>
       </div>
     </div>
   );

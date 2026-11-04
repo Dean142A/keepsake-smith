@@ -309,6 +309,24 @@ input, textarea, select {
     justify-content: space-between !important;
     width: 100% !important;
     padding: 1.2rem 0 0.5rem 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .mobile-header-bar > div {
+    display: flex;
+    align-items: center;
+  }
+
+  .mobile-header-bar > div:first-child {
+    justify-content: flex-start;
+  }
+
+  .mobile-header-bar > div:nth-child(2) {
+    justify-content: center;
+  }
+
+  .mobile-header-bar > div:last-child {
+    justify-content: flex-end;
   }
 
   .mobile-nav-link {

@@ -282,25 +282,6 @@ export default function ShopPage() {
             </button>
           ))}
         </div>
-
-        {/* Bottom Callout Banner */}
-        <section style={styles.bottomBanner}>
-          <div style={{ flex: 1.2 }}>
-            <h2 className="heading-xl">
-              we <span className="metallic-pill-badge" /> know <br />
-              how to make this <br />
-              special
-            </h2>
-          </div>
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1.5rem', alignItems: 'flex-start' }}>
-            <p className="text-muted">
-              this explains color systems and color usages so they are used the way to brand identity portrays
-            </p>
-            <Link href="/customize" className="btn-pill btn-pill-dark">
-              Order Now
-            </Link>
-          </div>
-        </section>
       </div>
     </div>
   );
