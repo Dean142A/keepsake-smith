@@ -31,53 +31,73 @@ export default function Header() {
   if (isHomepage) {
     return (
       <header style={styles.homepageHeader}>
-        <div className="container" style={styles.homepageHeaderContainer}>
-          {/* Left Column: Hero Title */}
-          <div style={styles.heroTitleCol}>
-            <h1 className="heading-xl" style={styles.heroTitle}>
-              <span style={{ color: '#989898' }}>we craft gifts that <br />are </span>
-              <span style={{ color: '#D9D2C7' }}>memorable.</span>
-            </h1>
+        <div className="container">
+          {/* Mobile Top Navbar matching Home-1.png */}
+          <div className="mobile-header-bar mobile-only">
+            <Link href="/#services" className="mobile-nav-link">
+              SERVICES
+            </Link>
+            <Link href="/shop" className="mobile-nav-link">
+              SHOP
+            </Link>
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="mobile-cart-btn"
+              aria-label="View Bag"
+            >
+              CART({cartCount})
+            </button>
           </div>
 
-          {/* Right Column: Navbar Links & Emblem Badge */}
-          <div style={styles.headerRightCol}>
-            <nav style={styles.nav}>
-              <Link href="/#services" style={styles.navLink}>
-                SERVICES
-              </Link>
-              <Link href="/shop" style={styles.navLink}>
-                SHOP
-              </Link>
-              <Link href="/customize" style={styles.navLink}>
-                CUSTOM
-              </Link>
-              <Link href="/track" style={styles.navLink}>
-                TRACK
-              </Link>
-              <Link href="/faq" style={styles.navLink}>
-                FAQ
-              </Link>
-              <button
-                onClick={() => setIsCartOpen(true)}
-                style={styles.cartBtn}
-                aria-label="View Bag"
-              >
-                CART({cartCount})
-              </button>
-            </nav>
+          {/* Desktop Homepage Header */}
+          <div className="desktop-header-row desktop-only" style={styles.homepageHeaderContainer}>
+            {/* Left Column: Hero Title */}
+            <div style={styles.heroTitleCol}>
+              <h1 className="heading-xl" style={styles.heroTitle}>
+                <span style={{ color: '#989898' }}>we craft gifts that <br />are </span>
+                <span style={{ color: '#D9D2C7' }}>memorable.</span>
+              </h1>
+            </div>
 
-            <div style={styles.emblemBadge}>
-              <img
-                src="/keepsake.svg"
-                alt="Keepsake Logo"
-                width="36"
-                height="36"
-                style={{ flexShrink: 0, opacity: 0.85 }}
-              />
-              <p style={styles.emblemSubtext}>
-                this explains color systems and color usages so they are used the way to brand identity portrays
-              </p>
+            {/* Right Column: Navbar Links & Emblem Badge */}
+            <div style={styles.headerRightCol}>
+              <nav style={styles.nav}>
+                <Link href="/#services" style={styles.navLink}>
+                  SERVICES
+                </Link>
+                <Link href="/shop" style={styles.navLink}>
+                  SHOP
+                </Link>
+                <Link href="/customize" style={styles.navLink}>
+                  CUSTOM
+                </Link>
+                <Link href="/track" style={styles.navLink}>
+                  TRACK
+                </Link>
+                <Link href="/faq" style={styles.navLink}>
+                  FAQ
+                </Link>
+                <button
+                  onClick={() => setIsCartOpen(true)}
+                  style={styles.cartBtn}
+                  aria-label="View Bag"
+                >
+                  CART({cartCount})
+                </button>
+              </nav>
+
+              <div style={styles.emblemBadge}>
+                <img
+                  src="/keepsake.svg"
+                  alt="Keepsake Logo"
+                  width="36"
+                  height="36"
+                  style={{ flexShrink: 0, opacity: 0.85 }}
+                />
+                <p style={styles.emblemSubtext}>
+                  this explains color systems and color usages so they are used the way to brand identity portrays
+                </p>
+              </div>
             </div>
           </div>
         </div>

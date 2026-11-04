@@ -3,9 +3,11 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useCart } from '@/context/CartContext';
 
 export default function Footer() {
   const pathname = usePathname();
+  const { cartCount, setIsCartOpen } = useCart();
 
   const isAdmin = pathname?.startsWith('/admin') || (
     typeof window !== 'undefined' && (
@@ -29,28 +31,63 @@ export default function Footer() {
   const mainSite = isPortal ? 'https://thekeepsakesmith.com' : '';
 
   return (
-    <footer style={styles.footer}>
+    <footer style={styles.footer} className="mobile-footer-wrap">
       <div className="container">
-        <div style={styles.navRow}>
-          <div style={styles.leftNav}>
-            <a href={`${mainSite}/#services`} style={styles.link}>SERVICES</a>
-            <a href={`${mainSite}/shop`} style={styles.link}>SHOP</a>
-            <a href={`${mainSite}/customize`} style={styles.link}>CUSTOM</a>
-            <a href={`${mainSite}/track`} style={styles.link}>TRACK ORDER</a>
-            <a href={`${mainSite}/faq`} style={styles.link}>FAQ / HELP</a>
+        {/* Mobile Footer Links matching Home-1.png */}
+        <div className="mobile-only">
+          <div className="mobile-footer-nav-1">
+            <a href={`${mainSite}/#services`} className="mobile-footer-link">SERVICES</a>
+            <a href={`${mainSite}/shop`} className="mobile-footer-link">SHOP</a>
+            <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="mobile-footer-link">INSTAGRAM</a>
+            <a href={`${mainSite}/customize`} className="mobile-footer-link">CUSTOM</a>
+            <button
+              onClick={() => setIsCartOpen(true)}
+              className="mobile-footer-link"
+              style={{ background: 'transparent', border: 'none', cursor: 'pointer', padding: 0 }}
+            >
+              CART({cartCount})
+            </button>
           </div>
-          <div style={styles.rightNav}>
-            <a href={`${mainSite}/#privacy`} style={styles.link}>PRIVACY</a>
-            <a href={`${mainSite}/#cookies`} style={styles.link}>COOKIES</a>
-            <a href={`${mainSite}/#returns`} style={styles.link}>RETURNS</a>
+
+          <div className="mobile-footer-nav-2">
+            <a href={`${mainSite}/#privacy`} className="mobile-footer-link">PRIVACY</a>
+            <a href={`${mainSite}/#cookies`} className="mobile-footer-link">COOKIES</a>
+            <a href={`${mainSite}/#returns`} className="mobile-footer-link">RETURNS</a>
+          </div>
+
+          <div style={styles.divider} />
+
+          <div className="mobile-footer-disclaimer">
+            this explains color systems and color usages so they are used the way to brand identity portrays this explains color
+            systems and color usages so they are used the way to brand identity portrays this explains color systems and color
+            usages so they are used the way to brand identity portrays this explains color systems and color usages so they are
+            used the....systems and color usages so they are used the.
           </div>
         </div>
 
-        <div style={styles.divider} />
+        {/* Desktop Footer Links */}
+        <div className="desktop-only">
+          <div style={styles.navRow}>
+            <div style={styles.leftNav}>
+              <a href={`${mainSite}/#services`} style={styles.link}>SERVICES</a>
+              <a href={`${mainSite}/shop`} style={styles.link}>SHOP</a>
+              <a href={`${mainSite}/customize`} style={styles.link}>CUSTOM</a>
+              <a href={`${mainSite}/track`} style={styles.link}>TRACK ORDER</a>
+              <a href={`${mainSite}/faq`} style={styles.link}>FAQ / HELP</a>
+            </div>
+            <div style={styles.rightNav}>
+              <a href={`${mainSite}/#privacy`} style={styles.link}>PRIVACY</a>
+              <a href={`${mainSite}/#cookies`} style={styles.link}>COOKIES</a>
+              <a href={`${mainSite}/#returns`} style={styles.link}>RETURNS</a>
+            </div>
+          </div>
 
-        <div style={styles.disclaimerText}>
-          this explains color systems and color usages so they are used the way to brand identity portrays.
-          systems and color usages so they are used the way to brand identity portrays.
+          <div style={styles.divider} />
+
+          <div style={styles.disclaimerText}>
+            this explains color systems and color usages so they are used the way to brand identity portrays.
+            systems and color usages so they are used the way to brand identity portrays.
+          </div>
         </div>
       </div>
     </footer>

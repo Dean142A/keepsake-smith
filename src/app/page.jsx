@@ -11,11 +11,66 @@ export default function HomePage() {
   const [qty1, setQty1] = useState(1);
   const [qty2, setQty2] = useState(1);
 
+  // Add-on product quantities
+  const [qtyAddon1, setQtyAddon1] = useState(1);
+  const [qtyAddon2, setQtyAddon2] = useState(1);
+  const [qtyAddon3, setQtyAddon3] = useState(1);
+
   return (
     <div style={styles.page}>
       <div className="container">
-        {/* HERO SECTION 1 */}
-        <section style={styles.heroSection}>
+        {/* =========================================================
+            MOBILE HERO SECTION (Figma Home-1.png strictly matched)
+            ========================================================= */}
+        <section className="mobile-only mobile-hero-wrap">
+          {/* 1. Hero Title */}
+          <h1 className="mobile-hero-title">
+            <span style={{ color: '#989898' }}>we craft gifts that <br />are </span>
+            <span style={{ color: '#D9D2C7' }}>memorable.</span>
+          </h1>
+
+          {/* 2. Subtext + Wood Accent + Emblem Row */}
+          <div className="mobile-hero-body-row">
+            <div className="mobile-hero-body-left">
+              <p className="mobile-hero-desc">
+                this explains color systems and color usages so they are used the way to brand identity portrays
+              </p>
+              <div className="mobile-hero-emblem-wrap">
+                <img
+                  src="/keepsake.svg"
+                  alt="Keepsake Emblem"
+                  width="34"
+                  height="34"
+                  style={{ opacity: 0.85 }}
+                />
+              </div>
+            </div>
+            <div className="mobile-hero-body-right">
+              <img
+                src="/wood-accent.png"
+                alt="Natural Wood Accent"
+                className="mobile-wood-accent-img"
+              />
+            </div>
+          </div>
+
+          {/* 3. Live Countdown Timer with Dots & Order Now */}
+          <CountdownTimer />
+
+          {/* 4. Storefront Hero Banner Card */}
+          <div className="mobile-hero-banner-card">
+            <img
+              src="/mobile-hero-banner.png"
+              alt="Maquette dé keepsake storefront"
+              className="mobile-hero-banner-img"
+            />
+          </div>
+        </section>
+
+        {/* =========================================================
+            DESKTOP HERO SECTION (Figma Home.png)
+            ========================================================= */}
+        <section className="desktop-only" style={styles.heroSection}>
           <div style={styles.heroTopContent}>
             {/* Live Countdown Timer */}
             <CountdownTimer />
@@ -31,8 +86,28 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* HERO SECTION 2 */}
-        <section style={styles.sectionPadding}>
+        {/* =========================================================
+            SECTION 2: "lets worry about the hard part." (Home-1.png)
+            ========================================================= */}
+        {/* Mobile Section 2 */}
+        <section className="mobile-only mobile-section-2-wrap" id="services">
+          <h2 className="mobile-section-2-title">
+            <span style={{ color: '#989898' }}>lets worry about <br />the </span>
+            <span style={{ color: '#D9D2C7' }}>hard part.</span>
+          </h2>
+          <p className="mobile-section-2-desc">
+            this explains color systems and color usages so they are used the way to brand identity portrays
+            this explains color systems and color usages so they are used the way to brand identity portrays
+            this explains color systems and color usages so they are used the way to brand identity portrays
+            this explains color systems and color usages so they are used the....
+          </p>
+          <Link href="/customize" className="btn-pill btn-pill-dark">
+            Order Now
+          </Link>
+        </section>
+
+        {/* Desktop Section 2 */}
+        <section className="desktop-only" style={styles.sectionPadding}>
           <div style={styles.twoColumnRow}>
             <h2 className="heading-lg" style={{ flex: 1, fontSize: 'clamp(3.2rem, 7.2vw, 5.4rem)', fontWeight: '300', lineHeight: '1.05' }}>
               <span style={{ color: '#989898' }}>we craft gifts that <br />are </span>
@@ -50,16 +125,22 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* FEATURED PRODUCTS */}
-        <section style={styles.sectionPadding}>
+        {/* =========================================================
+            FEATURED PRODUCTS
+            ========================================================= */}
+        <section style={styles.sectionPaddingResponsive}>
           <div style={styles.sectionHeaderRow}>
             <h3 style={styles.sectionLabel}>FEATURED PRODUCTS</h3>
-            <Link href="/shop" className="btn-pill">
+            <Link href="/shop" className="btn-pill desktop-only">
               Visit Shop
+            </Link>
+            <Link href="/shop" className="btn-pill mobile-only">
+              Order Now
             </Link>
           </div>
 
-          <div style={styles.productGrid2}>
+          {/* Desktop Product Grid (2 columns) */}
+          <div className="desktop-only" style={styles.productGrid2}>
             {/* Featured Product 1 */}
             <div style={styles.featuredCard}>
               <div style={styles.featuredImgWrapper}>
@@ -108,10 +189,116 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+
+          {/* Mobile Product Grid (1 column vertical stack matching Home-1.png) */}
+          <div className="mobile-only mobile-products-grid">
+            {/* Mobile Featured Product 1 */}
+            <div className="mobile-product-card">
+              <div className="mobile-product-img-wrap">
+                <img
+                  src="https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop"
+                  alt="Maquette dé keepsake"
+                  className="mobile-product-img"
+                />
+              </div>
+              <div style={styles.featuredFooter}>
+                <div>
+                  <div style={styles.priceTag}>NGN 30,000</div>
+                  <div style={styles.productTitle}>Handwritten Cards</div>
+                </div>
+                <div className="quantity-control">
+                  <button
+                    className="quantity-btn"
+                    onClick={() => {
+                      const next = qty1 + 1;
+                      setQty1(next);
+                      addToCart({
+                        id: 'feat-1',
+                        title: 'Handwritten Cards',
+                        subtitle: 'maquette dé keepsake',
+                        price: 30000,
+                        quantity: 1,
+                        image: 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
+                      });
+                    }}
+                  >
+                    +
+                  </button>
+                  <span className="quantity-val">{qty1}</span>
+                  <button className="quantity-btn" onClick={() => setQty1(Math.max(1, qty1 - 1))}>-</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Featured Product 2 */}
+            <div className="mobile-product-card">
+              <div className="mobile-product-img-wrap">
+                <img
+                  src="https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop"
+                  alt="Black Envelope Keepsake Card"
+                  className="mobile-product-img"
+                />
+              </div>
+              <div style={styles.featuredFooter}>
+                <div>
+                  <div style={styles.priceTag}>NGN 30,000</div>
+                  <div style={styles.productTitle}>Handwritten Cards</div>
+                </div>
+                <div className="quantity-control">
+                  <button
+                    className="quantity-btn"
+                    onClick={() => {
+                      const next = qty2 + 1;
+                      setQty2(next);
+                      addToCart({
+                        id: 'feat-2',
+                        title: 'Handwritten Cards',
+                        subtitle: 'black envelope keepsake',
+                        price: 30000,
+                        quantity: 1,
+                        image: 'https://images.unsplash.com/photo-1513519245088-0e12902e5a38?q=80&w=800&auto=format&fit=crop',
+                      });
+                    }}
+                  >
+                    +
+                  </button>
+                  <span className="quantity-val">{qty2}</span>
+                  <button className="quantity-btn" onClick={() => setQty2(Math.max(1, qty2 - 1))}>-</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
-        {/* BUDGET BANNER SECTION */}
-        <section style={styles.budgetBannerCard}>
+        {/* =========================================================
+            BUDGET BANNER SECTION ("unsure what to gift? just give us a budget.")
+            ========================================================= */}
+        {/* Mobile Budget Banner Card matching Home-1.png */}
+        <section className="mobile-only mobile-budget-card">
+          <h3 className="mobile-budget-title">
+            <span style={{ color: '#989898' }}>unsure what to <br />gift? </span>
+            <span style={{ color: '#D9D2C7' }}>just give us <br />a budget.</span>
+          </h3>
+          <p className="mobile-budget-desc">
+            this explains color systems and color usages so they are used the way to brand identity portrays
+            this explains color systems and color usages so they are used the way to brand identity portrays
+            this explains color systems and color usages so they are used the way to brand identity portrays
+            this explains color systems and color..
+          </p>
+          <Link href="/customize" className="btn-pill btn-pill-solid" style={{ alignSelf: 'flex-start', padding: '0.8rem 2.2rem' }}>
+            Order Now
+          </Link>
+          <div className="mobile-budget-img-wrap">
+            <img
+              src="/front-view-bouquet-flowers-vase-with-gift-boxes 1.png"
+              alt="Flower Bouquet & Gift Box"
+              className="mobile-budget-img"
+            />
+          </div>
+        </section>
+
+        {/* Desktop Budget Banner Card */}
+        <section className="desktop-only" style={styles.budgetBannerCard}>
           <div style={styles.budgetImgCol}>
             <img
               src="/front-view-bouquet-flowers-vase-with-gift-boxes 1.png"
@@ -134,16 +321,22 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* REGULAR ADD-ONS */}
-        <section style={styles.sectionPadding}>
+        {/* =========================================================
+            REGULAR ADD'ONS
+            ========================================================= */}
+        <section style={styles.sectionPaddingResponsive}>
           <div style={styles.sectionHeaderRow}>
             <h3 style={styles.sectionLabel}>REGULAR ADD'ONS</h3>
-            <Link href="/shop" className="btn-pill">
+            <Link href="/shop" className="btn-pill desktop-only">
               Visit Shop
+            </Link>
+            <Link href="/shop" className="btn-pill mobile-only">
+              Order Now
             </Link>
           </div>
 
-          <div style={styles.productGrid3}>
+          {/* Desktop Add-ons Grid */}
+          <div className="desktop-only" style={styles.productGrid3}>
             {/* Add-on 1 */}
             <div style={styles.addonCardItem}>
               <div style={styles.addonImgWrap}>
@@ -234,10 +427,159 @@ export default function HomePage() {
               </div>
             </div>
           </div>
+
+          {/* Mobile Add-ons Grid (1 column stack matching Home-1.png) */}
+          <div className="mobile-only mobile-addons-grid">
+            {/* Mobile Add-on 1: FLW - 23 */}
+            <div className="mobile-addon-card">
+              <div className="mobile-addon-img-wrap">
+                <img
+                  src="https://images.unsplash.com/photo-1563241527-3004b7be0ffd?q=80&w=600&auto=format&fit=crop"
+                  alt="Flower Bundle"
+                  className="mobile-addon-img"
+                />
+              </div>
+              <div style={styles.featuredFooter}>
+                <div>
+                  <div style={styles.priceTag}>FLW - 23</div>
+                  <div style={styles.productTitle}>Handwritten Cards</div>
+                </div>
+                <div className="quantity-control">
+                  <button
+                    className="quantity-btn"
+                    onClick={() => {
+                      const next = qtyAddon1 + 1;
+                      setQtyAddon1(next);
+                      addToCart({
+                        id: 'addon-flw-23',
+                        title: 'FLW - 23',
+                        subtitle: 'fresh floral arrangement',
+                        price: 15000,
+                        quantity: 1,
+                        image: 'https://images.unsplash.com/photo-1563241527-3004b7be0ffd?q=80&w=600&auto=format&fit=crop',
+                      });
+                    }}
+                  >
+                    +
+                  </button>
+                  <span className="quantity-val">{qtyAddon1}</span>
+                  <button className="quantity-btn" onClick={() => setQtyAddon1(Math.max(1, qtyAddon1 - 1))}>-</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Add-on 2: JWL - 17 */}
+            <div className="mobile-addon-card">
+              <div className="mobile-addon-img-wrap">
+                <img
+                  src="https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=600&auto=format&fit=crop"
+                  alt="Gold Rings Set"
+                  className="mobile-addon-img"
+                />
+              </div>
+              <div style={styles.featuredFooter}>
+                <div>
+                  <div style={styles.priceTag}>JWL - 17</div>
+                  <div style={styles.productTitle}>Handwritten Cards</div>
+                </div>
+                <div className="quantity-control">
+                  <button
+                    className="quantity-btn"
+                    onClick={() => {
+                      const next = qtyAddon2 + 1;
+                      setQtyAddon2(next);
+                      addToCart({
+                        id: 'addon-jwl-17',
+                        title: 'JWL - 17',
+                        subtitle: 'handcrafted 14k gold ring set',
+                        price: 26000,
+                        quantity: 1,
+                        image: 'https://images.unsplash.com/photo-1605100804763-247f67b3557e?q=80&w=600&auto=format&fit=crop',
+                      });
+                    }}
+                  >
+                    +
+                  </button>
+                  <span className="quantity-val">{qtyAddon2}</span>
+                  <button className="quantity-btn" onClick={() => setQtyAddon2(Math.max(1, qtyAddon2 - 1))}>-</button>
+                </div>
+              </div>
+            </div>
+
+            {/* Mobile Add-on 3: CHLTE - 36 */}
+            <div className="mobile-addon-card">
+              <div className="mobile-addon-img-wrap">
+                <img
+                  src="https://images.unsplash.com/photo-1549007994-cb92caebd54b?q=80&w=600&auto=format&fit=crop"
+                  alt="Artisan Chocolates"
+                  className="mobile-addon-img"
+                />
+              </div>
+              <div style={styles.featuredFooter}>
+                <div>
+                  <div style={styles.priceTag}>CHLTE - 36</div>
+                  <div style={styles.productTitle}>Handwritten Cards</div>
+                </div>
+                <div className="quantity-control">
+                  <button
+                    className="quantity-btn"
+                    onClick={() => {
+                      const next = qtyAddon3 + 1;
+                      setQtyAddon3(next);
+                      addToCart({
+                        id: 'addon-chlte-36',
+                        title: 'CHLTE - 36',
+                        subtitle: 'artisan dark cocoa block',
+                        price: 5900,
+                        quantity: 1,
+                        image: 'https://images.unsplash.com/photo-1549007994-cb92caebd54b?q=80&w=600&auto=format&fit=crop',
+                      });
+                    }}
+                  >
+                    +
+                  </button>
+                  <span className="quantity-val">{qtyAddon3}</span>
+                  <button className="quantity-btn" onClick={() => setQtyAddon3(Math.max(1, qtyAddon3 - 1))}>-</button>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
 
-        {/* CALLOUT BANNER */}
-        <section style={styles.calloutBanner}>
+        {/* =========================================================
+            CALLOUT BANNER ("we [badge] know how to make this special")
+            ========================================================= */}
+        {/* Mobile Callout Banner matching Home-1.png */}
+        <section className="mobile-only mobile-callout-wrap">
+          <h2 className="mobile-callout-title">
+            <span style={{ color: '#989898' }}>we </span>
+            <img
+              src="/glden.png"
+              alt="glden"
+              style={{
+                height: '0.62em',
+                width: 'auto',
+                display: 'inline-block',
+                verticalAlign: 'middle',
+                margin: '0 8px 4px 8px',
+                borderRadius: '9999px',
+              }}
+            />
+            <span style={{ color: '#989898' }}>know <br /></span>
+            <span style={{ color: '#D9D2C7' }}>how to make this <br />special</span>
+          </h2>
+          <div className="mobile-callout-bottom-row">
+            <p className="mobile-callout-desc">
+              this explains color systems and color usages so they are used the way to brand identity portrays
+            </p>
+            <Link href="/customize" className="btn-pill btn-pill-dark" style={{ padding: '0.65rem 1.8rem', fontSize: '0.85rem' }}>
+              Order Now
+            </Link>
+          </div>
+        </section>
+
+        {/* Desktop Callout Banner */}
+        <section className="desktop-only" style={styles.calloutBanner}>
           <div style={{ flex: 1.2 }}>
             <h2 className="heading-lg" style={{ fontSize: 'clamp(3.2rem, 7.2vw, 5.4rem)', fontWeight: '300', lineHeight: '1.05' }}>
               <span style={{ color: '#989898' }}>we </span>
@@ -298,7 +640,10 @@ const styles = {
     objectFit: 'cover',
   },
   sectionPadding: {
-    padding: '200px 0',
+    padding: '160px 0',
+  },
+  sectionPaddingResponsive: {
+    padding: 'clamp(3.5rem, 8vw, 120px) 0',
   },
   twoColumnRow: {
     display: 'flex',
@@ -311,10 +656,10 @@ const styles = {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: '2.5rem',
+    marginBottom: '2rem',
   },
   sectionLabel: {
-    fontSize: '0.8rem',
+    fontSize: '0.78rem',
     fontWeight: '300',
     letterSpacing: '0.12em',
     color: '#888888',
@@ -349,7 +694,7 @@ const styles = {
     alignItems: 'center',
   },
   priceTag: {
-    fontSize: '1.3rem',
+    fontSize: '1.25rem',
     color: '#FFFFFF',
     fontWeight: '300',
   },

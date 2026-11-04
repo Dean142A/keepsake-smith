@@ -65,44 +65,80 @@ export default function CountdownTimer() {
   const pad = (num) => String(num).padStart(2, '0');
 
   return (
-    <div style={styles.container}>
-      {/* Timer Block: Numbers directly over their respective labels */}
-      <div style={styles.timerBlock}>
-        {/* Hours Unit */}
-        <div style={styles.unitCol}>
-          <span style={styles.numDisplay}>{pad(timeLeft.hours)}</span>
-          <span style={styles.unitLabel}>hours</span>
+    <>
+      {/* Mobile Countdown Timer Layout matching Home-1.png */}
+      <div className="mobile-only" style={{ width: '100%' }}>
+        <div className="mobile-carousel-dots">
+          <span className="mobile-dot dim" />
+          <span className="mobile-dot active" />
+          <span className="mobile-dot dim" />
         </div>
+        <div className="mobile-timer-row">
+          <div className="mobile-timer-digits">
+            <div className="mobile-timer-col">
+              <span className="mobile-num">{pad(timeLeft.hours)}</span>
+              <span className="mobile-lbl">Hours</span>
+            </div>
+            <span className="mobile-colon">:</span>
+            <div className="mobile-timer-col">
+              <span className="mobile-num">{pad(timeLeft.minutes)}</span>
+              <span className="mobile-lbl">Minutes</span>
+            </div>
+            <span className="mobile-colon">:</span>
+            <div className="mobile-timer-col">
+              <span className="mobile-num">{pad(timeLeft.seconds)}</span>
+              <span className="mobile-lbl">Seconds</span>
+            </div>
+          </div>
 
-        <span style={styles.colon}>:</span>
-
-        {/* Minutes Unit */}
-        <div style={styles.unitCol}>
-          <span style={styles.numDisplay}>{pad(timeLeft.minutes)}</span>
-          <span style={styles.unitLabel}>minutes</span>
-        </div>
-
-        <span style={styles.colon}>:</span>
-
-        {/* Seconds Unit */}
-        <div style={styles.unitCol}>
-          <span style={styles.numDisplay}>{pad(timeLeft.seconds)}</span>
-          <span style={styles.unitLabel}>seconds</span>
+          <Link href="/shop" className="btn-pill btn-pill-dark mobile-order-btn">
+            Order Now
+          </Link>
         </div>
       </div>
 
-      {/* Pagination Carousel Dots */}
-      <div style={styles.dotsIndicator}>
-        <span style={{ ...styles.dot, opacity: 0.3 }} />
-        <span style={{ ...styles.dot, opacity: 1 }} />
-        <span style={{ ...styles.dot, opacity: 0.3 }} />
-      </div>
+      {/* Desktop Countdown Timer Layout */}
+      <div className="desktop-only" style={{ width: '100%' }}>
+        <div style={styles.container}>
+          {/* Timer Block: Numbers directly over their respective labels */}
+          <div style={styles.timerBlock}>
+            {/* Hours Unit */}
+            <div style={styles.unitCol}>
+              <span style={styles.numDisplay}>{pad(timeLeft.hours)}</span>
+              <span style={styles.unitLabel}>hours</span>
+            </div>
 
-      {/* Order Now CTA Pill Button */}
-      <Link href="/shop" className="btn-pill btn-pill-dark" style={styles.orderBtn}>
-        Order Now
-      </Link>
-    </div>
+            <span style={styles.colon}>:</span>
+
+            {/* Minutes Unit */}
+            <div style={styles.unitCol}>
+              <span style={styles.numDisplay}>{pad(timeLeft.minutes)}</span>
+              <span style={styles.unitLabel}>minutes</span>
+            </div>
+
+            <span style={styles.colon}>:</span>
+
+            {/* Seconds Unit */}
+            <div style={styles.unitCol}>
+              <span style={styles.numDisplay}>{pad(timeLeft.seconds)}</span>
+              <span style={styles.unitLabel}>seconds</span>
+            </div>
+          </div>
+
+          {/* Pagination Carousel Dots */}
+          <div style={styles.dotsIndicator}>
+            <span style={{ ...styles.dot, opacity: 0.3 }} />
+            <span style={{ ...styles.dot, opacity: 1 }} />
+            <span style={{ ...styles.dot, opacity: 0.3 }} />
+          </div>
+
+          {/* Order Now CTA Pill Button */}
+          <Link href="/shop" className="btn-pill btn-pill-dark" style={styles.orderBtn}>
+            Order Now
+          </Link>
+        </div>
+      </div>
+    </>
   );
 }
 
