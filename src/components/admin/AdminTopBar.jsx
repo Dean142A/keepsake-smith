@@ -33,7 +33,7 @@ export default function AdminTopBar({
   }, []);
 
   return (
-    <header className="h-[64px] md:h-[72px] bg-white dark:bg-neutral-900 border-b border-neutral-200/60 dark:border-neutral-800 flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-30 transition-colors">
+    <header className="h-[64px] md:h-[70px] bg-white dark:bg-[#101217] border-b border-neutral-200/80 dark:border-neutral-800 flex items-center justify-between px-4 md:px-8 flex-shrink-0 z-30 transition-colors shadow-xs">
       <div className="flex items-center gap-3 md:gap-6 flex-1 min-w-0">
         {/* Mobile Hamburger */}
         <button

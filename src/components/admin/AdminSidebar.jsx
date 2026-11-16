@@ -34,17 +34,17 @@ export default function AdminSidebar({
   user,
 }) {
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-neutral-900 border-r border-neutral-200/60 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 select-none">
+    <div className="flex flex-col h-full bg-white dark:bg-[#101217] border-r border-neutral-200/80 dark:border-neutral-800 text-neutral-900 dark:text-neutral-100 select-none">
       {/* Brand Header */}
-      <div className="p-5 flex items-center gap-3">
-        <div className="w-9 h-9 rounded-full bg-accent-soft flex items-center justify-center text-accent flex-shrink-0">
-          <Package size={20} />
+      <div className="p-5 flex items-center gap-3 border-b border-neutral-100 dark:border-neutral-800/60 mb-2">
+        <div className="w-9 h-9 rounded-full bg-accent-soft flex items-center justify-center text-accent flex-shrink-0 shadow-xs">
+          <Package size={19} />
         </div>
         <div className="min-w-0">
-          <span className="font-bold text-base tracking-[-0.035em] block truncate leading-tight">
+          <span className="font-bold text-sm tracking-[-0.03em] block truncate leading-tight text-neutral-900 dark:text-white">
             Keepsake Ops
           </span>
-          <span className="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase tracking-[0.08em] block">
+          <span className="text-[10px] text-neutral-400 dark:text-neutral-500 uppercase tracking-[0.08em] block mt-0.5 font-mono">
             Admin Console
           </span>
         </div>
