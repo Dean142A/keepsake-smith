@@ -52,6 +52,7 @@ jobs:
       # Trigger rolling deployment on Bunny.net Magic Containers when credentials are set
       - name: Trigger Rolling Update on Bunny Magic Containers
         if: ${{ env.BUNNY_API_KEY != '' && env.BUNNY_APP_ID != '' }}
+        continue-on-error: true
         uses: BunnyWay/actions/container-update-image@main
         env:
           BUNNY_API_KEY: ${{ secrets.BUNNYNET_API_KEY }}
@@ -59,6 +60,6 @@ jobs:
         with:
           app_id: ${{ vars.APP_ID }}
           api_key: ${{ secrets.BUNNYNET_API_KEY }}
-          container: nodejs
+          container: app
           image_tag: ${{ github.sha }}
 
