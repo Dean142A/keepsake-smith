@@ -16,14 +16,13 @@ export function middleware(request) {
     return NextResponse.next();
   }
 
-  const isAdminSubdomain = hostname.startsWith('admin.');
-  const isWebSubdomain = hostname.startsWith('web.') || hostname.startsWith('app.');
+  const isAdminHost = hostname === 'admin.thekeepsakesmith.com' || hostname.startsWith('admin.');
+  const isAppHost = hostname === 'app.thekeepsakesmith.com' || hostname.startsWith('app.') || hostname.startsWith('web.');
   const isLocalhost = hostname === 'localhost' || hostname === '127.0.0.1';
 
-  // 1. Requests to admin.thekeepsakesmith.com (or admin.localhost)
-  if (isAdminSubdomain) {
+  // 1. admin.thekeepsakesmith.com
+  if (isAdminHost) {
     if (pathname === '/') {
-      // Rewrite root to /admin for the admin dashboard
       const url = request.nextUrl.clone();
       url.pathname = '/admin';
       return NextResponse.rewrite(url);
@@ -31,31 +30,23 @@ export function middleware(request) {
     return NextResponse.next();
   }
 
-  // 2. Requests to web.* or the root storefront domain
-  // Security rule: block direct /admin navigation on public/web domains in production
+  // 2. Redirect apex domain (thekeepsakesmith.com / www) to app.thekeepsakesmith.com in production
+  if (!isLocalhost && (hostname === 'thekeepsakesmith.com' || hostname === 'www.thekeepsakesmith.com')) {
+    const appUrl = new URL(pathname + request.nextUrl.search, 'https://app.thekeepsakesmith.com');
+    return NextResponse.redirect(appUrl, { status: 301 });
+  }
+
+  // 3. app.thekeepsakesmith.com (or local development)
+  // Security rule: block direct /admin navigation on app domain in production
   if (!isLocalhost && pathname.startsWith('/admin')) {
-    // Redirect to the dedicated admin subdomain
-    const adminUrl = new URL(pathname, `https://admin.thekeepsakesmith.com`);
+    const adminUrl = new URL(pathname + request.nextUrl.search, 'https://admin.thekeepsakesmith.com');
     return NextResponse.redirect(adminUrl, { status: 307 });
   }
 
-  // 3. On web. or app. or main domain:
-  // Root / is the 3D Keepsake Portal
-  if (pathname === '/') {
-    return NextResponse.next();
-  }
-
+  // On app.thekeepsakesmith.com, root / is the 3D Keepsake Portal
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
