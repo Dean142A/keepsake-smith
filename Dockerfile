@@ -1,17 +1,49 @@
-FROM node:22-alpine AS base
+# Multi-stage Dockerfile for Next.js Standalone
+# Compatible with Bunny.net Magic Containers and local Docker Compose
 
+# 1. Dependencies Stage
+FROM node:22-alpine AS deps
+RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
 COPY package*.json ./
 RUN npm ci
 
-ARG CACHEBUST=1
+# 2. Builder Stage
+FROM node:22-alpine AS builder
+WORKDIR /app
+
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-ENV NEXT_TELEMETRY_DISABLED 1
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
 
 RUN npm run build
 
+# 3. Runner Stage
+FROM node:22-alpine AS runner
+WORKDIR /app
+
+ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME="0.0.0.0"
+
+# Don't run production as root
+RUN addgroup --system --gid 1001 nodejs
+RUN adduser --system --uid 1001 nextjs
+
+# Copy static assets and standalone bundle
+COPY --from=builder /app/public ./public
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Persistent data directory for orders.json
+COPY --from=builder --chown=nextjs:nodejs /app/src/data ./src/data
+
+USER nextjs
+
 EXPOSE 3000
 
-CMD ["npm", "start"]
+CMD ["node", "server.js"]

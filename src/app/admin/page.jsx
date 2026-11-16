@@ -24,6 +24,137 @@ export default function AdminDashboardPage() {
   const [pkgAudio, setPkgAudio] = useState('');
   const [savingPkgAssets, setSavingPkgAssets] = useState(false);
 
+  // Manual Gift Order Creation State
+  const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
+  const [newPurchaserName, setNewPurchaserName] = useState('');
+  const [newPurchaserEmail, setNewPurchaserEmail] = useState('');
+  const [newRecipientName, setNewRecipientName] = useState('');
+  const [newRecipientEmail, setNewRecipientEmail] = useState('');
+  const [newNote, setNewNote] = useState('');
+  const [newPhotoUrl, setNewPhotoUrl] = useState('');
+  const [newAudioUrl, setNewAudioUrl] = useState('');
+  const [newFulfillment, setNewFulfillment] = useState('digital_physical');
+  const [newSendEmail, setNewSendEmail] = useState(true);
+  const [creatingOrder, setCreatingOrder] = useState(false);
+
+  // Daily CSV Import State
+  const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
+  const [csvText, setCsvText] = useState('');
+  const [importingCsv, setImportingCsv] = useState(false);
+  const [csvResults, setCsvResults] = useState(null);
+
+  const handleCreateOrder = async (e) => {
+    e.preventDefault();
+    if (!newPurchaserName && !newRecipientName) {
+      setStatusMsg('Please enter either purchaser or recipient name.');
+      return;
+    }
+    setCreatingOrder(true);
+    try {
+      const res = await fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          purchaserName: newPurchaserName,
+          purchaserEmail: newPurchaserEmail,
+          recipientName: newRecipientName,
+          recipientEmail: newRecipientEmail,
+          personalizationNote: newNote,
+          customPhoto: newPhotoUrl,
+          audioUrl: newAudioUrl,
+          fulfillmentType: newFulfillment,
+          sendNotification: newSendEmail,
+        }),
+      });
+      const data = await res.json();
+      if (data.success && data.order) {
+        setStatusMsg(`Order created! Generated Access Code: ${data.order.accessCode}`);
+        setIsAddOrderOpen(false);
+        setNewPurchaserName('');
+        setNewPurchaserEmail('');
+        setNewRecipientName('');
+        setNewRecipientEmail('');
+        setNewNote('');
+        setNewPhotoUrl('');
+        setNewAudioUrl('');
+        fetchData();
+      } else {
+        setStatusMsg(data.error || 'Failed to create order');
+      }
+    } catch (err) {
+      console.error(err);
+      setStatusMsg('Error creating order');
+    } finally {
+      setCreatingOrder(false);
+    }
+  };
+
+  const handleCsvFileUpload = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      setCsvText(evt.target.result || '');
+    };
+    reader.readAsText(file);
+  };
+
+  const handleProcessCsvImport = async () => {
+    if (!csvText.trim()) {
+      setStatusMsg('Please paste or upload CSV data first.');
+      return;
+    }
+    setImportingCsv(true);
+    try {
+      const lines = csvText.trim().split('\n');
+      if (lines.length < 2) {
+        setStatusMsg('CSV must contain a header row and at least 1 record.');
+        setImportingCsv(false);
+        return;
+      }
+      const headers = lines[0].split(',').map((h) => h.trim().toLowerCase().replace(/["']/g, ''));
+      const items = [];
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
+        const row = {};
+        headers.forEach((h, idx) => {
+          let val = (values[idx] || '').trim().replace(/^["']|["']$/g, '');
+          if (h.includes('purchaser_name') || h === 'purchaser') row.purchaserName = val;
+          else if (h.includes('purchaser_email')) row.purchaserEmail = val;
+          else if (h.includes('recipient_name') || h === 'recipient') row.recipientName = val;
+          else if (h.includes('recipient_email')) row.recipientEmail = val;
+          else if (h.includes('note') || h.includes('message')) row.personalizationNote = val;
+          else if (h.includes('photo')) row.customPhoto = val;
+          else if (h.includes('audio')) row.audioUrl = val;
+        });
+        if (row.purchaserName || row.recipientName) {
+          items.push(row);
+        }
+      }
+
+      const res = await fetch('/api/admin/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bulk: true, items }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setCsvResults(data.createdOrders || []);
+        setStatusMsg(`Successfully imported ${data.count} gift orders!`);
+        fetchData();
+      } else {
+        setStatusMsg(data.error || 'Failed to import CSV');
+      }
+    } catch (err) {
+      console.error(err);
+      setStatusMsg('Error processing CSV import');
+    } finally {
+      setImportingCsv(false);
+    }
+  };
+
   const handleOpenOrderDetails = (ord) => {
     setViewingOrder(ord);
     setPkgUrl(ord ? (ord.packageUrl || '') : '');
@@ -692,6 +823,51 @@ export default function AdminDashboardPage() {
 
           {/* Right Action Group */}
           <div style={styles.rightActions}>
+            {activeTab === 'orders' && (
+              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setIsAddOrderOpen(true)}
+                  style={{
+                    fontSize: '0.8rem',
+                    padding: '0.45rem 1.1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: '#C5A059',
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: '9999px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Plus size={14} /> Add Gift Order
+                </button>
+                <button
+                  onClick={() => {
+                    setCsvResults(null);
+                    setCsvText('');
+                    setIsCsvModalOpen(true);
+                  }}
+                  style={{
+                    fontSize: '0.8rem',
+                    padding: '0.45rem 1.1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                    color: '#FFF',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                    borderRadius: '9999px',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <Upload size={14} /> Upload Daily CSV
+                </button>
+              </div>
+            )}
+
             {activeTab === 'products' && (
               <button
                 onClick={() => {
@@ -795,10 +971,52 @@ export default function AdminDashboardPage() {
         {/* ORDERS CRM QUEUE TAB */}
         {activeTab === 'orders' && (
           <div>
-            <div style={styles.pageTitleRow}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
               <div>
                 <h1 style={styles.headingTitle}>Orders Queue & Access Codes CRM</h1>
                 <p style={styles.headingSub}>Classify physical card shipments vs digital 3D portal orders, manage access codes & fulfillment</p>
+              </div>
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+                <button
+                  onClick={() => setIsAddOrderOpen(true)}
+                  style={{
+                    backgroundColor: '#C5A059',
+                    color: '#000',
+                    border: 'none',
+                    borderRadius: '9999px',
+                    padding: '0.55rem 1.3rem',
+                    fontSize: '0.85rem',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <Plus size={15} /> Add Gift Order
+                </button>
+                <button
+                  onClick={() => {
+                    setCsvResults(null);
+                    setCsvText('');
+                    setIsCsvModalOpen(true);
+                  }}
+                  style={{
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    color: '#C5A059',
+                    border: '1px solid #C5A059',
+                    borderRadius: '9999px',
+                    padding: '0.55rem 1.3rem',
+                    fontSize: '0.85rem',
+                    fontWeight: '500',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                  }}
+                >
+                  <Upload size={15} /> Upload Daily CSV
+                </button>
               </div>
             </div>
 
@@ -2088,6 +2306,274 @@ export default function AdminDashboardPage() {
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: ADD NEW GIFT ORDER MANUALLY */}
+        {isAddOrderOpen && (
+          <div style={styles.modalOverlay} onClick={() => setIsAddOrderOpen(false)}>
+            <div style={{ ...styles.modalContent, maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.modalHeader}>
+                <div>
+                  <h2 style={styles.modalTitle}>Create New Gift Order</h2>
+                  <div style={{ fontSize: '0.78rem', color: '#888', marginTop: '4px' }}>
+                    Generate an access code and setup personalized 3D experience assets
+                  </div>
+                </div>
+                <button onClick={() => setIsAddOrderOpen(false)} style={styles.closeBtn}>
+                  <X size={18} color="#AAA" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateOrder} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Purchaser Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newPurchaserName}
+                      onChange={(e) => setNewPurchaserName(e.target.value)}
+                      placeholder="e.g. Arthur Vance"
+                      style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.85rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Purchaser Email</label>
+                    <input
+                      type="email"
+                      value={newPurchaserEmail}
+                      onChange={(e) => setNewPurchaserEmail(e.target.value)}
+                      placeholder="arthur@example.com"
+                      style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.85rem' }}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Recipient Name *</label>
+                    <input
+                      type="text"
+                      required
+                      value={newRecipientName}
+                      onChange={(e) => setNewRecipientName(e.target.value)}
+                      placeholder="e.g. Eleanor Vance"
+                      style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.85rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Recipient Email</label>
+                    <input
+                      type="email"
+                      value={newRecipientEmail}
+                      onChange={(e) => setNewRecipientEmail(e.target.value)}
+                      placeholder="eleanor@example.com"
+                      style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.85rem' }}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Personalization & Dedication Letter</label>
+                  <textarea
+                    value={newNote}
+                    onChange={(e) => setNewNote(e.target.value)}
+                    rows={3}
+                    placeholder="To Eleanor, every moment we share is a chapter I want to revisit forever..."
+                    style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.85rem', resize: 'vertical' }}
+                  />
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Custom Photo URL</label>
+                    <input
+                      type="text"
+                      value={newPhotoUrl}
+                      onChange={(e) => setNewPhotoUrl(e.target.value)}
+                      placeholder="https://... (or leave blank for default)"
+                      style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.85rem' }}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Fulfillment Classification</label>
+                    <select
+                      value={newFulfillment}
+                      onChange={(e) => setNewFulfillment(e.target.value)}
+                      style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.85rem' }}
+                    >
+                      <option value="digital_physical">Physical Card & 3D Experience</option>
+                      <option value="digital_only">Digital 3D Portal Only</option>
+                      <option value="physical_card">Physical Card Only</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '0.5rem' }}>
+                  <input
+                    type="checkbox"
+                    id="newSendEmail"
+                    checked={newSendEmail}
+                    onChange={(e) => setNewSendEmail(e.target.checked)}
+                  />
+                  <label htmlFor="newSendEmail" style={{ fontSize: '0.78rem', color: '#CCC', cursor: 'pointer' }}>
+                    Send "3D Keepsake Access Code Ready" email immediately if email is provided
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1rem' }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddOrderOpen(false)}
+                    style={{ padding: '0.6rem 1.2rem', backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#FFF', borderRadius: '9999px', cursor: 'pointer' }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={creatingOrder}
+                    style={{ padding: '0.6rem 1.6rem', backgroundColor: '#C5A059', color: '#000', border: 'none', borderRadius: '9999px', fontWeight: '600', cursor: 'pointer' }}
+                  >
+                    {creatingOrder ? 'Creating...' : 'Create Order & Generate Code'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* MODAL: BULK UPLOAD DAILY CSV */}
+        {isCsvModalOpen && (
+          <div style={styles.modalOverlay} onClick={() => setIsCsvModalOpen(false)}>
+            <div style={{ ...styles.modalContent, maxWidth: '640px' }} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.modalHeader}>
+                <div>
+                  <h2 style={styles.modalTitle}>Upload Daily Orders CSV</h2>
+                  <div style={{ fontSize: '0.78rem', color: '#888', marginTop: '4px' }}>
+                    Batch create orders and automatically generate 12-character access codes
+                  </div>
+                </div>
+                <button onClick={() => setIsCsvModalOpen(false)} style={styles.closeBtn}>
+                  <X size={18} color="#AAA" />
+                </button>
+              </div>
+
+              {!csvResults ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div style={{ padding: '0.85rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(197, 160, 89, 0.25)', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '0.78rem', color: '#C5A059', fontWeight: '600', marginBottom: '4px' }}>
+                      ✦ Expected CSV Columns:
+                    </div>
+                    <code style={{ fontSize: '0.72rem', color: '#AAA', wordBreak: 'break-all' }}>
+                      purchaser_name,purchaser_email,recipient_name,recipient_email,message,photo_url
+                    </code>
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '6px' }}>
+                      Option A: Select CSV File from Computer
+                    </label>
+                    <input
+                      type="file"
+                      accept=".csv,text/csv"
+                      onChange={handleCsvFileUpload}
+                      style={{ fontSize: '0.8rem', color: '#CCC' }}
+                    />
+                  </div>
+
+                  <div>
+                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '6px' }}>
+                      Option B: Paste Raw CSV Text
+                    </label>
+                    <textarea
+                      value={csvText}
+                      onChange={(e) => setCsvText(e.target.value)}
+                      rows={6}
+                      placeholder={`purchaser_name,purchaser_email,recipient_name,recipient_email,message\nArthur Vance,arthur@example.com,Eleanor Vance,eleanor@example.com,"Happy Anniversary, my love."`}
+                      style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8rem', fontFamily: 'monospace' }}
+                    />
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '0.5rem' }}>
+                    <button
+                      type="button"
+                      onClick={() => setIsCsvModalOpen(false)}
+                      style={{ padding: '0.6rem 1.2rem', backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#FFF', borderRadius: '9999px', cursor: 'pointer' }}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="button"
+                      disabled={importingCsv || !csvText.trim()}
+                      onClick={handleProcessCsvImport}
+                      style={{ padding: '0.6rem 1.6rem', backgroundColor: '#C5A059', color: '#000', border: 'none', borderRadius: '9999px', fontWeight: '600', cursor: 'pointer' }}
+                    >
+                      {importingCsv ? 'Processing...' : 'Import & Generate Codes'}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+                  <div style={{ padding: '1rem', backgroundColor: 'rgba(80, 200, 120, 0.1)', border: '1px solid rgba(80, 200, 120, 0.3)', borderRadius: '8px', textAlign: 'center' }}>
+                    <CheckCircle size={28} color="#50C878" style={{ margin: '0 auto 6px auto' }} />
+                    <div style={{ fontSize: '0.95rem', color: '#50C878', fontWeight: '600' }}>
+                      Successfully Generated {csvResults.length} Orders!
+                    </div>
+                    <div style={{ fontSize: '0.78rem', color: '#AAA', marginTop: '4px' }}>
+                      All access codes have been created and queued in the production vault.
+                    </div>
+                  </div>
+
+                  <div style={{ maxHeight: '240px', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.1)' }}>
+                    <table style={{ width: '100%', fontSize: '0.75rem', textAlign: 'left', borderCollapse: 'collapse' }}>
+                      <thead>
+                        <tr style={{ backgroundColor: '#0F0F0F', color: '#888' }}>
+                          <th style={{ padding: '6px 10px' }}>Order ID</th>
+                          <th style={{ padding: '6px 10px' }}>Recipient</th>
+                          <th style={{ padding: '6px 10px' }}>Access Code</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {csvResults.map((r) => (
+                          <tr key={r.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                            <td style={{ padding: '6px 10px', color: '#CCC' }}>{r.id}</td>
+                            <td style={{ padding: '6px 10px', color: '#FFF' }}>{r.recipientName}</td>
+                            <td style={{ padding: '6px 10px', color: '#C5A059', fontFamily: 'monospace' }}>{r.accessCode}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const csvHeader = 'Order ID,Purchaser,Recipient,Access Code,Status\n';
+                        const csvData = csvResults.map((r) => `"${r.id}","${r.purchaserName}","${r.recipientName}","${r.accessCode}","${r.status}"`).join('\n');
+                        const blob = new Blob([csvHeader + csvData], { type: 'text/csv' });
+                        const url = URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `keepsake-access-codes-${Date.now()}.csv`;
+                        a.click();
+                      }}
+                      style={{ padding: '0.6rem 1.4rem', backgroundColor: '#C5A059', color: '#000', border: 'none', borderRadius: '9999px', fontWeight: '600', cursor: 'pointer' }}
+                    >
+                      Download CSV with Access Codes
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsCsvModalOpen(false)}
+                      style={{ padding: '0.6rem 1.2rem', backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#FFF', borderRadius: '9999px', cursor: 'pointer' }}
+                    >
+                      Done
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

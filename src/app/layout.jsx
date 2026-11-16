@@ -1,5 +1,4 @@
 import './globals.css';
-import { CartProvider } from '@/context/CartContext';
 import ClientLayoutWrapper from '@/components/ClientLayoutWrapper';
 
 export const metadata = {
@@ -97,9 +96,7 @@ export default function RootLayout({ children }) {
         />
       </head>
       <body>
-        <CartProvider>
-          <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
-        </CartProvider>
+        <ClientLayoutWrapper>{children}</ClientLayoutWrapper>
       </body>
     </html>
   );

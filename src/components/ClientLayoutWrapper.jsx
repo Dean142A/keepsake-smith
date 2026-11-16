@@ -4,13 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
-import CartDrawer from '@/components/CartDrawer';
-import { useCart } from '@/context/CartContext';
 
 export default function ClientLayoutWrapper({ children }) {
   const pathname = usePathname();
   const [isAdmin, setIsAdmin] = useState(false);
-  const { toast, setIsCartOpen } = useCart();
 
   useEffect(() => {
     const checkAdmin = () => {
@@ -23,33 +20,13 @@ export default function ClientLayoutWrapper({ children }) {
     };
 
     checkAdmin();
-
-    // Noticeable Smooth Scrolling Handler for internal anchors
-    const handleAnchorClick = (e) => {
-      const target = e.target.closest('a');
-      if (!target) return;
-      const href = target.getAttribute('href');
-      if (href && href.startsWith('#') && href.length > 1) {
-        const elem = document.querySelector(href);
-        if (elem) {
-          e.preventDefault();
-          elem.scrollIntoView({
-            behavior: 'smooth',
-            block: 'start',
-          });
-        }
-      }
-    };
-
-    document.addEventListener('click', handleAnchorClick);
-    return () => document.removeEventListener('click', handleAnchorClick);
   }, [pathname]);
 
   const isPathAdmin = pathname?.startsWith('/admin');
-  const hideStorefrontLayout = isPathAdmin || isAdmin;
+  const hidePortalLayout = isPathAdmin || isAdmin;
 
-  if (hideStorefrontLayout) {
-    // Admin routes render ONLY the main dashboard page (which contains its own dedicated Admin Header)
+  if (hidePortalLayout) {
+    // Admin routes render directly with their own dedicated admin header/navigation
     return <main>{children}</main>;
   }
 
@@ -57,21 +34,7 @@ export default function ClientLayoutWrapper({ children }) {
     <>
       <Header />
       <main>{children}</main>
-      <CartDrawer />
       <Footer />
-      {toast && (
-        <div
-          className="cart-toast-pill"
-          onClick={() => setIsCartOpen(true)}
-          role="status"
-          aria-live="polite"
-        >
-          <div className="toast-dot" />
-          <span>{toast.message}</span>
-          <span className="toast-action">View Bag →</span>
-        </div>
-      )}
     </>
   );
 }
-

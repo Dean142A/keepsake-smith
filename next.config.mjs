@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   reactStrictMode: true,
   images: {
     remotePatterns: [
@@ -7,16 +8,25 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'images.unsplash.com',
       },
+      {
+        protocol: 'https',
+        hostname: '*.thekeepsakesmith.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '*.b-cdn.net',
+      },
     ],
   },
   async headers() {
     return [
       {
+        // Global security headers
         source: '/:path*',
         headers: [
           {
             key: 'X-Frame-Options',
-            value: 'DENY',
+            value: 'SAMEORIGIN',
           },
           {
             key: 'X-Content-Type-Options',
@@ -36,9 +46,26 @@ const nextConfig = {
           },
         ],
       },
+      {
+        // CORS headers for 3D textures, assets, and APIs across domains
+        source: '/(textures|audios|api)/:path*',
+        headers: [
+          {
+            key: 'Access-Control-Allow-Origin',
+            value: '*',
+          },
+          {
+            key: 'Access-Control-Allow-Methods',
+            value: 'GET, POST, PUT, OPTIONS',
+          },
+          {
+            key: 'Access-Control-Allow-Headers',
+            value: 'Content-Type, Authorization',
+          },
+        ],
+      },
     ];
   },
 };
 
 export default nextConfig;
-
