@@ -26,8 +26,8 @@ function AdminPortalInner() {
   const [globalSearch, setGlobalSearch] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Theme & Styling State
-  const [darkMode, setDarkMode] = useState(false);
+  // Theme & Styling State (Default to Dark Theme for signature TeleFlow/Keepsake look)
+  const [darkMode, setDarkMode] = useState(true);
   const [accentColor, setAccentColor] = useState('#10b981'); // TeleFlow Emerald default
 
   // Data State
@@ -89,11 +89,12 @@ function AdminPortalInner() {
   // 3. Theme & Accent Syncing
   useEffect(() => {
     if (typeof window !== 'undefined') {
-      const savedDark = localStorage.getItem('tf_dark_mode') === 'true';
+      const savedDark = localStorage.getItem('tf_dark_mode');
+      const isDark = savedDark === null ? true : savedDark === 'true'; // Default to true if not set!
       const savedAccent = localStorage.getItem('tf_accent_color') || '#10b981';
-      setDarkMode(savedDark);
+      setDarkMode(isDark);
       setAccentColor(savedAccent);
-      applyTheme(savedDark, savedAccent);
+      applyTheme(isDark, savedAccent);
     }
   }, []);
 
@@ -244,7 +245,7 @@ function AdminPortalInner() {
   const currentNav = ADMIN_NAV_ITEMS.find((n) => n.id === activeTab) || ADMIN_NAV_ITEMS[0];
 
   return (
-    <div className="flex h-screen bg-neutral-50 dark:bg-neutral-950 overflow-hidden text-neutral-900 dark:text-neutral-100 font-sans transition-colors">
+    <div className={`flex h-screen overflow-hidden font-sans transition-colors ${darkMode ? 'dark bg-[#0c0c0c] text-neutral-100' : 'bg-[#f4f5f7] text-neutral-900'}`}>
       {/* 1. Desktop Fixed Sidebar */}
       <aside className="hidden md:flex w-[210px] flex-shrink-0 flex-col z-20">
         <AdminSidebar

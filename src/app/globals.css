@@ -213,26 +213,10 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* Global Base Button & Input Rules (No important resets that break Tailwind/TeleFlow) */
 a {
   color: inherit;
   text-decoration: none;
-}
-
-/* Universal Base Button Rule */
-button {
-  font-family: var(--font-sans);
-  cursor: pointer;
-  background: transparent;
-  border: none;
-  color: inherit;
-  outline: none;
-}
-
-input, textarea, select {
-  font-family: var(--font-sans);
-  color: var(--text-primary);
-  background: transparent;
-  border-radius: 0px !important;
 }
 
 /* Custom Scrollbar */

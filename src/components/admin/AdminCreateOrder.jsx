@@ -11,6 +11,10 @@ import {
   Check,
   Package,
   Sparkles,
+  User,
+  Mail,
+  Music,
+  Send,
 } from 'lucide-react';
 import { useToast } from './AdminToast';
 
@@ -34,6 +38,9 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
   const [csvText, setCsvText] = useState('');
   const [submittingCsv, setSubmittingCsv] = useState(false);
   const [csvPreviewCount, setCsvPreviewCount] = useState(0);
+
+  const inputClass =
+    'w-full rounded-full border border-neutral-300 dark:border-neutral-700 bg-white dark:bg-neutral-800 px-4 py-2.5 text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-accent transition-all shadow-xs';
 
   const handleCreateSingle = async (e) => {
     e.preventDefault();
@@ -159,142 +166,180 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
   return (
     <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
       {/* Top Selector Tabs */}
-      <div className="flex items-center gap-2 p-1 bg-neutral-100 dark:bg-neutral-800 rounded-full w-fit">
+      <div className="flex items-center gap-2 p-1.5 bg-neutral-200/60 dark:bg-neutral-800 rounded-full w-fit">
         <button
           onClick={() => setActiveSubTab('single')}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all ${
             activeSubTab === 'single'
-              ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-xs'
-              : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+              ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
           }`}
         >
-          <UserPlus size={14} />
+          <UserPlus size={14} className="text-accent" />
           <span>Single Gift Order</span>
         </button>
         <button
           onClick={() => setActiveSubTab('csv')}
-          className={`flex items-center gap-2 px-4 py-1.5 rounded-full text-xs font-medium transition-all ${
+          className={`flex items-center gap-2 px-4 py-2 rounded-full text-xs font-semibold transition-all ${
             activeSubTab === 'csv'
-              ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-xs'
-              : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
+              ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-sm'
+              : 'text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white'
           }`}
         >
-          <Upload size={14} />
+          <Upload size={14} className="text-accent" />
           <span>Daily CSV Batch Import</span>
         </button>
       </div>
 
       {activeSubTab === 'single' ? (
         /* SINGLE GIFT ORDER FORM */
-        <div className="card-border p-6 md:p-8 animate-slide-up shadow-xs">
-          <div className="mb-6">
-            <h2 className="text-lg font-bold tracking-[-0.035em] text-neutral-900 dark:text-white">
-              Create Gift Order & Access Code
-            </h2>
-            <p className="text-xs text-neutral-500 mt-0.5">
-              Generates a unique 12-character access code (`KPSK-XXXX-XXXX`) and activates the 3D book experience.
-            </p>
+        <div className="card-border p-6 md:p-8 animate-slide-up shadow-sm">
+          <div className="mb-6 pb-4 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
+            <div>
+              <h2 className="text-lg font-bold tracking-[-0.035em] text-neutral-900 dark:text-white flex items-center gap-2">
+                <Sparkles size={18} className="text-accent" />
+                <span>Create Gift Order &amp; Access Code</span>
+              </h2>
+              <p className="text-xs text-neutral-500 mt-1">
+                Generates a unique 12-character access code (`KPSK-XXXX-XXXX`) and activates the 3D book experience.
+              </p>
+            </div>
+            <span className="hidden sm:inline-block px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold bg-accent-soft text-accent">
+              KPSK ENGINE
+            </span>
           </div>
 
-          <form onSubmit={handleCreateSingle} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="uppercase-label text-neutral-400 block mb-1">Purchaser Name</label>
-                <input
-                  type="text"
-                  value={purchaserName}
-                  onChange={(e) => setPurchaserName(e.target.value)}
-                  placeholder="e.g. John Sterling"
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
-                  required
-                />
-              </div>
+          <form onSubmit={handleCreateSingle} className="space-y-5">
+            {/* 1. Purchaser Info */}
+            <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/60 dark:border-neutral-800/80">
+              <span className="uppercase-label text-neutral-500 dark:text-neutral-400 block mb-3 font-semibold text-[10px]">
+                1. Purchaser Details
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300 block mb-1.5">
+                    Purchaser Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={purchaserName}
+                    onChange={(e) => setPurchaserName(e.target.value)}
+                    placeholder="e.g. John Sterling"
+                    className={inputClass}
+                    required
+                  />
+                </div>
 
-              <div>
-                <label className="uppercase-label text-neutral-400 block mb-1">Purchaser Email</label>
-                <input
-                  type="email"
-                  value={purchaserEmail}
-                  onChange={(e) => setPurchaserEmail(e.target.value)}
-                  placeholder="john@example.com"
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="uppercase-label text-neutral-400 block mb-1">Recipient Name</label>
-                <input
-                  type="text"
-                  value={recipientName}
-                  onChange={(e) => setRecipientName(e.target.value)}
-                  placeholder="e.g. Eleanor Vance"
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="uppercase-label text-neutral-400 block mb-1">Recipient Email</label>
-                <input
-                  type="email"
-                  value={recipientEmail}
-                  onChange={(e) => setRecipientEmail(e.target.value)}
-                  placeholder="eleanor@example.com"
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
-                />
+                <div>
+                  <label className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300 block mb-1.5">
+                    Purchaser Email
+                  </label>
+                  <input
+                    type="email"
+                    value={purchaserEmail}
+                    onChange={(e) => setPurchaserEmail(e.target.value)}
+                    placeholder="john@example.com"
+                    className={inputClass}
+                  />
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="uppercase-label text-neutral-400 block mb-1">
-                Personalized Dedication Letter (Rendered in 3D)
-              </label>
-              <textarea
-                rows={3}
-                value={personalizationNote}
-                onChange={(e) => setPersonalizationNote(e.target.value)}
-                placeholder="To Eleanor, Wishing you a wonderful birthday..."
-                className="w-full rounded-xl border border-neutral-200/60 dark:border-neutral-700 p-3 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
-              />
+            {/* 2. Recipient Info */}
+            <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/60 dark:border-neutral-800/80">
+              <span className="uppercase-label text-neutral-500 dark:text-neutral-400 block mb-3 font-semibold text-[10px]">
+                2. Gift Recipient Details
+              </span>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300 block mb-1.5">
+                    Recipient Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    value={recipientName}
+                    onChange={(e) => setRecipientName(e.target.value)}
+                    placeholder="e.g. Eleanor Vance"
+                    className={inputClass}
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300 block mb-1.5">
+                    Recipient Email
+                  </label>
+                  <input
+                    type="email"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                    placeholder="eleanor@example.com"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="uppercase-label text-neutral-400 block mb-1">Fulfillment Mode</label>
-                <select
-                  value={fulfillmentType}
-                  onChange={(e) => setFulfillmentType(e.target.value)}
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
-                >
-                  <option value="digital_physical">Physical Box + 3D Portal Experience</option>
-                  <option value="digital_only">Purely Digital 3D Experience</option>
-                  <option value="physical_only">Physical Keepsake Box Only</option>
-                </select>
-              </div>
+            {/* 3. Dedication & Audio */}
+            <div className="p-4 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/60 dark:border-neutral-800/80 space-y-4">
+              <span className="uppercase-label text-neutral-500 dark:text-neutral-400 block font-semibold text-[10px]">
+                3. Keepsake 3D Personalization
+              </span>
 
               <div>
-                <label className="uppercase-label text-neutral-400 block mb-1">Audio Recording Stream URL</label>
-                <input
-                  type="text"
-                  value={audioUrl}
-                  onChange={(e) => setAudioUrl(e.target.value)}
-                  placeholder="https://.../audio/message.mp3"
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                <label className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300 block mb-1.5">
+                  Personalized Dedication Letter (Rendered in 3D Pages)
+                </label>
+                <textarea
+                  rows={3}
+                  value={personalizationNote}
+                  onChange={(e) => setPersonalizationNote(e.target.value)}
+                  placeholder="To Eleanor, Wishing you a wonderful birthday with fondest memories..."
+                  className="w-full rounded-2xl border border-neutral-300 dark:border-neutral-700 p-3 text-xs bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-accent transition-all shadow-xs"
                 />
               </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300 block mb-1.5">
+                    Fulfillment Mode
+                  </label>
+                  <select
+                    value={fulfillmentType}
+                    onChange={(e) => setFulfillmentType(e.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="digital_physical">Physical Box + 3D Portal Experience</option>
+                    <option value="digital_only">Purely Digital 3D Experience</option>
+                    <option value="physical_only">Physical Keepsake Box Only</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[11px] font-medium text-neutral-700 dark:text-neutral-300 block mb-1.5">
+                    Audio Recording Stream URL
+                  </label>
+                  <input
+                    type="text"
+                    value={audioUrl}
+                    onChange={(e) => setAudioUrl(e.target.value)}
+                    placeholder="https://.../audio/message.mp3"
+                    className={inputClass}
+                  />
+                </div>
+              </div>
             </div>
 
-            <div className="pt-2">
-              <label className="flex items-center gap-2 cursor-pointer text-xs text-neutral-700 dark:text-neutral-300">
+            {/* Notification Checkbox */}
+            <div className="px-1">
+              <label className="flex items-center gap-2.5 cursor-pointer text-xs text-neutral-700 dark:text-neutral-300">
                 <input
                   type="checkbox"
                   checked={sendNotification}
                   onChange={(e) => setSendNotification(e.target.checked)}
-                  className="rounded text-accent focus:ring-accent"
+                  className="w-4 h-4 rounded text-accent focus:ring-accent cursor-pointer"
                 />
-                <span>Dispatch notification email to recipient immediately upon creation</span>
+                <span>Dispatch notification email to recipient with 1-click access code immediately</span>
               </label>
             </div>
 
@@ -302,7 +347,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
               <button
                 type="submit"
                 disabled={submittingSingle}
-                className="primary-button text-xs py-2 px-6 btn-press shadow-sm"
+                className="primary-button text-xs py-2.5 px-6 btn-press shadow-sm font-semibold"
               >
                 <Sparkles size={14} />
                 <span>{submittingSingle ? 'Generating...' : 'Generate Order & Access Code'}</span>
@@ -312,19 +357,20 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
         </div>
       ) : (
         /* DAILY CSV BATCH IMPORT */
-        <div className="card-border p-6 md:p-8 animate-slide-up shadow-xs space-y-6">
-          <div>
-            <h2 className="text-lg font-bold tracking-[-0.035em] text-neutral-900 dark:text-white">
-              Daily CSV Batch Import
+        <div className="card-border p-6 md:p-8 animate-slide-up shadow-sm space-y-6">
+          <div className="pb-4 border-b border-neutral-100 dark:border-neutral-800">
+            <h2 className="text-lg font-bold tracking-[-0.035em] text-neutral-900 dark:text-white flex items-center gap-2">
+              <Upload size={18} className="text-accent" />
+              <span>Daily CSV Batch Import</span>
             </h2>
-            <p className="text-xs text-neutral-500 mt-0.5">
+            <p className="text-xs text-neutral-500 mt-1">
               Upload orders from external fulfillment systems or paste raw CSV text to generate access codes in bulk.
             </p>
           </div>
 
           {/* Drag & Drop File Upload Area */}
-          <div className="border-2 border-dashed border-neutral-200 dark:border-neutral-700 rounded-2xl p-8 text-center hover:border-accent transition-colors">
-            <Upload size={32} className="mx-auto text-neutral-400 mb-3" />
+          <div className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 rounded-2xl p-8 text-center bg-neutral-50/50 dark:bg-neutral-800/30 hover:border-accent transition-colors">
+            <Upload size={32} className="mx-auto text-accent mb-3" />
             <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 block">
               Drag and drop your daily orders CSV here
             </span>
@@ -340,7 +386,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
 
           {/* Paste CSV Textarea */}
           <div>
-            <label className="uppercase-label text-neutral-400 block mb-1">
+            <label className="uppercase-label text-neutral-500 dark:text-neutral-400 block mb-1.5 font-semibold text-[10px]">
               Or Paste Raw CSV Data {csvPreviewCount > 0 && `(${csvPreviewCount} records detected)`}
             </label>
             <textarea
@@ -352,19 +398,19 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
                 setCsvPreviewCount(Math.max(0, lines.length - 1));
               }}
               placeholder="purchaser_name,purchaser_email,recipient_name,recipient_email,note,fulfillment..."
-              className="w-full rounded-xl border border-neutral-200/60 dark:border-neutral-700 p-3 font-mono text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+              className="w-full rounded-2xl border border-neutral-300 dark:border-neutral-700 p-3.5 font-mono text-xs bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[var(--accent)] shadow-xs"
             />
           </div>
 
-          <div className="flex items-center justify-between pt-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-2">
             <span className="text-[11px] text-neutral-400">
-              Expected columns: <code>purchaser_name, purchaser_email, recipient_name, recipient_email, note, fulfillment</code>
+              Columns: <code>purchaser_name, purchaser_email, recipient_name, recipient_email, note, fulfillment</code>
             </span>
 
             <button
               onClick={handleProcessCsv}
               disabled={submittingCsv || !csvText.trim()}
-              className="primary-button text-xs py-2 px-6 btn-press shadow-sm disabled:opacity-50"
+              className="primary-button text-xs py-2.5 px-6 btn-press shadow-sm disabled:opacity-50 font-semibold"
             >
               <Upload size={14} />
               <span>{submittingCsv ? 'Processing Batch...' : 'Generate Codes & Import'}</span>

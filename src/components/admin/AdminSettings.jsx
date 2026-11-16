@@ -176,3 +176,4 @@ export default function AdminSettings({ currentAccent, onChangeAccent, user }) {
     </div>
   );
 }
+

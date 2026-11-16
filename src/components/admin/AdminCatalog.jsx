@@ -68,3 +68,4 @@ export default function AdminCatalog({ products = [], onRefresh }) {
     </div>
   );
 }
+
