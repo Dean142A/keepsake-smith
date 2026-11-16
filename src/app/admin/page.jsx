@@ -6,7 +6,10 @@ import { Plus, Edit2, Trash2, CheckCircle, XCircle, Package, RefreshCw, Key, Mai
 
 export default function AdminDashboardPage() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
+  const [username, setUsername] = useState('admin@thekeepsakesmith.com');
   const [password, setPassword] = useState('');
+  const [loggingIn, setLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState('');
 
   const [activeTab, setActiveTab] = useState('orders'); // 'orders' or 'products'
@@ -230,44 +233,66 @@ export default function AdminDashboardPage() {
   const [timerSeconds, setTimerSeconds] = useState(46);
   const [savingTimer, setSavingTimer] = useState(false);
 
-  // Check login session on mount
+  // Verify secure admin session on mount
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    async function checkSession() {
       try {
-        const authSession = sessionStorage.getItem('ks_admin_auth') || localStorage.getItem('ks_admin_auth');
-        if (authSession === 'true') {
+        const res = await fetch('/api/admin/session');
+        const data = await res.json();
+        if (data && data.authenticated) {
           setIsAuthenticated(true);
+        } else {
+          setIsAuthenticated(false);
         }
-      } catch (err) {}
+      } catch (err) {
+        setIsAuthenticated(false);
+      } finally {
+        setAuthChecking(false);
+      }
     }
+    checkSession();
   }, []);
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    const cleanPass = (password || '').trim().toLowerCase();
-    if (cleanPass === 'keepsake2026' || cleanPass === 'admin' || cleanPass === 'keepsake') {
-      setIsAuthenticated(true);
-      if (typeof window !== 'undefined') {
-        try {
-          sessionStorage.setItem('ks_admin_auth', 'true');
-          localStorage.setItem('ks_admin_auth', 'true');
-        } catch (err) {}
+    if (!password) {
+      setLoginError('Please enter the administrator passcode.');
+      return;
+    }
+    setLoggingIn(true);
+    setLoginError('');
+    try {
+      const res = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+      const data = await res.json();
+      if (data && data.success) {
+        setIsAuthenticated(true);
+        setPassword('');
+      } else {
+        setLoginError(data?.error || 'Invalid credentials.');
       }
-      setLoginError('');
-    } else {
-      setLoginError('Invalid Admin Passcode. Password is "keepsake2026".');
+    } catch (err) {
+      setLoginError('Authentication server unreachable.');
+    } finally {
+      setLoggingIn(false);
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/admin/logout', { method: 'POST' });
+    } catch (err) {}
     setIsAuthenticated(false);
+    setPassword('');
     if (typeof window !== 'undefined') {
       try {
         sessionStorage.removeItem('ks_admin_auth');
         localStorage.removeItem('ks_admin_auth');
       } catch (err) {}
     }
-    setPassword('');
   };
 
   const fetchData = async () => {
@@ -690,7 +715,21 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // 1. LOGIN SCREEN (IF UNAUTHENTICATED)
+  // 1. SESSION VERIFICATION LOADER
+  if (authChecking) {
+    return (
+      <div style={styles.loginPage}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ display: 'inline-block', width: '28px', height: '28px', border: '2px solid #C5A059', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+          <p style={{ color: '#C5A059', letterSpacing: '0.15em', fontSize: '0.75rem', marginTop: '1rem', textTransform: 'uppercase' }}>
+            Verifying Admin Session...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. ENCRYPTED LOGIN VAULT (IF UNAUTHENTICATED)
   if (!isAuthenticated) {
     return (
       <div style={styles.loginPage}>
@@ -698,16 +737,31 @@ export default function AdminDashboardPage() {
           {/* Logo Emblem */}
           <div style={styles.loginLogo}>
             <svg width="48" height="48" viewBox="0 0 100 100" fill="none">
-              <circle cx="50" cy="50" r="46" stroke="#FFFFFF" strokeWidth="2" opacity="0.8" />
-              <path d="M50 15 C30 15, 15 30, 15 50 C15 70, 30 85, 50 85" stroke="#FFFFFF" strokeWidth="2" />
+              <circle cx="50" cy="50" r="46" stroke="#C5A059" strokeWidth="2" opacity="0.8" />
+              <path d="M50 15 C30 15, 15 30, 15 50 C15 70, 30 85, 50 85" stroke="#C5A059" strokeWidth="2" />
             </svg>
             <h1 style={styles.loginTitle}>THE KEEPSAKE SMITH</h1>
-            <span style={styles.loginSub}>ADMIN CMS LOGIN</span>
+            <span style={styles.loginSub}>MANAGEMENT &amp; CRM VAULT</span>
           </div>
 
           <form onSubmit={handleLogin} style={styles.loginForm}>
             <div style={styles.formGroup}>
-              <label style={styles.label}>Admin Security Passcode</label>
+              <label style={styles.label}>Admin Identifier</label>
+              <div style={styles.inputWrap}>
+                <Mail size={16} color="#888" style={{ marginLeft: '12px' }} />
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  placeholder="admin@thekeepsakesmith.com"
+                  style={styles.passwordInput}
+                  required
+                />
+              </div>
+            </div>
+
+            <div style={styles.formGroup}>
+              <label style={styles.label}>Administrator Passcode</label>
               <div style={styles.inputWrap}>
                 <Lock size={16} color="#888" style={{ marginLeft: '12px' }} />
                 <input
@@ -715,7 +769,7 @@ export default function AdminDashboardPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e); }}
-                  placeholder="Enter passcode (keepsake2026)"
+                  placeholder="Enter secure passcode"
                   style={styles.passwordInput}
                   required
                   autoFocus
@@ -727,14 +781,18 @@ export default function AdminDashboardPage() {
 
             <button
               type="submit"
-              onClick={handleLogin}
-              style={styles.loginBtn}
+              disabled={loggingIn}
+              style={{
+                ...styles.loginBtn,
+                opacity: loggingIn ? 0.7 : 1,
+                cursor: loggingIn ? 'not-allowed' : 'pointer',
+              }}
             >
-              Unlock Dashboard
+              {loggingIn ? 'Authenticating...' : 'Sign In to Vault'}
             </button>
           </form>
 
-          <p style={styles.hintText}>Protected system portal. Default access passcode: <code>keepsake2026</code></p>
+          <p style={styles.hintText}>Protected system portal. Authorized administrators only.</p>
         </div>
       </div>
     );
