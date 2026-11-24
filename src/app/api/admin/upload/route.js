@@ -1,64 +1,112 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import { validateAdminRequest } from '@/lib/auth';
+import {
+  putObject,
+  buildObjectKey,
+  resolveExtension,
+  isRemoteStorageConfigured,
+  ALLOWED_IMAGE_EXT,
+  ALLOWED_AUDIO_EXT,
+} from '@/lib/storage';
 
-const ALLOWED_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.webp', '.gif', '.svg', '.mp3', '.wav']);
+const MAX_IMAGE_BYTES = 12 * 1024 * 1024; // 12 MB
+const MAX_AUDIO_BYTES = 25 * 1024 * 1024; // 25 MB
 
+function classify(ext) {
+  if (ALLOWED_IMAGE_EXT.has(ext)) return 'image';
+  if (ALLOWED_AUDIO_EXT.has(ext)) return 'audio';
+  return null;
+}
+
+/**
+ * Accepts one or many files in a single request.
+ *
+ * Field names: `file` / `files` (repeatable). `orderId` scopes the object key
+ * so an order's media groups together in the storage zone. `kind` may be
+ * passed to force a bucket ("pages" | "voice" | "music"); otherwise it is
+ * inferred from the file type.
+ */
 export async function POST(request) {
   const authCheck = validateAdminRequest(request);
   if (!authCheck.authenticated) return authCheck.response;
 
   try {
     const formData = await request.formData();
-    const file = formData.get('file') || formData.get('image');
+    const orderId = formData.get('orderId') || 'unassigned';
+    const forcedKind = formData.get('kind') || null;
 
-    if (!file || typeof file === 'string') {
+    const candidates = [...formData.getAll('files'), ...formData.getAll('file')].filter(
+      (f) => f && typeof f !== 'string'
+    );
+
+    if (candidates.length === 0) {
       return NextResponse.json(
         { success: false, error: 'No file provided.' },
         { status: 400 }
       );
     }
 
-    const ext = (path.extname(file.name) || '.jpg').toLowerCase();
-    if (!ALLOWED_EXTENSIONS.has(ext)) {
+    const uploaded = [];
+    const rejected = [];
+
+    for (const file of candidates) {
+      const ext = resolveExtension(file.name, file.type);
+      const type = classify(ext);
+
+      if (!type) {
+        rejected.push({
+          name: file.name,
+          error: `Unsupported file type "${ext || file.type || 'unknown'}". Images: JPG, PNG, WEBP, GIF. Audio: MP3, WAV, M4A, OGG.`,
+        });
+        continue;
+      }
+
+      const limit = type === 'image' ? MAX_IMAGE_BYTES : MAX_AUDIO_BYTES;
+      if (file.size > limit) {
+        rejected.push({
+          name: file.name,
+          error: `${(file.size / 1048576).toFixed(1)} MB exceeds the ${limit / 1048576} MB limit for ${type} files.`,
+        });
+        continue;
+      }
+
+      const buffer = Buffer.from(await file.arrayBuffer());
+      const kind = forcedKind || (type === 'image' ? 'pages' : 'voice');
+      const key = buildObjectKey({ orderId, kind, originalName: file.name, ext });
+
+      const stored = await putObject({
+        key,
+        buffer,
+        contentType: file.type || (type === 'image' ? 'image/jpeg' : 'audio/mpeg'),
+      });
+
+      uploaded.push({
+        url: stored.url,
+        key: stored.key,
+        storage: stored.storage,
+        type,
+        name: file.name,
+        size: file.size,
+      });
+    }
+
+    if (uploaded.length === 0) {
       return NextResponse.json(
-        { success: false, error: `Invalid file extension "${ext}". Allowed types: PNG, JPG, WEBP, GIF, SVG, MP3, WAV.` },
+        { success: false, error: rejected[0]?.error || 'No files could be uploaded.', rejected },
         { status: 400 }
       );
     }
 
-    const bytes = await file.arrayBuffer();
-    const buffer = Buffer.from(bytes);
-
-    // Save to process.cwd()/public/uploads directory
-    const uploadsDir = path.join(process.cwd(), 'public', 'uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-
-    const cleanName = path.basename(file.name, ext).replace(/[^a-zA-Z0-9_-]/g, '_');
-    const safeFilename = `${Date.now()}-${cleanName}${ext}`;
-
-    const filePath = path.join(uploadsDir, safeFilename);
-
-    fs.writeFileSync(filePath, buffer);
-
-    // Also generate base64 data URL for fallback/instant rendering
-    const mimeType = file.type || 'image/jpeg';
-    const base64Data = buffer.toString('base64');
-    const dataUrl = `data:${mimeType};base64,${base64Data}`;
-
-    const publicUrl = `/uploads/${safeFilename}`;
-
     return NextResponse.json({
       success: true,
-      url: publicUrl,
-      dataUrl: dataUrl,
-      filename: safeFilename
+      files: uploaded,
+      rejected,
+      remoteStorage: isRemoteStorageConfigured(),
+      // Single-file convenience, kept so older callers keep working.
+      url: uploaded[0].url,
     });
   } catch (err) {
-    console.error('Image upload error:', err);
+    console.error('Upload error:', err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }

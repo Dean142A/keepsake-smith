@@ -103,16 +103,6 @@ function PortalContent() {
                 <p style={styles.cardSub}>
                   Enter the access code printed on your physical keepsake card or received in your gift email to launch your interactive 3D WebGL experience.
                 </p>
-                <div style={styles.demoChipWrap}>
-                  <button
-                    type="button"
-                    onClick={() => handleFormatCode('KPSK892F37A1')}
-                    style={styles.demoChip}
-                    title="Click to auto-fill sample demo code"
-                  >
-                    <span style={{ color: '#C5A059' }}>✦ Try Demo Code:</span> KPSK-892F-37A1
-                  </button>
-                </div>
               </div>
 
               <form onSubmit={handleRedeem} style={styles.form}>
@@ -122,7 +112,7 @@ function PortalContent() {
                     maxLength={16}
                     value={code}
                     onChange={(e) => handleFormatCode(e.target.value)}
-                    placeholder="KPSK-892F-37A1"
+                    placeholder="KPSK-XXXX-XXXX"
                     style={styles.codeInput}
                     disabled={loading}
                     autoComplete="off"
@@ -163,6 +153,7 @@ function PortalContent() {
         ) : (
           /* Interactive R3F 3D Animated Book Experience */
           <BookViewer
+            order={experienceData}
             personalization={experienceData.personalization}
             onExit={() => setExperienceData(null)}
           />
@@ -227,23 +218,6 @@ const styles = {
     boxSizing: 'border-box',
     width: '100%',
     boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
-  },
-  demoChipWrap: {
-    marginTop: '0.9rem',
-  },
-  demoChip: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    backgroundColor: 'rgba(197, 160, 89, 0.08)',
-    border: '1px solid rgba(197, 160, 89, 0.28)',
-    borderRadius: '9999px',
-    padding: '0.45rem 1rem',
-    fontSize: '0.78rem',
-    color: '#D9D2C7',
-    fontFamily: 'monospace',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
   },
   cardHeader: {
     display: 'flex',

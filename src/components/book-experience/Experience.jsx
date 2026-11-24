@@ -22,7 +22,7 @@ const CameraRig = () => {
   return null;
 };
 
-export const Experience = () => {
+export const Experience = ({ leaves = [] }) => {
   return (
     <>
       <CameraRig />
@@ -32,7 +32,7 @@ export const Experience = () => {
         speed={2}
         rotationIntensity={0.5}
       >
-        <Book />
+        <Book leaves={leaves} />
       </Float>
       <ambientLight intensity={1.5} />
       <directionalLight
