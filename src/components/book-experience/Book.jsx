@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useCursor, useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useAtom } from 'jotai';
@@ -82,24 +82,22 @@ if (typeof window !== 'undefined') {
 }
 
 /**
- * `front` and `back` are full image URLs for this order (CDN-hosted customer
- * photos, or the local cover artwork), not names of files baked into the
- * build. Captions are composited into the texture by usePageTextures so the
- * text bends with the paper.
+ * `front` and `back` are face descriptors for this order's leaf: either a
+ * photo (a CDN-hosted customer image plus its caption) or the letter. Both
+ * are composited into the texture by usePageTextures, so the words bend with
+ * the paper instead of floating over it.
  */
 const Page = ({
   number,
   front,
   back,
-  frontCaption,
-  backCaption,
   totalLeaves,
   page,
   opened,
   bookClosed,
   ...props
 }) => {
-  const [picture, picture2] = usePageTextures(front, back, frontCaption, backCaption);
+  const [picture, picture2] = usePageTextures(front, back);
   // Static cover roughness map; applied only to the outer leaves below.
   const pictureRoughness = useTexture('/textures/book-cover-roughness.jpg');
 
@@ -127,24 +125,25 @@ const Page = ({
     }
     const skeleton = new Skeleton(bones);
 
+    // Every leaf sits at the same place, separated only by a fraction of a
+    // degree of fan. Polygon offset decides the order explicitly rather than
+    // leaving it to depth-buffer precision, which is what tore the artwork
+    // into vertical bands and let a back cover win over a photo.
+    const faceMaterial = (isOuter) =>
+      new MeshStandardMaterial({
+        color: whiteColor,
+        ...(isOuter ? { roughnessMap: pictureRoughness } : { roughness: 1 }),
+        emissive: emissiveColor,
+        emissiveIntensity: 0,
+        polygonOffset: true,
+        polygonOffsetFactor: 0,
+        polygonOffsetUnits: 0,
+      });
+
     const materials = [
       ...pageMaterials,
-      new MeshStandardMaterial({
-        color: whiteColor,
-        map: picture,
-        ...(number === 0 ? { roughnessMap: pictureRoughness } : { roughness: 1 }),
-        emissive: emissiveColor,
-        emissiveIntensity: 0,
-      }),
-      new MeshStandardMaterial({
-        color: whiteColor,
-        map: picture2,
-        ...(number === totalLeaves - 1
-          ? { roughnessMap: pictureRoughness }
-          : { roughness: 1 }),
-        emissive: emissiveColor,
-        emissiveIntensity: 0,
-      }),
+      faceMaterial(number === 0),
+      faceMaterial(number === totalLeaves - 1),
     ];
 
     const mesh = new SkinnedMesh(pageGeometry, materials);
@@ -154,7 +153,26 @@ const Page = ({
     mesh.add(skeleton.bones[0]);
     mesh.bind(skeleton);
     return mesh;
-  }, [number, totalLeaves, picture, picture2, pictureRoughness]);
+  }, [number, totalLeaves, pictureRoughness]);
+
+  // Attach the composited artwork to the long-lived materials.
+  useEffect(() => {
+    const materials = manualSkinnedMesh.material;
+    materials[4].map = picture;
+    materials[4].needsUpdate = true;
+    materials[5].map = picture2;
+    materials[5].needsUpdate = true;
+  }, [manualSkinnedMesh, picture, picture2]);
+
+  // Free this leaf's GPU resources when the book closes or the order changes.
+  useEffect(
+    () => () => {
+      manualSkinnedMesh.material.forEach((m, i) => {
+        if (i >= 4) m.dispose();
+      });
+    },
+    [manualSkinnedMesh]
+  );
 
   const [highlighted, setHighlighted] = useState(false);
   useCursor(highlighted);
@@ -163,6 +181,16 @@ const Page = ({
 
   useFrame((_, delta) => {
     if (!skinnedMeshRef.current) return;
+
+    // Leaves already turned stack upwards on the left; leaves still to come
+    // stack downwards on the right. Re-derive the order each frame because it
+    // inverts the moment a page is turned.
+    const depthRank = opened ? number : totalLeaves - number;
+    for (const i of [4, 5]) {
+      const mat = skinnedMeshRef.current.material[i];
+      mat.polygonOffsetFactor = -depthRank;
+      mat.polygonOffsetUnits = -depthRank;
+    }
 
     const emissiveIntensity = highlighted ? 0.22 : 0;
     skinnedMeshRef.current.material[4].emissiveIntensity = MathUtils.lerp(
@@ -189,11 +217,15 @@ const Page = ({
 
     let targetRotation = opened ? -Math.PI : 0;
     if (!bookClosed) {
-      if (opened) {
-        targetRotation = -Math.PI + (totalLeaves - number) * 0.005;
-      } else {
-        targetRotation = -number * 0.005;
-      }
+      // The fan is what physically separates leaves that otherwise occupy the
+      // same plane, so its direction decides which one the viewer sees. On
+      // each side the leaf nearest the middle of the book must tilt furthest
+      // towards the camera: the next unread page on the right, the page just
+      // turned on the left. Fanning the other way buried the current page
+      // under the rest of the stack.
+      targetRotation = opened
+        ? -Math.PI + (number + 1) * 0.005
+        : -(totalLeaves - number) * 0.005;
     } else {
       targetRotation = opened ? -Math.PI : 0;
     }
@@ -267,15 +299,13 @@ export const Book = ({ leaves = [], ...props }) => {
     <group {...props} rotation-y={-Math.PI / 6}>
       {leaves.map((leaf, index) => (
         <Page
-          key={`${index}-${leaf.front}`}
+          key={`${index}-${leaf.front?.imageUrl || leaf.front?.kind}`}
           number={index}
           totalLeaves={leaves.length}
           opened={page > index}
           bookClosed={page === 0 || page === leaves.length}
           front={leaf.front}
           back={leaf.back}
-          frontCaption={leaf.frontCaption}
-          backCaption={leaf.backCaption}
         />
       ))}
     </group>
