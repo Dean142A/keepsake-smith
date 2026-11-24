@@ -15,6 +15,7 @@ import {
   Filter,
 } from 'lucide-react';
 import { useToast } from './AdminToast';
+import { isExperienceReady } from '@/lib/keepsake';
 
 export default function AdminCodeVault({ orders = [], onOpenOrder }) {
   const { toast } = useToast();
@@ -34,7 +35,7 @@ export default function AdminCodeVault({ orders = [], onOpenOrder }) {
         purchaser: o.purchaserName || o.customer || 'Customer',
         date: o.createdAt || 'Recent',
         redeemed: Boolean(o.status === 'redeemed' || o.hasBeenOpened),
-        packageUrl: o.packageUrl,
+        ready: isExperienceReady(o),
         order: o,
       }));
   }, [orders]);
@@ -252,7 +253,7 @@ export default function AdminCodeVault({ orders = [], onOpenOrder }) {
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      {item.packageUrl ? (
+                      {item.ready ? (
                         <span className="text-emerald-600 dark:text-emerald-400 font-medium text-[11px]">
                           &bull; Assigned
                         </span>

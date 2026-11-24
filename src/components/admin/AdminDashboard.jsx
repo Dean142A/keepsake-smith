@@ -14,6 +14,7 @@ import {
   Plus,
   Upload,
 } from 'lucide-react';
+import { isExperienceReady } from '@/lib/keepsake';
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -39,12 +40,12 @@ export default function AdminDashboard({
   setActiveTab,
 }) {
   const totalOrders = orders.length;
-  const pendingAssets = orders.filter((o) => !o.packageUrl || o.packageUrl === '').length;
+  const pendingAssets = orders.filter((o) => !isExperienceReady(o)).length;
   const redeemedOrders = orders.filter((o) => o.status === 'redeemed' || o.hasBeenOpened).length;
   const activeCodes = orders.filter((o) => o.accessCode).length;
 
   const urgentQueue = orders
-    .filter((o) => !o.packageUrl || o.packageUrl === '')
+    .filter((o) => !isExperienceReady(o))
     .slice(0, 5);
 
   const recentOrders = [...orders].slice(0, 6);
@@ -280,7 +281,7 @@ export default function AdminDashboard({
                       </span>
                     </td>
                     <td className="py-3 px-4">
-                      {ord.packageUrl ? (
+                      {isExperienceReady(ord) ? (
                         <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
                           <CheckCircle2 size={12} /> Ready
                         </span>
