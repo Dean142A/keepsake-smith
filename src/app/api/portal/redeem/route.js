@@ -1,9 +1,6 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import { normaliseExperience, normaliseCode } from '@/lib/keepsake';
-
-const ordersFilePath = path.join(process.cwd(), 'src', 'data', 'orders.json');
+import { getOrderByCode } from '@/lib/orders-store';
 
 // Note: this limiter is per container instance. With several instances behind
 // the load balancer the effective allowance is MAX_FAILED_ATTEMPTS per
@@ -11,16 +8,6 @@ const ordersFilePath = path.join(process.cwd(), 'src', 'data', 'orders.json');
 const FAILED_ATTEMPTS = new Map();
 const MAX_FAILED_ATTEMPTS = 5;
 const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
-
-function readOrders() {
-  try {
-    if (!fs.existsSync(ordersFilePath)) return [];
-    return JSON.parse(fs.readFileSync(ordersFilePath, 'utf8') || '[]');
-  } catch (err) {
-    console.error('Error reading orders file:', err);
-    return [];
-  }
-}
 
 export async function POST(req) {
   try {
@@ -49,10 +36,9 @@ export async function POST(req) {
       );
     }
 
-    const orders = readOrders();
-    const matchingOrder = orders.find(
-      (o) => o.accessCode && normaliseCode(o.accessCode) === cleanCode
-    );
+    // Direct lookup: orders are keyed by access code, so this is one read
+    // rather than a scan of every order.
+    const matchingOrder = await getOrderByCode(cleanCode);
 
     if (!matchingOrder) {
       const attempts = (attemptRecord?.attempts || 0) + 1;
