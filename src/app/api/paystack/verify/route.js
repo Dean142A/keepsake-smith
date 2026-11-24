@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { sendEmail, getOrderConfirmationHtml } from '@/lib/mailer';
+import { generateAccessCode } from '@/lib/keepsake';
 
 const ordersFilePath = path.join(process.cwd(), 'src', 'data', 'orders.json');
 
@@ -23,16 +24,6 @@ function writeOrders(orders) {
   } catch (err) {
     console.error('Error writing orders file:', err);
   }
-}
-
-function generateAccessCode() {
-  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-  let code = 'KPSK-';
-  for (let i = 0; i < 8; i++) {
-    if (i === 4) code += '-';
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
 }
 
 // POST /api/paystack/verify - Verify Paystack payment & fulfill order

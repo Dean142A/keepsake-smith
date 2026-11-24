@@ -213,8 +213,6 @@ function fromWhom(purchaserName) {
  */
 export const FULFILMENT_STAGES = {
   ready: {
-    label: '3D Experience Ready',
-    physicalOnly: false,
     recipient: ({ recipientName, purchaserName, accessCode }) => ({
       subject: greetSubject(recipientName, 'your keepsake is ready to open'),
       html: emailShell({
@@ -237,8 +235,6 @@ export const FULFILMENT_STAGES = {
   },
 
   in_transit: {
-    label: 'Package On Its Way',
-    physicalOnly: true,
     recipient: ({ recipientName, purchaserName }) => ({
       subject: greetSubject(recipientName, 'something is on its way to you'),
       html: emailShell({
@@ -258,8 +254,6 @@ export const FULFILMENT_STAGES = {
   },
 
   pickup_ready: {
-    label: 'Ready for Pickup',
-    physicalOnly: true,
     recipient: ({ recipientName, purchaserName }) => ({
       subject: greetSubject(recipientName, 'your gift is ready to collect'),
       html: emailShell({

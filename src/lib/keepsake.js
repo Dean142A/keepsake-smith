@@ -135,8 +135,3 @@ export function normaliseCode(str) {
 export function isExperienceReady(order) {
   return normaliseExperience(order).pages.length > 0;
 }
-
-/** How many photos this order supplied, which is what drives the leaf count. */
-export function experiencePageCount(order) {
-  return normaliseExperience(order).pages.length;
-}
