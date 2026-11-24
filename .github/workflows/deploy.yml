@@ -26,14 +26,14 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4.4.1
 
       - name: Log in to GitHub Container Registry (ghcr.io)
         if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+        uses: docker/login-action@v4.8.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
@@ -41,7 +41,7 @@ jobs:
 
       - name: Extract Docker metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6.2.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -49,7 +49,7 @@ jobs:
             type=sha,format=long
 
       - name: Build and push Docker image to ghcr.io
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7.4.0
         with:
           context: .
           # Build everywhere, publish only from main and manual runs.
@@ -68,7 +68,11 @@ jobs:
       # this step's own env block and so never gated anything. Removed.
       - name: Trigger Rolling Update on Bunny Magic Containers
         if: github.event_name != 'pull_request'
-        uses: BunnyWay/actions/container-update-image@main
+        # Pinned to a commit rather than @main: a moving ref means an upstream
+        # change could run unreviewed code against production with our API key.
+        # 931a74b = BunnyWay/actions "Version Packages (#48)", 2026-10-12 — the
+        # exact commit verified working in run 45398252948.
+        uses: BunnyWay/actions/container-update-image@931a74b9c45ea9f9f01435fbbf1649830e67d3b3
         with:
           app_id: ${{ vars.APP_ID }}
           api_key: ${{ secrets.BUNNYNET_API_KEY }}
