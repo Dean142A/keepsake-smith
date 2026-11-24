@@ -87,8 +87,11 @@ export default function BookViewer({ order, personalization, onExit }) {
         camera={{
           position: [0, 1.5, 5.5],
           fov: 45,
-          near: 0.1,
-          far: 1000,
+          // The book is about two units tall and the rig settles four units
+          // away, so a tight frustum spends the depth buffer where it is
+          // actually needed instead of on empty space out to 1000.
+          near: 0.5,
+          far: 60,
         }}
         style={{ width: '100%', height: '100%' }}
       >

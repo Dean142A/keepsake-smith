@@ -146,14 +146,34 @@ function AdminPortalInner({
     return data;
   };
 
-  const handleSendEmail = async (orderId) => {
+  // Re-sends the notification for the stage the order is already at. POST
+  // creates a new order, so sending through it never reached the mailer.
+  // Moves the order to a fulfilment stage, which is what triggers the
+  // recipient and purchaser notifications for that stage.
+  const handleSetStage = async (orderId, stage) => {
     const res = await fetch('/api/admin/orders', {
-      method: 'POST',
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ notifyRecipient: true, orderId }),
+      body: JSON.stringify({ id: orderId, status: stage }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to update the order');
+    fetchData();
+    return data;
+  };
+
+  const handleSendEmail = async (orderId, status) => {
+    const res = await fetch('/api/admin/orders', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: orderId, status: status || 'ready', sendNotification: true }),
     });
     const data = await res.json();
     if (!data.success) throw new Error(data.error || 'Failed to send notification email');
+    if (!data.emailSent) {
+      const reason = (data.deliveries || []).map((d) => d.error).filter(Boolean)[0];
+      throw new Error(reason || 'The mail provider did not accept the message');
+    }
     fetchData();
     return data;
   };
@@ -305,6 +325,7 @@ function AdminPortalInner({
           onClose={() => setViewingOrder(null)}
           onSaveAssets={handleSaveAssets}
           onSendEmail={handleSendEmail}
+          onSetStage={handleSetStage}
         />
       </div>
     );

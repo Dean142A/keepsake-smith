@@ -1,23 +1,15 @@
 import { NextResponse } from 'next/server';
-import fs from 'fs';
-import path from 'path';
 import { sendEmail, getOrderConfirmationHtml } from '@/lib/mailer';
+import { listOrders, getOrderById } from '@/lib/orders-store';
 
-const ordersFilePath = path.join(process.cwd(), 'src', 'data', 'orders.json');
-
-function readOrders() {
-  try {
-    if (!fs.existsSync(ordersFilePath)) return [];
-    return JSON.parse(fs.readFileSync(ordersFilePath, 'utf8') || '[]');
-  } catch (err) {
-    console.error('Error reading orders file:', err);
-    return [];
-  }
-}
-
+/**
+ * Re-sends the order confirmation. This used to read src/data/orders.json
+ * straight off the container filesystem, which is empty in production now
+ * that orders live in the durable store, so every lookup 404'd.
+ */
 export async function POST(request) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => ({}));
     const { orderId, email } = body;
 
     if (!orderId && !email) {
@@ -27,12 +19,15 @@ export async function POST(request) {
       );
     }
 
-    const orders = readOrders();
-    const order = orders.find((o) => {
-      if (orderId && o.id.toUpperCase() === orderId.trim().toUpperCase()) return true;
-      if (email && o.purchaserEmail.toUpperCase() === email.trim().toUpperCase()) return true;
-      return false;
-    });
+    let order = null;
+    if (orderId) {
+      order = await getOrderById(orderId.trim());
+    }
+    if (!order && email) {
+      const wanted = email.trim().toLowerCase();
+      const all = await listOrders();
+      order = all.find((o) => (o.purchaserEmail || '').toLowerCase() === wanted) || null;
+    }
 
     if (!order) {
       return NextResponse.json(
@@ -41,31 +36,37 @@ export async function POST(request) {
       );
     }
 
-    const htmlContent = getOrderConfirmationHtml({
-      orderId: order.id,
-      purchaserName: order.purchaserName,
-      totalAmount: order.totalAmount,
-      accessCode: order.accessCode,
-    });
+    if (!order.purchaserEmail) {
+      return NextResponse.json(
+        { success: false, error: 'This order has no purchaser email address on file' },
+        { status: 422 }
+      );
+    }
 
     const result = await sendEmail({
       to: order.purchaserEmail,
       subject: `Resent: Order Access Code #${order.id} — The Keepsake Smith`,
-      html: htmlContent,
+      html: getOrderConfirmationHtml({
+        orderId: order.id,
+        purchaserName: order.purchaserName,
+        totalAmount: order.totalAmount,
+        accessCode: order.accessCode,
+      }),
     });
 
-    if (result.success) {
-      return NextResponse.json({
-        success: true,
-        message: `Order confirmation & 12-char access code resent to ${order.purchaserEmail}!`,
-      });
-    } else {
+    if (!result.success) {
       return NextResponse.json(
-        { success: false, error: result.error || 'Failed to dispatch email' },
-        { status: 500 }
+        { success: false, error: result.error || 'The mail provider rejected the message' },
+        { status: 502 }
       );
     }
+
+    return NextResponse.json({
+      success: true,
+      message: `Order confirmation and access code resent to ${order.purchaserEmail}`,
+    });
   } catch (err) {
+    console.error('Resend email error:', err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }

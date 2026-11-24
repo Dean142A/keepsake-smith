@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { CanvasTexture, SRGBColorSpace, Texture, LinearFilter } from 'three';
+import { CanvasTexture, DataTexture, SRGBColorSpace, LinearFilter } from 'three';
 
 /**
  * Builds page artwork at runtime by compositing the customer's photo and its
@@ -15,6 +15,15 @@ const CANVAS_W = 1024;
 const CANVAS_H = Math.round(CANVAS_W * (1.71 / 1.28));
 
 const imageCache = new Map();
+
+/** Stable dependency for a face, so the effect reruns only on real changes. */
+function faceKey(face) {
+  if (!face) return 'empty';
+  if (face.kind === 'letter') {
+    return `letter:${face.letter?.body || ''}|${face.letter?.signature || ''}`;
+  }
+  return `photo:${face.imageUrl || ''}|${face.caption || ''}`;
+}
 
 function loadImage(url) {
   if (imageCache.has(url)) return imageCache.get(url);
@@ -98,77 +107,173 @@ function paintCaption(ctx, caption, w, h) {
   ctx.shadowBlur = 0;
 }
 
-async function buildTexture(url, caption) {
+/** Letters arrive with light markdown from the admin textarea; paint the words. */
+function stripMarkdown(text) {
+  return String(text || '')
+    .replace(/\*\*(.+?)\*\*/g, '$1')
+    .replace(/[*_`#>]/g, '')
+    .replace(/\r/g, '');
+}
+
+function wrapParagraph(ctx, text, maxWidth) {
+  const out = [];
+  for (const para of stripMarkdown(text).split(/\n+/)) {
+    if (!para.trim()) { out.push(''); continue; }
+    let line = '';
+    for (const word of para.trim().split(/\s+/)) {
+      const attempt = line ? `${line} ${word}` : word;
+      if (ctx.measureText(attempt).width > maxWidth && line) {
+        out.push(line);
+        line = word;
+      } else {
+        line = attempt;
+      }
+    }
+    if (line) out.push(line);
+  }
+  return out;
+}
+
+/** The letter is a page of the book, so it is painted into the paper itself. */
+function paintLetter(ctx, letter, w, h) {
+  // Warm stationery, not the dark photo base.
+  ctx.fillStyle = '#f2ece0';
+  ctx.fillRect(0, 0, w, h);
+
+  const pad = Math.round(w * 0.11);
+  const inner = w - pad * 2;
+
+  ctx.textAlign = 'center';
+  ctx.fillStyle = 'rgba(140,116,66,0.95)';
+  ctx.font = `400 ${Math.round(w * 0.028)}px "Helvetica Neue", Helvetica, Arial, sans-serif`;
+  ctx.fillText('A LETTER FOR YOU', w / 2, pad * 0.92);
+
+  ctx.strokeStyle = 'rgba(197,160,89,0.8)';
+  ctx.lineWidth = Math.max(1, Math.round(w * 0.002));
+  ctx.beginPath();
+  ctx.moveTo(w / 2 - w * 0.07, pad * 1.22);
+  ctx.lineTo(w / 2 + w * 0.07, pad * 1.22);
+  ctx.stroke();
+
+  // Shrink the body until the whole letter fits the page; a letter that runs
+  // past the paper would simply be lost.
+  const sigSpace = Math.round(h * 0.13);
+  let fontSize = Math.round(w * 0.047);
+  let lines = [];
+  let lineHeight = 0;
+  for (; fontSize >= Math.round(w * 0.024); fontSize -= 2) {
+    ctx.font = `300 ${fontSize}px Georgia, "Times New Roman", serif`;
+    lineHeight = Math.round(fontSize * 1.62);
+    lines = wrapParagraph(ctx, letter.body, inner);
+    if (pad * 1.9 + lines.length * lineHeight < h - sigSpace) break;
+  }
+
+  ctx.textAlign = 'left';
+  ctx.fillStyle = 'rgba(34,30,24,0.92)';
+  let y = pad * 1.9 + lineHeight;
+  for (const line of lines) {
+    if (y > h - sigSpace) break;
+    ctx.fillText(line, pad, y);
+    y += lineHeight;
+  }
+
+  if (letter.signature && letter.signature.trim()) {
+    ctx.textAlign = 'right';
+    ctx.font = `italic 300 ${Math.round(w * 0.05)}px Georgia, "Times New Roman", serif`;
+    ctx.fillStyle = 'rgba(120,96,52,0.95)';
+    ctx.fillText(`— ${letter.signature.trim()}`, w - pad, h - pad * 0.95);
+  }
+}
+
+async function buildTexture(face) {
   const canvas = document.createElement('canvas');
   canvas.width = CANVAS_W;
   canvas.height = CANVAS_H;
   const ctx = canvas.getContext('2d');
 
-  // Paper base, visible if the photo fails or has transparency.
-  ctx.fillStyle = '#17150f';
-  ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-
-  try {
-    const img = await loadImage(url);
-    drawCover(ctx, img, CANVAS_W, CANVAS_H);
-  } catch {
-    // Leave the paper base; the caption still renders so the spread isn't blank.
-    ctx.fillStyle = 'rgba(197,160,89,0.25)';
+  if (face && face.kind === 'letter') {
+    paintLetter(ctx, face.letter || { body: '', signature: '' }, CANVAS_W, CANVAS_H);
+  } else {
+    // Paper base, visible if the photo fails or has transparency.
+    ctx.fillStyle = '#17150f';
     ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
-  }
 
-  paintCaption(ctx, caption, CANVAS_W, CANVAS_H);
+    try {
+      const img = await loadImage(face?.imageUrl);
+      drawCover(ctx, img, CANVAS_W, CANVAS_H);
+    } catch {
+      // Leave the paper base; the caption still renders so the spread isn't blank.
+      ctx.fillStyle = 'rgba(197,160,89,0.25)';
+      ctx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+    }
+
+    paintCaption(ctx, face?.caption, CANVAS_W, CANVAS_H);
+  }
 
   const tex = new CanvasTexture(canvas);
   tex.colorSpace = SRGBColorSpace;
   tex.minFilter = LinearFilter;
   tex.magFilter = LinearFilter;
+  // The canvas is not power-of-two; mipmaps would force a resample pass we
+  // neither need nor want at this size.
+  tex.generateMipmaps = false;
   tex.anisotropy = 8;
   tex.needsUpdate = true;
   return tex;
 }
 
-const BLANK = (() => {
-  let t = null;
-  return () => {
-    if (t) return t;
-    t = new Texture();
-    return t;
-  };
-})();
+/**
+ * A real 1x1 paper-coloured texture per page. A shared `new Texture()` with no
+ * image is never uploaded, so the sampler keeps whatever was last bound in
+ * that slot and the page shows fragments of a different photo.
+ */
+function makePlaceholder() {
+  const data = new Uint8Array([0x17, 0x15, 0x0f, 0xff]);
+  const t = new DataTexture(data, 1, 1);
+  t.colorSpace = SRGBColorSpace;
+  t.needsUpdate = true;
+  return t;
+}
 
 /**
- * Returns [frontTexture, backTexture]. Both start as a blank placeholder and
- * swap in once composited, so the book renders immediately instead of
- * suspending the whole canvas on a slow CDN fetch.
+ * Returns [frontTexture, backTexture] for a leaf's two faces. Both start as a
+ * solid placeholder and swap in once composited, so the book renders
+ * immediately instead of suspending the whole canvas on a slow CDN fetch.
  */
-export function usePageTextures(front, back, frontCaption, backCaption) {
-  const [textures, setTextures] = useState([BLANK(), BLANK()]);
-  const disposed = useRef([]);
+export function usePageTextures(front, back) {
+  const [textures, setTextures] = useState(() => [makePlaceholder(), makePlaceholder()]);
+  const live = useRef([]);
+
+  const frontKey = faceKey(front);
+  const backKey = faceKey(back);
 
   useEffect(() => {
     let alive = true;
 
-    Promise.all([
-      buildTexture(front, frontCaption),
-      buildTexture(back, backCaption),
-    ]).then(([f, b]) => {
+    Promise.all([buildTexture(front), buildTexture(back)]).then(([f, b]) => {
       if (!alive) {
         f.dispose();
         b.dispose();
         return;
       }
-      disposed.current.forEach((t) => t?.dispose?.());
-      disposed.current = [f, b];
+      const previous = live.current;
+      live.current = [f, b];
       setTextures([f, b]);
+      // Dispose a frame later: the renderer may still be holding the old
+      // textures for the frame being drawn right now, and freeing them
+      // mid-frame is what shreds the page.
+      if (previous.length) {
+        requestAnimationFrame(() => previous.forEach((t) => t?.dispose?.()));
+      }
     });
 
     return () => {
       alive = false;
     };
-  }, [front, back, frontCaption, backCaption]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [frontKey, backKey]);
 
-  useEffect(() => () => disposed.current.forEach((t) => t?.dispose?.()), []);
+  useEffect(() => () => live.current.forEach((t) => t?.dispose?.()), []);
 
   return textures;
 }

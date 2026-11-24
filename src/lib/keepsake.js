@@ -81,32 +81,35 @@ export function normaliseExperience(order = {}) {
  * uploaded images exactly rather than a fixed template.
  */
 export function buildSpreads(experience) {
-  const { pages, coverUrl, backCoverUrl } = experience;
-  if (!pages.length) return [];
+  const { pages, letter, coverUrl, backCoverUrl } = experience;
 
-  const leaves = [];
-  // Front cover, backed by the first photo.
-  leaves.push({ front: coverUrl, back: pages[0]?.imageUrl || backCoverUrl, frontCaption: '', backCaption: pages[0]?.caption || '' });
+  const hasLetter = Boolean(letter && letter.body && letter.body.trim());
+  if (!pages.length && !hasLetter) return [];
 
-  for (let i = 1; i < pages.length; i += 2) {
-    leaves.push({
-      front: pages[i].imageUrl,
-      frontCaption: pages[i].caption || '',
-      back: pages[i + 1]?.imageUrl || backCoverUrl,
-      backCaption: pages[i + 1]?.caption || '',
-    });
+  const photoFace = (imageUrl, caption = '') => ({ kind: 'photo', imageUrl, caption });
+  const backFace = photoFace(backCoverUrl);
+
+  // Interior faces in reading order. The letter takes the first one, so it
+  // greets the recipient on the inside of the front cover rather than hiding
+  // behind a button.
+  const faces = [];
+  if (hasLetter) faces.push({ kind: 'letter', letter, caption: '' });
+  pages.forEach((p) => faces.push(photoFace(p.imageUrl, p.caption)));
+
+  const leaves = [{ front: photoFace(coverUrl), back: faces[0] || backFace }];
+
+  for (let i = 1; i < faces.length; i += 2) {
+    leaves.push({ front: faces[i], back: faces[i + 1] || backFace });
   }
 
-  // Ensure the stack closes on the back cover.
-  const last = leaves[leaves.length - 1];
-  if (last.back !== backCoverUrl) {
-    leaves.push({ front: backCoverUrl, frontCaption: '', back: backCoverUrl, backCaption: '' });
+  // Close the stack on the back cover when the last leaf is still a photo.
+  if (leaves[leaves.length - 1].back !== backFace) {
+    leaves.push({ front: backFace, back: backFace });
   }
 
   return leaves;
 }
 
-/** 12-character access code, formatted KPSK-XXXX-XXXX. */
 export function generateAccessCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1
   let body = '';

@@ -17,22 +17,39 @@ import {
 } from 'lucide-react';
 import { useToast } from './AdminToast';
 
+/**
+ * Fulfilment milestones an operator can move an order to. Each one emails the
+ * recipient and the purchaser; the physical stages are hidden for orders that
+ * are digital only, because there is nothing to post.
+ */
+const STAGES = [
+  { id: 'ready', label: '3D Experience Ready', hint: 'Sends the access code', physicalOnly: false },
+  { id: 'in_transit', label: 'Package On Its Way', hint: 'Dispatched from the workshop', physicalOnly: true },
+  { id: 'pickup_ready', label: 'Ready for Pickup', hint: 'Arrived and waiting', physicalOnly: true },
+];
+
 export default function OrderDetailsModal({
   order,
   isOpen,
   onClose,
   onSaveAssets,
   onSendEmail,
+  onSetStage,
 }) {
   const { toast } = useToast();
   const [pkgNote, setPkgNote] = useState('');
   const [pkgAudio, setPkgAudio] = useState('');
   const [saving, setSaving] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
+  const [stagePending, setStagePending] = useState('');
+  // The parent keeps its own copy of the selected order, so it does not
+  // re-render with the new status after a stage change. Track it here too.
+  const [stage, setStage] = useState('');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (order) {
+      setStage(order.status || '');
       setPkgNote(order.personalizationNote || '');
       setPkgAudio(order.audioUrl || '');
     }
@@ -69,12 +86,32 @@ export default function OrderDetailsModal({
   const handleSendNotification = async () => {
     setSendingEmail(true);
     try {
-      await onSendEmail(order.id);
-      toast(`Notification email dispatched to ${order.recipientEmail || 'recipient'}`);
+      const res = await onSendEmail(order.id, stage || order.status);
+      const who = (res?.deliveries || []).filter((d) => d.sent).map((d) => d.to);
+      toast(who.length ? `Email sent to ${who.join(' and ')}` : 'Notification sent');
     } catch (err) {
-      toast('Failed to send notification email', 'error');
+      toast(err.message || 'Failed to send notification email', 'error');
     } finally {
       setSendingEmail(false);
+    }
+  };
+
+  const handleStage = async (next) => {
+    setStagePending(next);
+    try {
+      const res = await onSetStage(order.id, next);
+      setStage(res?.order?.status || next);
+      const who = (res?.deliveries || []).filter((d) => d.sent).map((d) => d.to);
+      toast(
+        who.length
+          ? `${STAGES.find((x) => x.id === next)?.label} — emailed ${who.join(' and ')}`
+          : `${STAGES.find((x) => x.id === next)?.label} — saved, but no email went out`,
+        who.length ? 'success' : 'error'
+      );
+    } catch (err) {
+      toast(err.message || 'Could not update the order', 'error');
+    } finally {
+      setStagePending('');
     }
   };
 
@@ -175,6 +212,67 @@ export default function OrderDetailsModal({
           </div>
 
           {/* 3D WebGL Production Assets Form */}
+          {/* Fulfilment stage */}
+          <div className="mb-6">
+            <div className="flex items-center justify-between pb-1 mb-3 border-b border-neutral-100 dark:border-neutral-800">
+              <div className="flex items-center gap-2">
+                <Package size={15} className="text-accent" />
+                <h4 className="font-semibold text-xs text-neutral-900 dark:text-white">
+                  Fulfilment Stage
+                </h4>
+              </div>
+              <span className="text-[10px] text-neutral-400">
+                {(order.fulfillmentType || 'digital_physical') === 'digital_only'
+                  ? 'Digital only'
+                  : 'Digital + physical'}
+              </span>
+            </div>
+
+            <div className="grid gap-2">
+              {STAGES.filter(
+                (item) =>
+                  !item.physicalOnly ||
+                  (order.fulfillmentType || 'digital_physical') !== 'digital_only'
+              ).map((item) => {
+                const current = stage === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    onClick={() => handleStage(item.id)}
+                    disabled={Boolean(stagePending)}
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-left transition-all btn-press disabled:opacity-60 ${
+                      current
+                        ? 'border-[var(--accent)] bg-accent-soft'
+                        : 'border-neutral-200/70 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800'
+                    }`}
+                  >
+                    <span>
+                      <span className="block text-xs font-medium text-neutral-900 dark:text-white">
+                        {item.label}
+                      </span>
+                      <span className="block text-[10px] text-neutral-500 dark:text-neutral-400">
+                        {item.hint}
+                      </span>
+                    </span>
+                    <span className="text-[10px] font-medium text-accent whitespace-nowrap">
+                      {stagePending === item.id
+                        ? 'Sending...'
+                        : current
+                        ? 'Current — resend'
+                        : 'Set & notify'}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <p className="text-[10px] text-neutral-400 mt-2">
+              Each stage emails {order.recipientName || 'the recipient'} and{' '}
+              {order.purchaserName || 'the purchaser'} separately.
+            </p>
+          </div>
+
           <form onSubmit={handleSave} className="space-y-4">
             <div className="flex items-center justify-between pb-1 border-b border-neutral-100 dark:border-neutral-800">
               <div className="flex items-center gap-2">
@@ -203,13 +301,13 @@ export default function OrderDetailsModal({
             {/* Inside Cover Dedication Note */}
             <div>
               <label className="uppercase-label text-neutral-400 block mb-1">
-                Letter (shown as the dedication overlay)
+                Letter (painted onto its own page)
               </label>
               <textarea
                 rows={3}
                 value={pkgNote}
                 onChange={(e) => setPkgNote(e.target.value)}
-                placeholder="A cherished message rendered inside the 3D book pages..."
+                placeholder="A cherished message, written onto the first page of the book..."
                 className="w-full rounded-xl border border-neutral-200/60 dark:border-neutral-700 p-3 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
               />
             </div>
@@ -232,7 +330,7 @@ export default function OrderDetailsModal({
                 className="primary-button text-xs py-2 px-5 btn-press shadow-sm"
               >
                 <Save size={13} />
-                <span>{saving ? 'Saving...' : 'Save 3D Assets'}</span>
+                <span>{saving ? 'Saving...' : 'Save Changes'}</span>
               </button>
             </div>
           </form>

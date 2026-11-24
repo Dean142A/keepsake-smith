@@ -152,3 +152,133 @@ export function getGiftReadyHtml({ recipientName, purchaserName, accessCode }) {
 </html>
   `;
 }
+
+/** Shared chrome so every notification looks like the same house. */
+function emailShell({ heading, lede, body, cta, footer }) {
+  return `
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:40px 20px;background-color:#111111;font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;">
+  <div style="max-width:600px;margin:0 auto;background-color:#171717;border:1px solid rgba(197,160,89,0.25);padding:40px;">
+    <div style="font-size:14px;letter-spacing:3px;text-transform:uppercase;color:#C5A059;margin-bottom:30px;">The Keepsake Smith</div>
+    <h1 style="font-size:28px;font-weight:300;margin:0 0 15px;color:#FFFFFF;">${heading}</h1>
+    <p style="font-size:15px;color:#CCCCCC;line-height:1.65;margin:0 0 18px;">${lede}</p>
+    ${body || ''}
+    ${cta || ''}
+    <div style="margin-top:40px;border-top:1px solid rgba(255,255,255,0.08);padding-top:20px;font-size:11px;color:#666666;">
+      ${footer || 'The Keepsake Smith'}<br>
+      &copy; ${new Date().getFullYear()} The Keepsake Smith. All rights reserved.
+    </div>
+  </div>
+</body>
+</html>`;
+}
+
+function button(href, label) {
+  return `<a href="${href}" style="display:inline-block;padding:16px 36px;background-color:#C5A059;border-radius:9999px;color:#111111;text-decoration:none;font-size:14px;font-weight:bold;letter-spacing:1px;margin-top:20px;">${label}</a>`;
+}
+
+function codeBox(accessCode) {
+  return `<div style="background-color:#0F0F0F;border:1px solid #C5A059;padding:22px;text-align:center;margin:28px 0;">
+      <div style="font-size:11px;letter-spacing:2px;color:#AAAAAA;margin-bottom:8px;">ACCESS CODE</div>
+      <div style="font-family:monospace;font-size:26px;letter-spacing:4px;color:#C5A059;font-weight:bold;">${accessCode}</div>
+    </div>`;
+}
+
+/** Nobody should ever be greeted as "undefined". */
+function warmName(name) {
+  const clean = String(name || '').trim();
+  return clean ? clean.split(/\s+/)[0] : 'there';
+}
+
+/** "there, your gift is ready" is not a sentence; drop the greeting instead. */
+function greetSubject(name, tail) {
+  const first = warmName(name);
+  return first === 'there'
+    ? tail.charAt(0).toUpperCase() + tail.slice(1)
+    : `${first}, ${tail}`;
+}
+
+function fromWhom(purchaserName) {
+  const clean = String(purchaserName || '').trim();
+  return clean ? clean.split(/\s+/)[0] : 'someone who loves you';
+}
+
+/**
+ * Fulfilment milestones. Each one writes twice: a warm note to the person
+ * receiving the gift, and a plainer progress note to the person who paid for
+ * it, so both know where things stand without either getting the other's
+ * message.
+ */
+export const FULFILMENT_STAGES = {
+  ready: {
+    label: '3D Experience Ready',
+    physicalOnly: false,
+    recipient: ({ recipientName, purchaserName, accessCode }) => ({
+      subject: greetSubject(recipientName, 'your keepsake is ready to open'),
+      html: emailShell({
+        heading: 'Your Keepsake is Ready',
+        lede: `Hey ${warmName(recipientName)} &mdash; ${fromWhom(purchaserName)} made something for you, and it is finished. Photographs, a letter, and a voice you will recognise, bound into a book you can turn.`,
+        body: codeBox(accessCode),
+        cta: button(`https://app.thekeepsakesmith.com/?code=${accessCode}`, 'Open Your Keepsake'),
+        footer: 'No account or password needed. Keep this code safe.',
+      }),
+    }),
+    purchaser: ({ recipientName, accessCode, orderId }) => ({
+      subject: `Your keepsake for ${warmName(recipientName)} is ready (#${orderId})`,
+      html: emailShell({
+        heading: 'Their Keepsake is Ready',
+        lede: `The 3D experience you ordered for ${warmName(recipientName)} is finished and live. They can open it with the code below whenever you are ready for them to see it.`,
+        body: codeBox(accessCode),
+        footer: `Order #${orderId}`,
+      }),
+    }),
+  },
+
+  in_transit: {
+    label: 'Package On Its Way',
+    physicalOnly: true,
+    recipient: ({ recipientName, purchaserName }) => ({
+      subject: greetSubject(recipientName, 'something is on its way to you'),
+      html: emailShell({
+        heading: 'On Its Way',
+        lede: `Hey ${warmName(recipientName)} &mdash; the keepsake ${fromWhom(purchaserName)} had made for you has left our workshop. Hold the thought for a day or two; it is coming.`,
+        footer: 'We will write again the moment it is ready for you.',
+      }),
+    }),
+    purchaser: ({ recipientName, orderId }) => ({
+      subject: `Dispatched: your keepsake for ${warmName(recipientName)} (#${orderId})`,
+      html: emailShell({
+        heading: 'Your Package Has Been Dispatched',
+        lede: `The physical keepsake for ${warmName(recipientName)} has left our workshop and is in transit. We will let you both know as soon as it is ready to collect.`,
+        footer: `Order #${orderId}`,
+      }),
+    }),
+  },
+
+  pickup_ready: {
+    label: 'Ready for Pickup',
+    physicalOnly: true,
+    recipient: ({ recipientName, purchaserName }) => ({
+      subject: greetSubject(recipientName, 'your gift is ready to collect'),
+      html: emailShell({
+        heading: 'It Has Arrived',
+        lede: `Hey ${warmName(recipientName)} &mdash; the gift from ${fromWhom(purchaserName)} is here and waiting for you. Come and collect it whenever suits; it is not going anywhere.`,
+        footer: 'Bring nothing but yourself.',
+      }),
+    }),
+    purchaser: ({ recipientName, orderId }) => ({
+      subject: `Ready for collection: your keepsake for ${warmName(recipientName)} (#${orderId})`,
+      html: emailShell({
+        heading: 'Ready for Collection',
+        lede: `The keepsake for ${warmName(recipientName)} has arrived and is ready to be collected. We have let them know too.`,
+        footer: `Order #${orderId}`,
+      }),
+    }),
+  },
+};
+
+export function stageFor(status) {
+  return FULFILMENT_STAGES[status] || null;
+}

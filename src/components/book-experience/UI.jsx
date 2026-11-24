@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { atom, useAtom } from 'jotai';
-import { Volume2, VolumeX, ArrowLeft, Mail, ChevronLeft, ChevronRight, X, Mic, Pause } from 'lucide-react';
+import { Volume2, VolumeX, ArrowLeft, ChevronLeft, ChevronRight, Mic, Pause } from 'lucide-react';
 import { duckBackgroundMusic, restoreBackgroundMusic } from './backgroundMusic';
 
 export const pageAtom = atom(0);
@@ -16,7 +16,6 @@ export const UI = ({
   onToggleMusic,
 }) => {
   const [page, setPage] = useAtom(pageAtom);
-  const [showDedication, setShowDedication] = useState(false);
   const [voicePlaying, setVoicePlaying] = useState(false);
   const [voiceBlocked, setVoiceBlocked] = useState(false);
   const voiceRef = useRef(null);
@@ -119,8 +118,6 @@ export const UI = ({
         setPage((prev) => Math.min(leafCount, prev + 1));
       } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
         setPage((prev) => Math.max(0, prev - 1));
-      } else if (e.key === 'Escape') {
-        setShowDedication(false);
       }
     };
 
@@ -147,15 +144,6 @@ export const UI = ({
                 For {personalization.recipientName || 'Recipient'}
               </span>
             </div>
-          )}
-
-          {personalization?.message && (
-            <button
-              onClick={() => setShowDedication(true)}
-              style={styles.dedicationBtn}
-            >
-              <Mail size={14} style={{ marginRight: '6px', color: '#C5A059' }} /> Read the Letter
-            </button>
           )}
 
           {voiceNoteUrl && (
@@ -248,58 +236,6 @@ export const UI = ({
       </div>
 
       {/* Personal Dedication Modal Card */}
-      {showDedication && personalization && (
-        <div style={styles.modalBackdrop} onClick={() => setShowDedication(false)}>
-          <div style={styles.modalCard} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <div>
-                <span style={styles.modalTag}>PERSONAL GIFT DEDICATION</span>
-                <h3 style={styles.modalTitle}>
-                  For {personalization.recipientName || 'You'}
-                </h3>
-                {personalization.sender && (
-                  <p style={styles.modalSender}>From: {personalization.sender}</p>
-                )}
-              </div>
-              <button
-                onClick={() => setShowDedication(false)}
-                style={styles.closeBtn}
-                title="Close"
-              >
-                <X size={18} />
-              </button>
-            </div>
-
-            {/* Custom Photo if attached */}
-            {personalization.photo && (
-              <div style={styles.photoContainer}>
-                <img
-                  src={personalization.photo}
-                  alt="Personalized Keepsake Memory"
-                  style={styles.personalPhoto}
-                />
-              </div>
-            )}
-
-            {/* Personalized Message */}
-            <div style={styles.messageBody}>
-              <p style={styles.messageText}>
-                "{personalization.message || 'We craft gifts that are memorable.'}"
-              </p>
-            </div>
-
-            <div style={styles.modalFooter}>
-              <button
-                onClick={() => setShowDedication(false)}
-                className="btn-pill btn-pill-solid"
-                style={{ width: '100%', justifyContent: 'center' }}
-              >
-                Continue Viewing 3D Keepsake
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </main>
   );
 };
