@@ -119,3 +119,21 @@ export function generateAccessCode() {
 export function normaliseCode(str) {
   return (str || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
 }
+
+/**
+ * Whether an order has everything the 3D keepsake needs in order to render.
+ *
+ * The first build shipped a hand-made WebGL bundle per customer and judged
+ * readiness by the presence of `packageUrl`. The book is now generated from
+ * the order's own photos, so that field is never written and every order
+ * looked permanently unfinished. Readiness now means what it says: at least
+ * one page of media exists.
+ */
+export function isExperienceReady(order) {
+  return normaliseExperience(order).pages.length > 0;
+}
+
+/** How many photos this order supplied, which is what drives the leaf count. */
+export function experiencePageCount(order) {
+  return normaliseExperience(order).pages.length;
+}

@@ -31,16 +31,28 @@ export default function BookViewer({ order, personalization, onExit }) {
   useEffect(() => {
     setMounted(true);
 
-    const handleFirstInteraction = () => {
-      playBackgroundMusic(experience.backgroundMusicUrl);
-      setMusicActive(true);
-      window.removeEventListener('click', handleFirstInteraction);
+    let cancelled = false;
+
+    // Start the score straight away. Redeeming a code is itself a gesture, so
+    // the browser normally permits this; the listener below only matters for a
+    // recipient who arrived on a direct ?code= link. musicActive follows what
+    // actually happened, so the control never claims sound that isn't playing.
+    const start = () => {
+      playBackgroundMusic(experience.backgroundMusicUrl)
+        .then(() => {
+          if (!cancelled) setMusicActive(true);
+        })
+        .catch(() => {
+          if (!cancelled) setMusicActive(false);
+        });
     };
 
-    window.addEventListener('click', handleFirstInteraction);
+    start();
+    window.addEventListener('click', start, { once: true });
 
     return () => {
-      window.removeEventListener('click', handleFirstInteraction);
+      cancelled = true;
+      window.removeEventListener('click', start);
       pauseBackgroundMusic();
     };
   }, [experience.backgroundMusicUrl]);
@@ -49,10 +61,11 @@ export default function BookViewer({ order, personalization, onExit }) {
     if (musicActive) {
       pauseBackgroundMusic();
       setMusicActive(false);
-    } else {
-      playBackgroundMusic(experience.backgroundMusicUrl);
-      setMusicActive(true);
+      return;
     }
+    playBackgroundMusic(experience.backgroundMusicUrl)
+      .then(() => setMusicActive(true))
+      .catch(() => setMusicActive(false));
   };
 
   if (!mounted) return null;

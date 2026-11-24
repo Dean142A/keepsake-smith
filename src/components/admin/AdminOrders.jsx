@@ -16,6 +16,7 @@ import {
   Mail,
 } from 'lucide-react';
 import { useToast } from './AdminToast';
+import { isExperienceReady } from '@/lib/keepsake';
 
 export default function AdminOrders({
   orders = [],
@@ -46,7 +47,7 @@ export default function AdminOrders({
       if (!matchQuery) return false;
 
       // Filter match
-      if (filter === 'PENDING_ASSETS') return !o.packageUrl;
+      if (filter === 'PENDING_ASSETS') return !isExperienceReady(o);
       if (filter === 'DIGITAL_PHYSICAL') return o.fulfillmentType === 'digital_physical';
       if (filter === 'DIGITAL_ONLY') return o.fulfillmentType === 'digital_only';
       if (filter === 'REDEEMED') return o.status === 'redeemed' || o.hasBeenOpened;
@@ -146,7 +147,7 @@ export default function AdminOrders({
               const recipient = ord.recipientName || ord.customer || 'Recipient';
               const purchaser = ord.purchaserName || ord.customer || 'Purchaser';
               const initials = recipient.slice(0, 2).toUpperCase();
-              const hasAssets = Boolean(ord.packageUrl);
+              const hasAssets = isExperienceReady(ord);
 
               return (
                 <div

@@ -94,10 +94,10 @@ export function getOrderConfirmationHtml({ orderId, purchaserName, totalAmount, 
     <p>Total Paid: <strong>₦${Number(totalAmount).toLocaleString()}</strong></p>
     <p>You will receive a follow-up notification as soon as your 3D digital gift experience is ready for viewing.</p>
 
-    <a href="https://app.thekeepsakesmith.com" class="btn">Launch 3D Portal</a>
+    <a href="https://app.thekeepsakesmith.com/?code=${accessCode}" class="btn">Launch 3D Portal</a>
 
     <div class="footer">
-      this explains color systems and color usages so they are used the way brand identity portrays.<br>
+      Keep your access code safe &mdash; it is all that is needed to open the gift.<br>
       © ${new Date().getFullYear()} The Keepsake Smith. All rights reserved.
     </div>
   </div>
@@ -141,7 +141,7 @@ export function getGiftReadyHtml({ recipientName, purchaserName, accessCode }) {
 
     <p>Simply click the button below or visit <strong>app.thekeepsakesmith.com</strong> and enter your code to view your custom experience.</p>
 
-    <a href="https://app.thekeepsakesmith.com?code=${accessCode}" class="btn">Unlock 3D Experience</a>
+    <a href="https://app.thekeepsakesmith.com/?code=${accessCode}" class="btn">Unlock 3D Experience</a>
 
     <div class="footer">
       No account or password is required. Keep this code safe.<br>
