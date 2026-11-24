@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { atom, useAtom } from 'jotai';
 import { Volume2, VolumeX, ArrowLeft, Mail, ChevronLeft, ChevronRight, X, Mic, Pause } from 'lucide-react';
+import { duckBackgroundMusic, restoreBackgroundMusic } from './backgroundMusic';
 
 export const pageAtom = atom(0);
 
@@ -17,26 +18,90 @@ export const UI = ({
   const [page, setPage] = useAtom(pageAtom);
   const [showDedication, setShowDedication] = useState(false);
   const [voicePlaying, setVoicePlaying] = useState(false);
+  const [voiceBlocked, setVoiceBlocked] = useState(false);
   const voiceRef = useRef(null);
 
   const voiceNoteUrl = experience?.voiceNoteUrl || '';
 
-  // Stop the voice note when the experience unmounts.
-  useEffect(() => () => voiceRef.current?.pause?.(), []);
+  // The recorded message is the heart of the gift, so it introduces itself:
+  // it starts as soon as the keepsake opens, with the music stepping aside
+  // underneath it. The recipient should not have to hunt for a play button.
+  useEffect(() => {
+    if (!voiceNoteUrl) return undefined;
+
+    const audio = new Audio(voiceNoteUrl);
+    audio.preload = 'auto';
+    voiceRef.current = audio;
+
+    let cancelled = false;
+
+    const handleEnded = () => {
+      if (cancelled) return;
+      setVoicePlaying(false);
+      restoreBackgroundMusic();
+    };
+    audio.addEventListener('ended', handleEnded);
+
+    const attempt = () => {
+      duckBackgroundMusic();
+      audio
+        .play()
+        .then(() => {
+          if (cancelled) return;
+          setVoicePlaying(true);
+          setVoiceBlocked(false);
+        })
+        .catch(() => {
+          // Browsers refuse sound until the page has been interacted with.
+          // Recipients normally arrive by submitting their access code, which
+          // counts; a direct ?code= link has no gesture yet, so wait for one
+          // rather than leaving the gift silent with no explanation.
+          if (cancelled) return;
+          restoreBackgroundMusic();
+          setVoicePlaying(false);
+          setVoiceBlocked(true);
+        });
+    };
+
+    attempt();
+
+    const onGesture = () => {
+      if (!cancelled && audio.paused && audio.currentTime === 0) attempt();
+    };
+    window.addEventListener('pointerdown', onGesture, { once: true });
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('pointerdown', onGesture);
+      audio.removeEventListener('ended', handleEnded);
+      audio.pause();
+      voiceRef.current = null;
+      restoreBackgroundMusic();
+    };
+  }, [voiceNoteUrl]);
 
   const toggleVoiceNote = () => {
-    if (!voiceNoteUrl) return;
-    if (!voiceRef.current) {
-      voiceRef.current = new Audio(voiceNoteUrl);
-      voiceRef.current.addEventListener('ended', () => setVoicePlaying(false));
-    }
-    if (voicePlaying) {
-      voiceRef.current.pause();
+    const audio = voiceRef.current;
+    if (!audio) return;
+
+    if (!audio.paused) {
+      audio.pause();
       setVoicePlaying(false);
-    } else {
-      voiceRef.current.play().catch(() => setVoicePlaying(false));
-      setVoicePlaying(true);
+      restoreBackgroundMusic();
+      return;
     }
+
+    duckBackgroundMusic();
+    audio
+      .play()
+      .then(() => {
+        setVoicePlaying(true);
+        setVoiceBlocked(false);
+      })
+      .catch(() => {
+        setVoicePlaying(false);
+        restoreBackgroundMusic();
+      });
   };
 
   // Play page flip sound
@@ -105,7 +170,8 @@ export const UI = ({
                 </>
               ) : (
                 <>
-                  <Mic size={14} style={{ marginRight: '6px', color: '#C5A059' }} /> Play Voice Note
+                  <Mic size={14} style={{ marginRight: '6px', color: '#C5A059' }} />
+                  {voiceBlocked ? 'Tap to Play Voice Note' : 'Play Voice Note'}
                 </>
               )}
             </button>

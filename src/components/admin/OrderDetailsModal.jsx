@@ -25,7 +25,6 @@ export default function OrderDetailsModal({
   onSendEmail,
 }) {
   const { toast } = useToast();
-  const [pkgUrl, setPkgUrl] = useState('');
   const [pkgNote, setPkgNote] = useState('');
   const [pkgAudio, setPkgAudio] = useState('');
   const [saving, setSaving] = useState(false);
@@ -34,7 +33,6 @@ export default function OrderDetailsModal({
 
   useEffect(() => {
     if (order) {
-      setPkgUrl(order.packageUrl || '');
       setPkgNote(order.personalizationNote || '');
       setPkgAudio(order.audioUrl || '');
     }
@@ -57,11 +55,10 @@ export default function OrderDetailsModal({
     setSaving(true);
     try {
       await onSaveAssets(order.id, {
-        packageUrl: pkgUrl,
         personalizationNote: pkgNote,
         audioUrl: pkgAudio,
       });
-      toast(`3D WebGL assets saved for Order #${order.id}`);
+      toast(`Keepsake details saved for Order #${order.id}`);
     } catch (err) {
       toast('Failed to save assets', 'error');
     } finally {
@@ -183,33 +180,16 @@ export default function OrderDetailsModal({
               <div className="flex items-center gap-2">
                 <Sparkles size={15} className="text-accent" />
                 <h4 className="font-semibold text-xs text-neutral-900 dark:text-white">
-                  3D WebGL Production Assets
+                  Quick Edits
                 </h4>
               </div>
-              <span className="text-[10px] text-neutral-400">Rendered in Three.js</span>
-            </div>
-
-            {/* Package Model / Texture URL */}
-            <div>
-              <label className="uppercase-label text-neutral-400 block mb-1">
-                Custom 3D Texture / Asset Bundle URL
-              </label>
-              <input
-                type="text"
-                value={pkgUrl}
-                onChange={(e) => setPkgUrl(e.target.value)}
-                placeholder="https://.../textures/custom-book.glb or image url"
-                className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
-              />
-              <span className="text-[10px] text-neutral-400 block mt-1">
-                Leave blank to use default heirloom leatherette & gold foil textures.
-              </span>
+              <span className="text-[10px] text-neutral-400">Photos &amp; voice note live in the builder</span>
             </div>
 
             {/* Background Audio URL */}
             <div>
               <label className="uppercase-label text-neutral-400 block mb-1">
-                Background Music / Voice Recording Stream URL
+                Background Music URL (optional)
               </label>
               <input
                 type="text"
@@ -223,7 +203,7 @@ export default function OrderDetailsModal({
             {/* Inside Cover Dedication Note */}
             <div>
               <label className="uppercase-label text-neutral-400 block mb-1">
-                Inside Cover Dedication Letter (3D Typography)
+                Letter (shown as the dedication overlay)
               </label>
               <textarea
                 rows={3}
