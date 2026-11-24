@@ -140,13 +140,6 @@ export async function getOrderById(id) {
   return localAll().find((o) => o.id === id) || null;
 }
 
-export async function updateOrder(id, mutate) {
-  const existing = await getOrderById(id);
-  if (!existing) return null;
-  const next = { ...existing, ...mutate(existing), updatedAt: new Date().toISOString() };
-  await saveOrder(next);
-  return next;
-}
 
 /**
  * Fails fast in production when nothing durable is configured, rather than

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { sendEmail, getGiftReadyHtml, getOrderConfirmationHtml, stageFor } from '@/lib/mailer';
 import { validateAdminRequest } from '@/lib/auth';
-import { MAX_PAGES } from '@/lib/keepsake';
+import { MAX_PAGES, generateAccessCode } from '@/lib/keepsake';
 import {
   listOrders,
   saveOrder,
@@ -41,16 +41,6 @@ function buildExperiencePayload(experience, legacy = {}) {
 }
 
 
-
-function generateAccessCode() {
-  const chars = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-  let code = 'KPSK-';
-  for (let i = 0; i < 8; i++) {
-    if (i === 4) code += '-';
-    code += chars.charAt(Math.floor(Math.random() * chars.length));
-  }
-  return code;
-}
 
 // GET /api/admin/orders - Get all orders queue
 export async function GET(request) {
