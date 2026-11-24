@@ -12,6 +12,7 @@ import { pageAtom } from './UI';
 
 export default function BookViewer({ order, personalization, onExit }) {
   const [mounted, setMounted] = useState(false);
+  const [isNarrow, setIsNarrow] = useState(false);
   const [musicActive, setMusicActive] = useState(false);
   const [, setPage] = useAtom(pageAtom);
 
@@ -29,6 +30,7 @@ export default function BookViewer({ order, personalization, onExit }) {
   }, [order?.id, setPage]);
 
   useEffect(() => {
+    setIsNarrow(typeof window !== 'undefined' && window.innerWidth < 800);
     setMounted(true);
 
     let cancelled = false;
@@ -85,7 +87,9 @@ export default function BookViewer({ order, personalization, onExit }) {
       <Canvas
         shadows
         camera={{
-          position: [0, 1.5, 5.5],
+          // Phones need to stand further back to fit the book in a narrow
+          // viewport; OrbitControls takes the camera from here.
+          position: isNarrow ? [0, 1.1, 7.2] : [-0.5, 1, 4.2],
           fov: 45,
           // The book is about two units tall and the rig settles four units
           // away, so a tight frustum spends the depth buffer where it is
@@ -93,7 +97,8 @@ export default function BookViewer({ order, personalization, onExit }) {
           near: 0.5,
           far: 60,
         }}
-        style={{ width: '100%', height: '100%' }}
+        // Without this the browser claims pinch and drag for page scrolling.
+        style={{ width: '100%', height: '100%', touchAction: 'none' }}
       >
         <color attach="background" args={['#0D0D0D']} />
         <ambientLight intensity={1.8} />

@@ -1,23 +1,20 @@
 'use client';
 
-import React, { useRef } from 'react';
-import { Environment, Float } from '@react-three/drei';
-import { useFrame, useThree } from '@react-three/fiber';
-import { easing } from 'maath';
+import React, { useEffect } from 'react';
+import { Environment, Float, OrbitControls } from '@react-three/drei';
+import { useThree } from '@react-three/fiber';
 import { Book } from './Book';
+import { bookControls } from './viewerControls';
 
-const CameraRig = () => {
-  const { camera } = useThree();
-  const targetPosition = useRef([
-    -0.5,
-    1,
-    typeof window !== 'undefined' && window.innerWidth > 800 ? 4 : 9,
-  ]);
+const ControlsBinding = () => {
+  const controls = useThree((state) => state.controls);
 
-  useFrame((_, delta) => {
-    easing.damp3(camera.position, targetPosition.current, 2.5, delta);
-    camera.lookAt(0, 0, 0);
-  });
+  useEffect(() => {
+    bookControls.current = controls || null;
+    return () => {
+      bookControls.current = null;
+    };
+  }, [controls]);
 
   return null;
 };
@@ -25,7 +22,26 @@ const CameraRig = () => {
 export const Experience = ({ leaves = [] }) => {
   return (
     <>
-      <CameraRig />
+      <OrbitControls
+        makeDefault
+        // Panning lets people lose the book off-screen with nothing to grab;
+        // rotation and distance are enough to read any page closely.
+        enablePan={false}
+        enableDamping
+        dampingFactor={0.08}
+        rotateSpeed={0.55}
+        zoomSpeed={0.8}
+        // Close enough to read a caption, far enough to see the whole book.
+        minDistance={1.6}
+        maxDistance={9}
+        // Stay above the shadow plane; looking up from underneath is just the
+        // underside of a page.
+        minPolarAngle={0.2}
+        maxPolarAngle={Math.PI / 2 + 0.22}
+        target={[0, 0, 0]}
+      />
+      <ControlsBinding />
+
       <Float
         rotation-x={-Math.PI / 8}
         floatIntensity={0.3}

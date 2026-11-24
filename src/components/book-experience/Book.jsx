@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { useCursor, useTexture } from '@react-three/drei';
+import { useCursor } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useAtom } from 'jotai';
 import { easing } from 'maath';
@@ -26,6 +26,8 @@ const insideCurveStrength = 0.18;
 const outsideCurveStrength = 0.05;
 const turningCurveStrength = 0.09;
 const TURN_ANIMATION_DURATION = 400;
+// How far a pointer may travel and still count as a tap rather than a drag.
+const DRAG_SLOP_PX = 6;
 
 const PAGE_WIDTH = 1.28;
 const PAGE_HEIGHT = 1.71;
@@ -77,10 +79,6 @@ const pageMaterials = [
   new MeshStandardMaterial({ color: whiteColor }),
 ];
 
-if (typeof window !== 'undefined') {
-  useTexture.preload(`/textures/book-cover-roughness.jpg`);
-}
-
 /**
  * `front` and `back` are face descriptors for this order's leaf: either a
  * photo (a CDN-hosted customer image plus its caption) or the letter. Both
@@ -98,11 +96,6 @@ const Page = ({
   ...props
 }) => {
   const [picture, picture2] = usePageTextures(front, back);
-  // Static cover roughness map; applied only to the outer leaves below.
-  const pictureRoughness = useTexture('/textures/book-cover-roughness.jpg');
-
-  const isCoverLeaf = number === 0 || number === totalLeaves - 1;
-
   const group = useRef();
   const turnedAt = useRef(0);
   const lastOpened = useRef(opened);
@@ -129,10 +122,13 @@ const Page = ({
     // degree of fan. Polygon offset decides the order explicitly rather than
     // leaving it to depth-buffer precision, which is what tore the artwork
     // into vertical bands and let a back cover win over a photo.
+    // Covers read as board rather than paper, so they take a slightly lower
+    // roughness. The map that used to do this was a texture carrying another
+    // project's watermark, which showed through on the cover of every gift.
     const faceMaterial = (isOuter) =>
       new MeshStandardMaterial({
         color: whiteColor,
-        ...(isOuter ? { roughnessMap: pictureRoughness } : { roughness: 1 }),
+        roughness: isOuter ? 0.72 : 1,
         emissive: emissiveColor,
         emissiveIntensity: 0,
         polygonOffset: true,
@@ -153,7 +149,7 @@ const Page = ({
     mesh.add(skeleton.bones[0]);
     mesh.bind(skeleton);
     return mesh;
-  }, [number, totalLeaves, pictureRoughness]);
+  }, [number, totalLeaves]);
 
   // Attach the composited artwork to the long-lived materials.
   useEffect(() => {
@@ -174,6 +170,7 @@ const Page = ({
     [manualSkinnedMesh]
   );
 
+  const pointerStart = useRef(null);
   const [highlighted, setHighlighted] = useState(false);
   useCursor(highlighted);
 
@@ -277,8 +274,20 @@ const Page = ({
         e.stopPropagation();
         setHighlighted(false);
       }}
+      onPointerDown={(e) => {
+        pointerStart.current = { x: e.clientX, y: e.clientY };
+      }}
       onClick={(e) => {
         e.stopPropagation();
+        // A drag that rotates the book ends in a click on whatever is under
+        // the finger. Only treat it as a page turn if the pointer stayed put.
+        const start = pointerStart.current;
+        const moved =
+          start &&
+          Math.hypot(e.clientX - start.x, e.clientY - start.y) > DRAG_SLOP_PX;
+        pointerStart.current = null;
+        if (moved) return;
+
         setPage(opened ? number : number + 1);
         setHighlighted(false);
       }}
