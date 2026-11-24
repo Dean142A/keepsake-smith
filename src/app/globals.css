@@ -1,5 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;300;400;500;600;700&display=swap');
 
+/* ═══════════════════════════════════════════════════════════════════════
+   The whole storefront stylesheet lives in the `legacy` cascade layer.
+
+   Why: Tailwind v4 emits its utilities inside @layer utilities, and UNLAYERED
+   css always beats LAYERED css regardless of specificity. While this file was
+   unlayered, its `* { margin:0; padding:0 }` and `button { background:
+   transparent }` silently defeated every Tailwind utility in /admin — padding,
+   background and spacing all computed to 0. Layering this file restores normal
+   precedence (see the layer order declared in src/app/admin/admin.css).
+
+   This does not change the storefront: wrapping an entire stylesheet in one
+   layer preserves its internal order and specificity exactly, and this is the
+   only unlayered stylesheet in the app.
+   ═══════════════════════════════════════════════════════════════════════ */
+@layer legacy {
+
 :root {
   --bg-primary: #111111;
   --bg-surface: #171717;
@@ -65,6 +81,14 @@ input, textarea, select {
   font-family: var(--font-sans);
   color: var(--text-primary);
   background: transparent;
+}
+
+/* Storefront inputs keep Keepsake's sharp 0px corners. The admin console
+   (.admin-root) opts out so its Tailwind pill inputs can take effect — without
+   this exclusion the !important here overrides every `rounded-full` in /admin. */
+input:not(.admin-root input),
+textarea:not(.admin-root textarea),
+select:not(.admin-root select) {
   border-radius: 0px !important;
 }
 
@@ -770,4 +794,4 @@ input, textarea, select {
     transform: translateX(0);
   }
 }
-
+}
