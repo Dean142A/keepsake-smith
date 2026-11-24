@@ -2,7 +2,8 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import { atom, useAtom } from 'jotai';
-import { Volume2, VolumeX, ArrowLeft, ChevronLeft, ChevronRight, Mic, Pause } from 'lucide-react';
+import { Volume2, VolumeX, ArrowLeft, ChevronLeft, ChevronRight, Mic, Pause, Maximize2 } from 'lucide-react';
+import { bookControls } from './viewerControls';
 import { duckBackgroundMusic, restoreBackgroundMusic } from './backgroundMusic';
 
 export const pageAtom = atom(0);
@@ -166,7 +167,18 @@ export const UI = ({
           )}
         </div>
 
-        <button onClick={onToggleMusic} style={styles.audioPill}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <button
+            onClick={() => bookControls.current?.reset?.()}
+            style={styles.audioPill}
+            title="Back to the starting view"
+          >
+            <span style={styles.iconBtnInner}>
+              <Maximize2 size={14} color="#C5A059" /> Reset View
+            </span>
+          </button>
+
+          <button onClick={onToggleMusic} style={styles.audioPill}>
           {musicActive ? (
             <span style={styles.iconBtnInner}>
               <Volume2 size={15} color="#C5A059" /> Music On
@@ -176,7 +188,8 @@ export const UI = ({
               <VolumeX size={15} /> Tap for Music
             </span>
           )}
-        </button>
+          </button>
+        </div>
       </div>
 
       {/* Floating Side Arrow Controls for easy page turning */}
