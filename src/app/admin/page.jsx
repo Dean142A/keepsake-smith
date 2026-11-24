@@ -1,3097 +1,375 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Plus, Edit2, Trash2, CheckCircle, XCircle, Package, RefreshCw, Key, Mail, Lock, LogOut, ShieldCheck, Search, Filter, Upload, Image as ImageIcon, Link as LinkIcon, X, Eye, Copy, Check } from 'lucide-react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { ToastProvider, useToast } from '@/components/admin/AdminToast';
+import AdminLogin from '@/components/admin/AdminLogin';
+import AdminSidebar, { ADMIN_NAV_ITEMS } from '@/components/admin/AdminSidebar';
+import AdminTopBar from '@/components/admin/AdminTopBar';
+import AdminDashboard from '@/components/admin/AdminDashboard';
+import AdminOrders from '@/components/admin/AdminOrders';
+import AdminCreateOrder from '@/components/admin/AdminCreateOrder';
+import AdminCodeVault from '@/components/admin/AdminCodeVault';
+import AdminCatalog from '@/components/admin/AdminCatalog';
+import AdminSettings from '@/components/admin/AdminSettings';
+import OrderDetailsModal from '@/components/admin/OrderDetailsModal';
 
-export default function AdminDashboardPage() {
+const STORAGE_DARK = 'keepsake_admin_dark_mode';
+const STORAGE_ACCENT = 'keepsake_admin_accent';
+
+/** Keepsake gold — the console's default accent. */
+const DEFAULT_ACCENT = '#C5A059';
+
+/** Shift a hex colour lighter (positive) or darker (negative). */
+function adjustColor(hex, amount) {
+  let c = String(hex).replace('#', '');
+  if (c.length === 3) c = c.split('').map((x) => x + x).join('');
+  const num = parseInt(c, 16);
+  if (Number.isNaN(num)) return hex;
+  const r = Math.min(255, Math.max(0, (num >> 16) + amount));
+  const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + amount));
+  const b = Math.min(255, Math.max(0, (num & 0xff) + amount));
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+function hexToRgba(hex, alpha) {
+  let c = String(hex).replace('#', '');
+  if (c.length === 3) c = c.split('').map((x) => x + x).join('');
+  const num = parseInt(c, 16);
+  if (Number.isNaN(num)) return `rgba(197, 160, 89, ${alpha})`;
+  return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
+}
+
+function AdminPortalInner({
+  darkMode,
+  setDarkMode,
+  accentColor,
+  setAccentColor,
+}) {
+  const { toast } = useToast();
+
+  // ── Auth ──────────────────────────────────────────────────────────────
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [authChecking, setAuthChecking] = useState(true);
-  const [username, setUsername] = useState('admin@thekeepsakesmith.com');
-  const [password, setPassword] = useState('');
-  const [loggingIn, setLoggingIn] = useState(false);
-  const [loginError, setLoginError] = useState('');
+  const [currentUser] = useState({
+    username: 'admin@thekeepsakesmith.com',
+    role: 'Super Admin',
+  });
 
-  const [activeTab, setActiveTab] = useState('orders'); // 'orders' or 'products'
-  const [orderFilter, setOrderFilter] = useState('ALL'); // 'ALL', 'PHYSICAL', 'DIGITAL', 'GIFTS'
-  const [products, setProducts] = useState([]);
+  // ── Navigation ────────────────────────────────────────────────────────
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [globalSearch, setGlobalSearch] = useState('');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // ── Data ──────────────────────────────────────────────────────────────
   const [orders, setOrders] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [statusMsg, setStatusMsg] = useState('');
+  const [products, setProducts] = useState([]);
+  const [loadingData, setLoadingData] = useState(false);
 
-  // Order Details Modal & WebGL Workspace State
+  // ── Modals ────────────────────────────────────────────────────────────
   const [viewingOrder, setViewingOrder] = useState(null);
-  const [copiedCode, setCopiedCode] = useState(false);
-  const [pkgUrl, setPkgUrl] = useState('');
-  const [pkgNote, setPkgNote] = useState('');
-  const [pkgAudio, setPkgAudio] = useState('');
-  const [savingPkgAssets, setSavingPkgAssets] = useState(false);
 
-  // Manual Gift Order Creation State
-  const [isAddOrderOpen, setIsAddOrderOpen] = useState(false);
-  const [newPurchaserName, setNewPurchaserName] = useState('');
-  const [newPurchaserEmail, setNewPurchaserEmail] = useState('');
-  const [newRecipientName, setNewRecipientName] = useState('');
-  const [newRecipientEmail, setNewRecipientEmail] = useState('');
-  const [newNote, setNewNote] = useState('');
-  const [newPhotoUrl, setNewPhotoUrl] = useState('');
-  const [newAudioUrl, setNewAudioUrl] = useState('');
-  const [newFulfillment, setNewFulfillment] = useState('digital_physical');
-  const [newSendEmail, setNewSendEmail] = useState(true);
-  const [creatingOrder, setCreatingOrder] = useState(false);
-
-  // Daily CSV Import State
-  const [isCsvModalOpen, setIsCsvModalOpen] = useState(false);
-  const [csvText, setCsvText] = useState('');
-  const [importingCsv, setImportingCsv] = useState(false);
-  const [csvResults, setCsvResults] = useState(null);
-
-  const handleCreateOrder = async (e) => {
-    e.preventDefault();
-    if (!newPurchaserName && !newRecipientName) {
-      setStatusMsg('Please enter either purchaser or recipient name.');
-      return;
-    }
-    setCreatingOrder(true);
+  // Verify the server session on mount.
+  const checkSession = useCallback(async () => {
     try {
-      const res = await fetch('/api/admin/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          purchaserName: newPurchaserName,
-          purchaserEmail: newPurchaserEmail,
-          recipientName: newRecipientName,
-          recipientEmail: newRecipientEmail,
-          personalizationNote: newNote,
-          customPhoto: newPhotoUrl,
-          audioUrl: newAudioUrl,
-          fulfillmentType: newFulfillment,
-          sendNotification: newSendEmail,
-        }),
-      });
+      const res = await fetch('/api/admin/session');
       const data = await res.json();
-      if (data.success && data.order) {
-        setStatusMsg(`Order created! Generated Access Code: ${data.order.accessCode}`);
-        setIsAddOrderOpen(false);
-        setNewPurchaserName('');
-        setNewPurchaserEmail('');
-        setNewRecipientName('');
-        setNewRecipientEmail('');
-        setNewNote('');
-        setNewPhotoUrl('');
-        setNewAudioUrl('');
-        fetchData();
-      } else {
-        setStatusMsg(data.error || 'Failed to create order');
-      }
-    } catch (err) {
-      console.error(err);
-      setStatusMsg('Error creating order');
+      setIsAuthenticated(Boolean(data && data.authenticated));
+    } catch {
+      setIsAuthenticated(false);
     } finally {
-      setCreatingOrder(false);
+      setAuthChecking(false);
     }
-  };
-
-  const handleCsvFileUpload = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      setCsvText(evt.target.result || '');
-    };
-    reader.readAsText(file);
-  };
-
-  const handleProcessCsvImport = async () => {
-    if (!csvText.trim()) {
-      setStatusMsg('Please paste or upload CSV data first.');
-      return;
-    }
-    setImportingCsv(true);
-    try {
-      const lines = csvText.trim().split('\n');
-      if (lines.length < 2) {
-        setStatusMsg('CSV must contain a header row and at least 1 record.');
-        setImportingCsv(false);
-        return;
-      }
-      const headers = lines[0].split(',').map((h) => h.trim().toLowerCase().replace(/["']/g, ''));
-      const items = [];
-      for (let i = 1; i < lines.length; i++) {
-        const line = lines[i].trim();
-        if (!line) continue;
-        const values = line.match(/(".*?"|[^",\s]+)(?=\s*,|\s*$)/g) || line.split(',');
-        const row = {};
-        headers.forEach((h, idx) => {
-          let val = (values[idx] || '').trim().replace(/^["']|["']$/g, '');
-          if (h.includes('purchaser_name') || h === 'purchaser') row.purchaserName = val;
-          else if (h.includes('purchaser_email')) row.purchaserEmail = val;
-          else if (h.includes('recipient_name') || h === 'recipient') row.recipientName = val;
-          else if (h.includes('recipient_email')) row.recipientEmail = val;
-          else if (h.includes('note') || h.includes('message')) row.personalizationNote = val;
-          else if (h.includes('photo')) row.customPhoto = val;
-          else if (h.includes('audio')) row.audioUrl = val;
-        });
-        if (row.purchaserName || row.recipientName) {
-          items.push(row);
-        }
-      }
-
-      const res = await fetch('/api/admin/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bulk: true, items }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setCsvResults(data.createdOrders || []);
-        setStatusMsg(`Successfully imported ${data.count} gift orders!`);
-        fetchData();
-      } else {
-        setStatusMsg(data.error || 'Failed to import CSV');
-      }
-    } catch (err) {
-      console.error(err);
-      setStatusMsg('Error processing CSV import');
-    } finally {
-      setImportingCsv(false);
-    }
-  };
-
-  const handleOpenOrderDetails = (ord) => {
-    setViewingOrder(ord);
-    setPkgUrl(ord ? (ord.packageUrl || '') : '');
-    setPkgNote(ord ? (ord.personalizationNote || '') : '');
-    setPkgAudio(ord ? (ord.audioUrl || '') : '');
-  };
-
-  const handleSaveProductionAssets = async (orderId) => {
-    setSavingPkgAssets(true);
-    try {
-      const res = await fetch('/api/admin/orders', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          id: orderId,
-          packageUrl: pkgUrl,
-          personalizationNote: pkgNote,
-          audioUrl: pkgAudio,
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setStatusMsg(`Production WebGL assets saved for Order #${orderId}!`);
-        setViewingOrder(data.order);
-        fetchData();
-      } else {
-        setStatusMsg(data.error || 'Failed to save production assets');
-      }
-    } catch (err) {
-      console.error('Error saving production assets:', err);
-      setStatusMsg('Server error saving production assets.');
-    } finally {
-      setSavingPkgAssets(false);
-    }
-  };
-
-  // Product Form State
-  const [editingProduct, setEditingProduct] = useState(null);
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [title, setTitle] = useState('');
-  const [subtitle, setSubtitle] = useState('');
-  const [price, setPrice] = useState('');
-  const [category, setCategory] = useState('CARDS');
-  const [image, setImage] = useState('');
-  const [allowsCustomization, setAllowsCustomization] = useState(true);
-
-  // File Upload State
-  const [uploading, setUploading] = useState(false);
-  const [uploadError, setUploadError] = useState('');
-  const [useUrlInput, setUseUrlInput] = useState(false);
-
-  // Categories Manager State
-  const [categories, setCategories] = useState([]);
-  const [editingCategory, setEditingCategory] = useState(null);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
-  const [catName, setCatName] = useState('');
-  const [catDescription, setCatDescription] = useState('');
-
-  // Coupons Manager State
-  const [coupons, setCoupons] = useState([]);
-  const [editingCoupon, setEditingCoupon] = useState(null);
-  const [isCouponModalOpen, setIsCouponModalOpen] = useState(false);
-  const [cCode, setCCode] = useState('');
-  const [cDiscountType, setCDiscountType] = useState('percentage');
-  const [cDiscountValue, setCDiscountValue] = useState('');
-  const [cActive, setCActive] = useState(true);
-  const [cMaxUses, setCMaxUses] = useState('');
-  const [cExpiryDate, setCExpiryDate] = useState('');
-
-  // Live Timer Settings State
-  const [timerHours, setTimerHours] = useState(22);
-  const [timerMinutes, setTimerMinutes] = useState(7);
-  const [timerSeconds, setTimerSeconds] = useState(46);
-  const [savingTimer, setSavingTimer] = useState(false);
-
-  // Verify secure admin session on mount
-  useEffect(() => {
-    async function checkSession() {
-      try {
-        const res = await fetch('/api/admin/session');
-        const data = await res.json();
-        if (data && data.authenticated) {
-          setIsAuthenticated(true);
-        } else {
-          setIsAuthenticated(false);
-        }
-      } catch (err) {
-        setIsAuthenticated(false);
-      } finally {
-        setAuthChecking(false);
-      }
-    }
-    checkSession();
   }, []);
 
-  const handleLogin = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    if (!password) {
-      setLoginError('Please enter the administrator passcode.');
-      return;
-    }
-    setLoggingIn(true);
-    setLoginError('');
+  useEffect(() => {
+    checkSession();
+  }, [checkSession]);
+
+  const fetchData = useCallback(async () => {
+    setLoadingData(true);
     try {
-      const res = await fetch('/api/admin/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
-      });
-      const data = await res.json();
-      if (data && data.success) {
-        setIsAuthenticated(true);
-        setPassword('');
-      } else {
-        setLoginError(data?.error || 'Invalid credentials.');
-      }
+      const [resOrders, resProducts] = await Promise.all([
+        fetch('/api/admin/orders'),
+        fetch('/api/admin/products'),
+      ]);
+      const dataOrders = await resOrders.json().catch(() => ({ orders: [] }));
+      const dataProducts = await resProducts.json().catch(() => ({ products: [] }));
+      if (dataOrders.success) setOrders(dataOrders.orders || []);
+      if (dataProducts.success) setProducts(dataProducts.products || []);
     } catch (err) {
-      setLoginError('Authentication server unreachable.');
+      console.error('Error fetching admin data:', err);
+      toast('Could not load admin data', 'error');
     } finally {
-      setLoggingIn(false);
+      setLoadingData(false);
     }
+  }, [toast]);
+
+  useEffect(() => {
+    if (isAuthenticated) fetchData();
+  }, [isAuthenticated, fetchData]);
+
+  const toggleDarkMode = () => {
+    const next = !darkMode;
+    setDarkMode(next);
+    try {
+      window.localStorage.setItem(STORAGE_DARK, String(next));
+    } catch { /* ignore */ }
+    toast(next ? 'Switched to obsidian theme' : 'Switched to light theme');
+  };
+
+  const handleChangeAccent = (color) => {
+    setAccentColor(color);
+    try {
+      window.localStorage.setItem(STORAGE_ACCENT, color);
+    } catch { /* ignore */ }
+    toast('Accent updated');
   };
 
   const handleLogout = async () => {
     try {
       await fetch('/api/admin/logout', { method: 'POST' });
-    } catch (err) {}
+    } catch { /* ignore */ }
     setIsAuthenticated(false);
-    setPassword('');
-    if (typeof window !== 'undefined') {
-      try {
-        sessionStorage.removeItem('ks_admin_auth');
-        localStorage.removeItem('ks_admin_auth');
-      } catch (err) {}
-    }
+    toast('Signed out');
   };
 
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      const [resProd, resOrd, resCat, resTimer, resCoup] = await Promise.all([
-        fetch('/api/admin/products'),
-        fetch('/api/admin/orders'),
-        fetch('/api/admin/categories'),
-        fetch('/api/admin/settings'),
-        fetch('/api/coupons/admin'),
-      ]);
-      const dataProd = await resProd.json();
-      const dataOrd = await resOrd.json();
-      const dataCat = await resCat.json();
-      const dataTimer = await resTimer.json();
-      const dataCoup = await resCoup.json();
-
-      if (dataProd.success) setProducts(dataProd.products || []);
-      if (dataOrd.success) setOrders(dataOrd.orders || []);
-      if (dataCat.success) setCategories(dataCat.categories || []);
-      if (dataCoup.success) setCoupons(dataCoup.coupons || []);
-      if (dataTimer.success && dataTimer.settings) {
-        setTimerHours(dataTimer.settings.timerHours ?? 22);
-        setTimerMinutes(dataTimer.settings.timerMinutes ?? 7);
-        setTimerSeconds(dataTimer.settings.timerSeconds ?? 46);
-      }
-    } catch (err) {
-      console.error('Error fetching admin data:', err);
-    } finally {
-      setLoading(false);
-    }
+  const handleSaveAssets = async (orderId, assets) => {
+    const res = await fetch('/api/admin/orders', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: orderId, ...assets }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to save assets');
+    setViewingOrder(data.order);
+    fetchData();
+    return data;
   };
 
-  // COUPON MANAGEMENT HANDLERS
-  const resetCouponForm = () => {
-    setCCode('');
-    setCDiscountType('percentage');
-    setCDiscountValue('');
-    setCActive(true);
-    setCMaxUses('');
-    setCExpiryDate('');
-    setEditingCoupon(null);
-    setIsCouponModalOpen(false);
+  const handleSendEmail = async (orderId) => {
+    const res = await fetch('/api/admin/orders', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notifyRecipient: true, orderId }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to send notification email');
+    fetchData();
+    return data;
   };
 
-  const handleOpenEditCoupon = (coup) => {
-    setEditingCoupon(coup);
-    setCCode(coup.code);
-    setCDiscountType(coup.discountType || 'percentage');
-    setCDiscountValue(coup.discountValue);
-    setCActive(coup.active !== false);
-    setCMaxUses(coup.maxUses || '');
-    setCExpiryDate(coup.expiryDate || '');
-    setIsCouponModalOpen(true);
-  };
-
-  const handleCouponSubmit = async (e) => {
-    e.preventDefault();
-    if (!cCode || !cCode.trim() || !cDiscountValue) {
-      setStatusMsg('Coupon Code and Discount Value are required.');
-      return;
-    }
-
-    const payload = {
-      code: cCode.trim().toUpperCase(),
-      discountType: cDiscountType,
-      discountValue: Number(cDiscountValue),
-      active: cActive,
-      maxUses: cMaxUses ? Number(cMaxUses) : null,
-      expiryDate: cExpiryDate || null,
-    };
-
-    try {
-      if (editingCoupon) {
-        const res = await fetch('/api/coupons/admin', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: editingCoupon.id, ...payload }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setStatusMsg(`Coupon "${data.coupon.code}" updated successfully!`);
-          fetchData();
-          resetCouponForm();
-        } else {
-          setStatusMsg(data.error || 'Error updating coupon');
-        }
-      } else {
-        const res = await fetch('/api/coupons/admin', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setStatusMsg(`New coupon "${data.coupon.code}" created successfully!`);
-          fetchData();
-          resetCouponForm();
-        } else {
-          setStatusMsg(data.error || 'Error creating coupon');
-        }
-      }
-    } catch (err) {
-      setStatusMsg('Server error saving coupon.');
-    }
-  };
-
-  const handleToggleCouponActive = async (coup) => {
-    try {
-      const res = await fetch('/api/coupons/admin', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: coup.id, active: !coup.active }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setStatusMsg(`Coupon "${coup.code}" status changed to ${!coup.active ? 'ACTIVE' : 'INACTIVE'}.`);
-        fetchData();
-      }
-    } catch (err) {
-      console.error('Error toggling coupon status:', err);
-    }
-  };
-
-  const handleDeleteCoupon = async (id, code) => {
-    if (!confirm(`Are you sure you want to delete coupon code "${code}"?`)) return;
-    try {
-      const res = await fetch(`/api/coupons/admin?id=${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        setStatusMsg(`Coupon "${code}" deleted.`);
-        fetchData();
-      } else {
-        setStatusMsg(data.error || 'Failed to delete coupon');
-      }
-    } catch (err) {
-      console.error('Error deleting coupon:', err);
-    }
-  };
-
-  const handleSaveTimerSettings = async (e) => {
-    if (e && e.preventDefault) e.preventDefault();
-    setSavingTimer(true);
-    try {
-      const res = await fetch('/api/admin/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          timerHours: Number(timerHours),
-          timerMinutes: Number(timerMinutes),
-          timerSeconds: Number(timerSeconds),
-        }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setStatusMsg('Live Homepage Countdown Timer updated and saved to database!');
-      } else {
-        setStatusMsg('Error: ' + (data.error || 'Failed to update timer settings.'));
-      }
-    } catch (err) {
-      setStatusMsg('Network error updating timer settings.');
-    } finally {
-      setSavingTimer(false);
-    }
-  };
-
+  // ⌘K / Ctrl+K focuses the global search field.
   useEffect(() => {
-    if (isAuthenticated) {
-      fetchData();
-    }
-  }, [isAuthenticated]);
-
-  const resetForm = () => {
-    setTitle('');
-    setSubtitle('');
-    setPrice('');
-    setCategory('CARDS');
-    setImage('');
-    setAllowsCustomization(true);
-    setEditingProduct(null);
-    setUploadError('');
-    setUploading(false);
-    setUseUrlInput(false);
-    setIsFormOpen(false);
-  };
-
-  const handleFileUpload = async (e) => {
-    const file = e.target.files && e.target.files[0];
-    if (!file) return;
-
-    setUploading(true);
-    setUploadError('');
-
-    try {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const res = await fetch('/api/admin/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (data.success) {
-        setImage(data.url || data.dataUrl);
-      } else {
-        setUploadError(data.error || 'Failed to upload image.');
+    const onKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        document.getElementById('admin-global-search')?.focus();
       }
-    } catch (err) {
-      console.error('File upload error:', err);
-      setUploadError('Server error uploading image file.');
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleOpenEdit = (prod) => {
-    setEditingProduct(prod);
-    setTitle(prod.title);
-    setSubtitle(prod.subtitle || '');
-    setPrice(prod.price);
-    setCategory(prod.category || 'CARDS');
-    setImage(prod.image || '');
-    setAllowsCustomization(prod.allowsCustomization !== false);
-    setIsFormOpen(true);
-  };
-
-  const handleProductSubmit = async (e) => {
-    e.preventDefault();
-    if (!title || !price) {
-      setStatusMsg('Title and Price are required.');
-      return;
-    }
-
-    const payload = {
-      title,
-      subtitle,
-      price: Number(price),
-      category,
-      image: image || 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
-      allowsCustomization,
+      if (e.key === 'Escape') setMobileMenuOpen(false);
     };
+    document.addEventListener('keydown', onKeyDown);
+    return () => document.removeEventListener('keydown', onKeyDown);
+  }, []);
 
-    try {
-      if (editingProduct) {
-        const res = await fetch('/api/admin/products', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: editingProduct.id, ...payload }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setStatusMsg('Product updated successfully!');
-          fetchData();
-          resetForm();
-        }
-      } else {
-        const res = await fetch('/api/admin/products', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setStatusMsg('New product created successfully!');
-          fetchData();
-          resetForm();
-        }
-      }
-    } catch (err) {
-      setStatusMsg('Server error saving product');
-    }
-  };
+  const currentNav =
+    ADMIN_NAV_ITEMS.find((n) => n.id === activeTab) || ADMIN_NAV_ITEMS[0];
 
-  const handleDeleteProduct = async (id) => {
-    if (!confirm('Are you sure you want to delete this product?')) return;
-    try {
-      const res = await fetch(`/api/admin/products?id=${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        setProducts(products.filter((p) => p.id !== id));
-        setStatusMsg('Product deleted successfully.');
-      }
-    } catch (err) {
-      console.error('Error deleting product:', err);
-    }
-  };
+  let body;
 
-  const handleToggleStock = async (prod) => {
-    try {
-      const res = await fetch('/api/admin/products', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: prod.id, inStock: prod.inStock === false }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setStatusMsg(`Product "${prod.title}" marked as ${prod.inStock === false ? 'In Stock' : 'Out of Stock'}.`);
-        fetchData();
-      }
-    } catch (err) {
-      console.error('Error toggling product stock:', err);
-    }
-  };
-
-  // CATEGORY MANAGEMENT HANDLERS
-  const resetCategoryForm = () => {
-    setCatName('');
-    setCatDescription('');
-    setEditingCategory(null);
-    setIsCategoryModalOpen(false);
-  };
-
-  const handleOpenEditCategory = (cat) => {
-    setEditingCategory(cat);
-    setCatName(cat.name);
-    setCatDescription(cat.description || '');
-    setIsCategoryModalOpen(true);
-  };
-
-  const handleCategorySubmit = async (e) => {
-    e.preventDefault();
-    if (!catName || !catName.trim()) {
-      setStatusMsg('Category name is required.');
-      return;
-    }
-
-    const payload = {
-      name: catName.trim().toUpperCase(),
-      description: catDescription.trim(),
-    };
-
-    try {
-      if (editingCategory) {
-        const res = await fetch('/api/admin/categories', {
-          method: 'PUT',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ id: editingCategory.id, ...payload }),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setStatusMsg(`Category "${data.category.name}" updated successfully!`);
-          fetchData();
-          resetCategoryForm();
-        } else {
-          setStatusMsg(data.error || 'Error updating category');
-        }
-      } else {
-        const res = await fetch('/api/admin/categories', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-        const data = await res.json();
-        if (data.success) {
-          setStatusMsg(`New category "${data.category.name}" created successfully!`);
-          fetchData();
-          resetCategoryForm();
-        } else {
-          setStatusMsg(data.error || 'Error creating category');
-        }
-      }
-    } catch (err) {
-      setStatusMsg('Server error saving category.');
-    }
-  };
-
-  const handleDeleteCategory = async (id, name) => {
-    if (!confirm(`Are you sure you want to delete category "${name}"?`)) return;
-    try {
-      const res = await fetch(`/api/admin/categories?id=${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.success) {
-        setStatusMsg(`Category "${name}" deleted.`);
-        fetchData();
-      } else {
-        setStatusMsg(data.error || 'Failed to delete category');
-      }
-    } catch (err) {
-      console.error('Error deleting category:', err);
-    }
-  };
-
-  const handleOrderStatusToggle = async (orderId, newStatus) => {
-    try {
-      const res = await fetch('/api/admin/orders', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: orderId, status: newStatus }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setStatusMsg(
-          newStatus === 'ready'
-            ? `Order #${orderId} marked READY & notification email sent!`
-            : `Order #${orderId} status updated to ${newStatus}.`
-        );
-        fetchData();
-      }
-    } catch (err) {
-      console.error('Error updating order status:', err);
-    }
-  };
-
-  const handleSendNotification = async (orderId) => {
-    try {
-      const res = await fetch('/api/admin/orders', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: orderId, status: 'ready', sendNotification: true }),
-      });
-      const data = await res.json();
-      if (data.success) {
-        setStatusMsg(`Email notification sent to recipient for Order #${orderId}!`);
-        fetchData();
-      }
-    } catch (err) {
-      console.error('Error sending email notification:', err);
-    }
-  };
-
-  // 1. SESSION VERIFICATION LOADER
   if (authChecking) {
-    return (
-      <div style={styles.loginPage}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{ display: 'inline-block', width: '28px', height: '28px', border: '2px solid #C5A059', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
-          <p style={{ color: '#C5A059', letterSpacing: '0.15em', fontSize: '0.75rem', marginTop: '1rem', textTransform: 'uppercase' }}>
-            Verifying Admin Session...
-          </p>
+    body = (
+      <div className="min-h-screen bg-neutral-50 dark:bg-neutral-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <span className="uppercase-label text-accent block">
+            Verifying admin session…
+          </span>
         </div>
       </div>
     );
-  }
-
-  // 2. ENCRYPTED LOGIN VAULT (IF UNAUTHENTICATED)
-  if (!isAuthenticated) {
-    return (
-      <div style={styles.loginPage}>
-        <div style={styles.loginCard}>
-          {/* Logo Emblem */}
-          <div style={styles.loginLogo}>
-            <svg width="48" height="48" viewBox="0 0 100 100" fill="none">
-              <circle cx="50" cy="50" r="46" stroke="#C5A059" strokeWidth="2" opacity="0.8" />
-              <path d="M50 15 C30 15, 15 30, 15 50 C15 70, 30 85, 50 85" stroke="#C5A059" strokeWidth="2" />
-            </svg>
-            <h1 style={styles.loginTitle}>THE KEEPSAKE SMITH</h1>
-            <span style={styles.loginSub}>MANAGEMENT &amp; CRM VAULT</span>
-          </div>
-
-          <form onSubmit={handleLogin} style={styles.loginForm}>
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Admin Identifier</label>
-              <div style={styles.inputWrap}>
-                <Mail size={16} color="#888" style={{ marginLeft: '12px' }} />
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="admin@thekeepsakesmith.com"
-                  style={styles.passwordInput}
-                  required
-                />
-              </div>
-            </div>
-
-            <div style={styles.formGroup}>
-              <label style={styles.label}>Administrator Passcode</label>
-              <div style={styles.inputWrap}>
-                <Lock size={16} color="#888" style={{ marginLeft: '12px' }} />
-                <input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') handleLogin(e); }}
-                  placeholder="Enter secure passcode"
-                  style={styles.passwordInput}
-                  required
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            {loginError && <div style={styles.errorAlert}>{loginError}</div>}
-
-            <button
-              type="submit"
-              disabled={loggingIn}
-              style={{
-                ...styles.loginBtn,
-                opacity: loggingIn ? 0.7 : 1,
-                cursor: loggingIn ? 'not-allowed' : 'pointer',
-              }}
-            >
-              {loggingIn ? 'Authenticating...' : 'Sign In to Vault'}
-            </button>
-          </form>
-
-          <p style={styles.hintText}>Protected system portal. Authorized administrators only.</p>
-        </div>
-      </div>
+  } else if (!isAuthenticated) {
+    body = (
+      <AdminLogin
+        onLoginSuccess={() => {
+          setIsAuthenticated(true);
+          fetchData();
+          toast('Welcome to Keepsake Ops');
+        }}
+      />
     );
-  }
+  } else {
+    body = (
+      <div className="flex h-screen bg-neutral-50 dark:bg-neutral-950 overflow-hidden text-neutral-900 dark:text-neutral-100 font-sans transition-colors">
+        {/* Desktop sidebar */}
+        <aside className="hidden md:flex w-[210px] flex-shrink-0 flex-col z-20">
+          <AdminSidebar
+            activeTab={activeTab}
+            setActiveTab={setActiveTab}
+            darkMode={darkMode}
+            toggleDarkMode={toggleDarkMode}
+            onLogout={handleLogout}
+            user={currentUser}
+          />
+        </aside>
 
-  // 2. AUTHENTICATED ADMIN DASHBOARD
-  return (
-    <div style={styles.adminPage}>
-      {/* DEDICATED ADMIN HEADER (Independent from Storefront) */}
-      <header style={styles.adminNavHeader}>
-        <div className="admin-container" style={styles.adminHeaderRow}>
-          <div style={styles.brandGroup}>
-            <svg width="32" height="32" viewBox="0 0 100 100" fill="none">
-              <circle cx="50" cy="50" r="46" stroke="#FFFFFF" strokeWidth="2" opacity="0.8" />
-              <path d="M50 15 C30 15, 15 30, 15 50 C15 70, 30 85, 50 85" stroke="#FFFFFF" strokeWidth="2" />
-            </svg>
-            <div>
-              <div style={styles.brandTitle}>THE KEEPSAKE SMITH</div>
-              <div style={styles.subdomainLabel}>admin.thekeepsakesmith.com</div>
-            </div>
+        {/* Mobile sidebar */}
+        {mobileMenuOpen && (
+          <div className="fixed inset-0 z-50 md:hidden">
+            <div
+              className="absolute inset-0 bg-neutral-950/60"
+              onClick={() => setMobileMenuOpen(false)}
+            />
+            <aside className="absolute left-0 top-0 bottom-0 w-[240px] flex flex-col z-10 animate-slide-up">
+              <AdminSidebar
+                activeTab={activeTab}
+                setActiveTab={setActiveTab}
+                darkMode={darkMode}
+                toggleDarkMode={toggleDarkMode}
+                onLogout={handleLogout}
+                onNavClick={() => setMobileMenuOpen(false)}
+                user={currentUser}
+              />
+            </aside>
           </div>
+        )}
 
-          {/* Center Tab Buttons */}
-          <div style={styles.navTabs}>
-            <button
-              onClick={() => setActiveTab('orders')}
-              style={{
-                ...styles.navTabBtn,
-                color: activeTab === 'orders' ? '#FFFFFF' : '#888888',
-                borderBottom: activeTab === 'orders' ? '2px solid #C5A059' : '2px solid transparent',
-              }}
-            >
-              Orders CRM ({orders.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('analytics')}
-              style={{
-                ...styles.navTabBtn,
-                color: activeTab === 'analytics' ? '#FFFFFF' : '#888888',
-                borderBottom: activeTab === 'analytics' ? '2px solid #C5A059' : '2px solid transparent',
-              }}
-            >
-              Analytics & Insights
-            </button>
-            <button
-              onClick={() => setActiveTab('products')}
-              style={{
-                ...styles.navTabBtn,
-                color: activeTab === 'products' ? '#FFFFFF' : '#888888',
-                borderBottom: activeTab === 'products' ? '2px solid #C5A059' : '2px solid transparent',
-              }}
-            >
-              Product Catalog ({products.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('categories')}
-              style={{
-                ...styles.navTabBtn,
-                color: activeTab === 'categories' ? '#FFFFFF' : '#888888',
-                borderBottom: activeTab === 'categories' ? '2px solid #C5A059' : '2px solid transparent',
-              }}
-            >
-              Categories ({categories.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('coupons')}
-              style={{
-                ...styles.navTabBtn,
-                color: activeTab === 'coupons' ? '#FFFFFF' : '#888888',
-                borderBottom: activeTab === 'coupons' ? '2px solid #C5A059' : '2px solid transparent',
-              }}
-            >
-              Coupons ({coupons.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('timer')}
-              style={{
-                ...styles.navTabBtn,
-                color: activeTab === 'timer' ? '#FFFFFF' : '#888888',
-                borderBottom: activeTab === 'timer' ? '2px solid #C5A059' : '2px solid transparent',
-              }}
-            >
-              Timer Settings
-            </button>
-          </div>
+        {/* Main viewport */}
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
+          <AdminTopBar
+            pageTitle={currentNav.name}
+            searchTerm={globalSearch}
+            setSearchTerm={setGlobalSearch}
+            onOpenAddOrder={() => setActiveTab('create')}
+            onOpenCsvModal={() => setActiveTab('create')}
+            onOpenMobileMenu={() => setMobileMenuOpen(true)}
+            onLogout={handleLogout}
+            user={currentUser}
+          />
 
-          {/* Right Action Group */}
-          <div style={styles.rightActions}>
-            {activeTab === 'orders' && (
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => setIsAddOrderOpen(true)}
-                  style={{
-                    fontSize: '0.8rem',
-                    padding: '0.45rem 1.1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    backgroundColor: '#C5A059',
-                    color: '#000',
-                    border: 'none',
-                    borderRadius: '9999px',
-                    fontWeight: '600',
-                    cursor: 'pointer',
+          <main className="flex-1 overflow-y-auto p-4 md:p-8">
+            <div className="max-w-7xl mx-auto">
+              {activeTab === 'dashboard' && (
+                <AdminDashboard
+                  orders={orders}
+                  onOpenOrder={setViewingOrder}
+                  onOpenAddOrder={() => setActiveTab('create')}
+                  onOpenCsvModal={() => setActiveTab('create')}
+                  setActiveTab={setActiveTab}
+                />
+              )}
+
+              {activeTab === 'orders' && (
+                <AdminOrders
+                  orders={orders}
+                  onOpenOrder={setViewingOrder}
+                  onOpenAddOrder={() => setActiveTab('create')}
+                  globalSearch={globalSearch}
+                />
+              )}
+
+              {activeTab === 'create' && (
+                <AdminCreateOrder
+                  onOrderCreated={() => {
+                    fetchData();
+                    setActiveTab('orders');
                   }}
-                >
-                  <Plus size={14} /> Add Gift Order
-                </button>
-                <button
-                  onClick={() => {
-                    setCsvResults(null);
-                    setCsvText('');
-                    setIsCsvModalOpen(true);
+                  onBatchImported={() => {
+                    fetchData();
+                    setActiveTab('orders');
                   }}
-                  style={{
-                    fontSize: '0.8rem',
-                    padding: '0.45rem 1.1rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-                    color: '#FFF',
-                    border: '1px solid rgba(255, 255, 255, 0.2)',
-                    borderRadius: '9999px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                  }}
-                >
-                  <Upload size={14} /> Upload Daily CSV
-                </button>
-              </div>
-            )}
-
-            {activeTab === 'products' && (
-              <button
-                onClick={() => {
-                  resetForm();
-                  setIsFormOpen(true);
-                }}
-                style={{
-                  fontSize: '0.8rem',
-                  padding: '0.45rem 1.2rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  backgroundColor: '#C5A059',
-                  color: '#000',
-                  border: 'none',
-                  borderRadius: '9999px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                }}
-              >
-                <Plus size={14} /> Add Product
-              </button>
-            )}
-
-            {activeTab === 'categories' && (
-              <button
-                onClick={() => {
-                  resetCategoryForm();
-                  setIsCategoryModalOpen(true);
-                }}
-                style={{
-                  fontSize: '0.8rem',
-                  padding: '0.45rem 1.2rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  backgroundColor: '#C5A059',
-                  color: '#000',
-                  border: 'none',
-                  borderRadius: '9999px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                }}
-              >
-                <Plus size={14} /> Add Category
-              </button>
-            )}
-
-            {activeTab === 'coupons' && (
-              <button
-                onClick={() => {
-                  resetCouponForm();
-                  setIsCouponModalOpen(true);
-                }}
-                style={{
-                  fontSize: '0.8rem',
-                  padding: '0.45rem 1.2rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  backgroundColor: '#C5A059',
-                  color: '#000',
-                  border: 'none',
-                  borderRadius: '9999px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                }}
-              >
-                <Plus size={14} /> Create Promo Code
-              </button>
-            )}
-
-            <button
-              onClick={fetchData}
-              className="btn-pill"
-              style={{ fontSize: '0.8rem', padding: '0.45rem 1rem', display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <RefreshCw size={14} /> Refresh
-            </button>
-
-            <button
-              onClick={handleLogout}
-              className="btn-pill btn-pill-dark"
-              style={{ fontSize: '0.8rem', padding: '0.45rem 1rem', display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <LogOut size={14} /> Logout
-            </button>
-          </div>
-        </div>
-      </header>
-
-      <div className="admin-container" style={styles.mainContent}>
-        {/* Status Alert Message */}
-        {statusMsg && (
-          <div style={styles.alertBanner} onClick={() => setStatusMsg('')}>
-            <span>{statusMsg}</span>
-            <span style={{ cursor: 'pointer', opacity: 0.8 }}>✕</span>
-          </div>
-        )}
-
-        {/* ORDERS CRM QUEUE TAB */}
-        {activeTab === 'orders' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '2rem' }}>
-              <div>
-                <h1 style={styles.headingTitle}>Orders Queue & Access Codes CRM</h1>
-                <p style={styles.headingSub}>Classify physical card shipments vs digital 3D portal orders, manage access codes & fulfillment</p>
-              </div>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
-                <button
-                  onClick={() => setIsAddOrderOpen(true)}
-                  style={{
-                    backgroundColor: '#C5A059',
-                    color: '#000',
-                    border: 'none',
-                    borderRadius: '9999px',
-                    padding: '0.55rem 1.3rem',
-                    fontSize: '0.85rem',
-                    fontWeight: '600',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  <Plus size={15} /> Add Gift Order
-                </button>
-                <button
-                  onClick={() => {
-                    setCsvResults(null);
-                    setCsvText('');
-                    setIsCsvModalOpen(true);
-                  }}
-                  style={{
-                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-                    color: '#C5A059',
-                    border: '1px solid #C5A059',
-                    borderRadius: '9999px',
-                    padding: '0.55rem 1.3rem',
-                    fontSize: '0.85rem',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                  }}
-                >
-                  <Upload size={15} /> Upload Daily CSV
-                </button>
-              </div>
-            </div>
-
-            {/* Stats Grid */}
-            <div style={styles.statsGrid}>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Total Revenue</span>
-                <span style={styles.statVal}>
-                  NGN {orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0).toLocaleString()}
-                </span>
-              </div>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Total Orders</span>
-                <span style={styles.statVal}>{orders.length}</span>
-              </div>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>3D Portal Redemption Rate</span>
-                <span style={styles.statVal}>
-                  {orders.length > 0
-                    ? `${Math.round((orders.filter((o) => o.redeemed || o.status === 'redeemed' || o.redemptionCount > 0).length / orders.length) * 100)}%`
-                    : '0%'}
-                </span>
-              </div>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Physical Cards / Gift Boxes</span>
-                <span style={styles.statVal}>{orders.filter((o) => o.fulfillmentType === 'physical_card').length}</span>
-              </div>
-            </div>
-
-            {/* Fulfillment Filter Pills */}
-            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-              <button
-                onClick={() => setOrderFilter('ALL')}
-                style={{
-                  ...styles.filterPill,
-                  backgroundColor: orderFilter === 'ALL' ? '#C5A059' : 'rgba(255, 255, 255, 0.05)',
-                  color: orderFilter === 'ALL' ? '#000' : '#FFF',
-                  borderColor: orderFilter === 'ALL' ? '#C5A059' : 'rgba(255, 255, 255, 0.15)',
-                }}
-              >
-                All Orders ({orders.length})
-              </button>
-              <button
-                onClick={() => setOrderFilter('PHYSICAL')}
-                style={{
-                  ...styles.filterPill,
-                  backgroundColor: orderFilter === 'PHYSICAL' ? '#C5A059' : 'rgba(255, 255, 255, 0.05)',
-                  color: orderFilter === 'PHYSICAL' ? '#000' : '#FFF',
-                  borderColor: orderFilter === 'PHYSICAL' ? '#C5A059' : 'rgba(255, 255, 255, 0.15)',
-                }}
-              >
-                Physical Cards ({orders.filter((o) => o.fulfillmentType === 'physical_card').length})
-              </button>
-              <button
-                onClick={() => setOrderFilter('DIGITAL')}
-                style={{
-                  ...styles.filterPill,
-                  backgroundColor: orderFilter === 'DIGITAL' ? '#C5A059' : 'rgba(255, 255, 255, 0.05)',
-                  color: orderFilter === 'DIGITAL' ? '#000' : '#FFF',
-                  borderColor: orderFilter === 'DIGITAL' ? '#C5A059' : 'rgba(255, 255, 255, 0.15)',
-                }}
-              >
-                Digital 3D Portal ({orders.filter((o) => o.fulfillmentType === 'digital_only').length})
-              </button>
-              <button
-                onClick={() => setOrderFilter('GIFTS')}
-                style={{
-                  ...styles.filterPill,
-                  backgroundColor: orderFilter === 'GIFTS' ? '#C5A059' : 'rgba(255, 255, 255, 0.05)',
-                  color: orderFilter === 'GIFTS' ? '#000' : '#FFF',
-                  borderColor: orderFilter === 'GIFTS' ? '#C5A059' : 'rgba(255, 255, 255, 0.15)',
-                }}
-              >
-                Gifts ({orders.filter((o) => o.recipientType === 'gift').length})
-              </button>
-            </div>
-
-            <div style={styles.tableContainer}>
-              <table style={styles.table}>
-                <thead>
-                  <tr style={styles.trHeader}>
-                    <th style={styles.th}>Order ID & Date</th>
-                    <th style={styles.th}>Order Type</th>
-                    <th style={styles.th}>Purchaser</th>
-                    <th style={styles.th}>Total</th>
-                    <th style={styles.th}>Status</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {orders.filter((ord) => {
-                    if (orderFilter === 'PHYSICAL') return ord.fulfillmentType === 'physical_card';
-                    if (orderFilter === 'DIGITAL') return ord.fulfillmentType === 'digital_only';
-                    if (orderFilter === 'GIFTS') return ord.recipientType === 'gift';
-                    return true;
-                  }).length === 0 ? (
-                    <tr>
-                      <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
-                        No orders match the selected filter.
-                      </td>
-                    </tr>
-                  ) : (
-                    orders
-                      .filter((ord) => {
-                        if (orderFilter === 'PHYSICAL') return ord.fulfillmentType === 'physical_card';
-                        if (orderFilter === 'DIGITAL') return ord.fulfillmentType === 'digital_only';
-                        if (orderFilter === 'GIFTS') return ord.recipientType === 'gift';
-                        return true;
-                      })
-                      .map((ord) => (
-                        <tr key={ord.id} style={styles.trBody}>
-                          <td style={styles.td}>
-                            <div style={{ color: '#FFF', fontWeight: '400', fontFamily: 'monospace' }}>#{ord.id}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#777', marginTop: '2px' }}>
-                              {new Date(ord.createdAt).toLocaleDateString()}
-                            </div>
-                          </td>
-                          <td style={styles.td}>
-                            {ord.fulfillmentType === 'physical_card' ? (
-                              <span style={styles.physicalTag}>Physical Card</span>
-                            ) : (
-                              <span style={styles.digitalTag}>Digital Only</span>
-                            )}
-                          </td>
-                          <td style={styles.td}>
-                            <div style={{ color: '#FFF', fontWeight: '400' }}>{ord.purchaserName}</div>
-                            <div style={{ fontSize: '0.78rem', color: '#888' }}>{ord.purchaserEmail}</div>
-                          </td>
-                          <td style={styles.td}>
-                            <span style={{ color: '#FFF', fontWeight: '400' }}>₦{ord.totalAmount.toLocaleString()}</span>
-                          </td>
-                          <td style={styles.td}>
-                            <span
-                              style={{
-                                ...styles.statusTag,
-                                borderColor:
-                                  ord.status === 'ready'
-                                    ? '#66BB6A'
-                                    : ord.status === 'in_production'
-                                    ? '#C5A059'
-                                    : '#888888',
-                                color:
-                                  ord.status === 'ready'
-                                    ? '#66BB6A'
-                                    : ord.status === 'in_production'
-                                    ? '#C5A059'
-                                    : '#888888',
-                              }}
-                            >
-                              {ord.status.toUpperCase().replace('_', ' ')}
-                            </span>
-                          </td>
-                          <td style={{ ...styles.td, textAlign: 'right' }}>
-                            <button
-                              onClick={() => handleOpenOrderDetails(ord)}
-                              className="btn-pill"
-                              style={{
-                                fontSize: '0.78rem',
-                                padding: '0.4rem 0.9rem',
-                                marginRight: '6px',
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '5px',
-                              }}
-                              title="View Order Details"
-                            >
-                              <Eye size={13} /> View
-                            </button>
-                            {ord.status === 'in_production' && (
-                              <button
-                                onClick={() => handleOrderStatusToggle(ord.id, 'ready')}
-                                style={{
-                                  fontSize: '0.75rem',
-                                  padding: '0.35rem 0.8rem',
-                                  marginRight: '6px',
-                                  backgroundColor: '#C5A059',
-                                  color: '#000',
-                                  border: 'none',
-                                  borderRadius: '9999px',
-                                  fontWeight: '600',
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                Mark Ready & Send Email
-                              </button>
-                            )}
-                            {ord.status === 'ready' && (
-                              <button
-                                onClick={() => handleOrderStatusToggle(ord.id, 'delivered')}
-                                style={{
-                                  fontSize: '0.75rem',
-                                  padding: '0.35rem 0.8rem',
-                                  marginRight: '6px',
-                                  backgroundColor: '#66BB6A',
-                                  color: '#000',
-                                  border: 'none',
-                                  borderRadius: '9999px',
-                                  fontWeight: '600',
-                                  cursor: 'pointer',
-                                }}
-                              >
-                                Mark Delivered
-                              </button>
-                            )}
-                            <button
-                              onClick={() => handleSendNotification(ord.id)}
-                              style={styles.actionBtn}
-                              title="Resend Email Notification"
-                            >
-                              <Mail size={16} color="#FFF" />
-                            </button>
-                          </td>
-                        </tr>
-                      ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* ANALYTICS & INSIGHTS TAB */}
-        {activeTab === 'analytics' && (
-          <div>
-            <div style={styles.pageTitleRow}>
-              <div>
-                <h1 style={styles.headingTitle}>Platform Analytics & Growth Metrics</h1>
-                <p style={styles.headingSub}>Real-time performance tracking: revenue, conversion funnel, 3D redemptions, and promo impact</p>
-              </div>
-            </div>
-
-            {/* Core KPI Cards */}
-            <div style={styles.statsGrid}>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Total Gross Revenue</span>
-                <span style={styles.statVal}>
-                  ₦{orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0).toLocaleString()}
-                </span>
-                <span style={{ fontSize: '0.72rem', color: '#66BB6A', marginTop: '4px' }}>Across {orders.length} orders</span>
-              </div>
-
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Average Order Value (AOV)</span>
-                <span style={styles.statVal}>
-                  ₦{orders.length > 0
-                    ? Math.round(orders.reduce((sum, o) => sum + (Number(o.totalAmount) || 0), 0) / orders.length).toLocaleString()
-                    : '0'}
-                </span>
-                <span style={{ fontSize: '0.72rem', color: '#C5A059', marginTop: '4px' }}>Per customer transaction</span>
-              </div>
-
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>3D Portal Redemptions</span>
-                <span style={styles.statVal}>
-                  {orders.filter((o) => o.redeemed || o.status === 'ready' || o.status === 'delivered').length} / {orders.length}
-                </span>
-                <span style={{ fontSize: '0.72rem', color: '#66BB6A', marginTop: '4px' }}>
-                  {orders.length > 0
-                    ? `${Math.round((orders.filter((o) => o.redeemed || o.status === 'ready' || o.status === 'delivered').length / orders.length) * 100)}% active rate`
-                    : '0%'}
-                </span>
-              </div>
-
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Discounts & Savings Given</span>
-                <span style={styles.statVal}>
-                  ₦{orders.reduce((sum, o) => sum + (Number(o.discountAmount) || 0), 0).toLocaleString()}
-                </span>
-                <span style={{ fontSize: '0.72rem', color: '#C5A059', marginTop: '4px' }}>Via promo codes</span>
-              </div>
-            </div>
-
-            {/* Two-Column Analytics Layout */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 1fr))', gap: '2rem', marginBottom: '2.5rem' }}>
-              {/* Order Status Distribution Funnel */}
-              <div style={{ backgroundColor: '#161616', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '20px', padding: '1.75rem' }}>
-                <h3 style={{ fontSize: '1rem', color: '#FFF', fontWeight: '400', marginBottom: '1.25rem' }}>Order Pipeline Funnel</h3>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#AAA', marginBottom: '6px' }}>
-                      <span>In Production (Crafting)</span>
-                      <span style={{ color: '#FFB74D' }}>{orders.filter((o) => o.status === 'in_production').length} orders</span>
-                    </div>
-                    <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ width: `${orders.length ? (orders.filter((o) => o.status === 'in_production').length / orders.length) * 100 : 0}%`, height: '100%', backgroundColor: '#FFB74D' }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#AAA', marginBottom: '6px' }}>
-                      <span>Ready for 3D Portal</span>
-                      <span style={{ color: '#C5A059' }}>{orders.filter((o) => o.status === 'ready').length} orders</span>
-                    </div>
-                    <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ width: `${orders.length ? (orders.filter((o) => o.status === 'ready').length / orders.length) * 100 : 0}%`, height: '100%', backgroundColor: '#C5A059' }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#AAA', marginBottom: '6px' }}>
-                      <span>Delivered / Completed</span>
-                      <span style={{ color: '#66BB6A' }}>{orders.filter((o) => o.status === 'delivered' || o.status === 'completed').length} orders</span>
-                    </div>
-                    <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ width: `${orders.length ? (orders.filter((o) => o.status === 'delivered' || o.status === 'completed').length / orders.length) * 100 : 0}%`, height: '100%', backgroundColor: '#66BB6A' }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Fulfillment Method Split */}
-              <div style={{ backgroundColor: '#161616', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '20px', padding: '1.75rem' }}>
-                <h3 style={{ fontSize: '1rem', color: '#FFF', fontWeight: '400', marginBottom: '1.25rem' }}>Fulfillment Classification Split</h3>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#AAA', marginBottom: '6px' }}>
-                      <span>Physical Cards & Boxes</span>
-                      <span style={{ color: '#FFF' }}>{orders.filter((o) => o.fulfillmentType === 'physical_card').length} ({orders.length ? Math.round((orders.filter((o) => o.fulfillmentType === 'physical_card').length / orders.length) * 100) : 0}%)</span>
-                    </div>
-                    <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ width: `${orders.length ? (orders.filter((o) => o.fulfillmentType === 'physical_card').length / orders.length) * 100 : 0}%`, height: '100%', backgroundColor: '#C5A059' }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#AAA', marginBottom: '6px' }}>
-                      <span>Digital 3D Portal Only</span>
-                      <span style={{ color: '#FFF' }}>{orders.filter((o) => o.fulfillmentType === 'digital_only').length} ({orders.length ? Math.round((orders.filter((o) => o.fulfillmentType === 'digital_only').length / orders.length) * 100) : 0}%)</span>
-                    </div>
-                    <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ width: `${orders.length ? (orders.filter((o) => o.fulfillmentType === 'digital_only').length / orders.length) * 100 : 0}%`, height: '100%', backgroundColor: '#64B5F6' }} />
-                    </div>
-                  </div>
-
-                  <div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: '#AAA', marginBottom: '6px' }}>
-                      <span>Direct Gifts to Recipient</span>
-                      <span style={{ color: '#FFF' }}>{orders.filter((o) => o.recipientType === 'gift').length} ({orders.length ? Math.round((orders.filter((o) => o.recipientType === 'gift').length / orders.length) * 100) : 0}%)</span>
-                    </div>
-                    <div style={{ width: '100%', height: '8px', backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ width: `${orders.length ? (orders.filter((o) => o.recipientType === 'gift').length / orders.length) * 100 : 0}%`, height: '100%', backgroundColor: '#BA68C8' }} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Promo Codes & Coupons Performance Table */}
-            <div style={{ backgroundColor: '#161616', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '20px', padding: '1.75rem', marginBottom: '2.5rem' }}>
-              <h3 style={{ fontSize: '1rem', color: '#FFF', fontWeight: '400', marginBottom: '1rem' }}>Promo Code Conversion & Usage</h3>
-              <div style={styles.tableContainer}>
-                <table style={styles.table}>
-                  <thead>
-                    <tr style={styles.trHeader}>
-                      <th style={styles.th}>Promo Code</th>
-                      <th style={styles.th}>Discount Rate</th>
-                      <th style={styles.th}>Status</th>
-                      <th style={styles.th}>Times Used</th>
-                      <th style={styles.th}>Max Cap</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {coupons.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} style={{ textAlign: 'center', padding: '2rem', color: '#888' }}>
-                          No promo codes created yet.
-                        </td>
-                      </tr>
-                    ) : (
-                      coupons.map((c) => (
-                        <tr key={c.id} style={styles.trBody}>
-                          <td style={styles.td}>
-                            <span style={{ color: '#C5A059', fontWeight: '600', letterSpacing: '0.08em', fontFamily: 'monospace' }}>
-                              {c.code}
-                            </span>
-                          </td>
-                          <td style={styles.td}>
-                            <span style={{ color: '#FFF' }}>
-                              {c.discountType === 'percentage' ? `${c.discountValue}% OFF` : `₦${Number(c.discountValue).toLocaleString()} OFF`}
-                            </span>
-                          </td>
-                          <td style={styles.td}>
-                            <span style={{ color: c.active !== false ? '#66BB6A' : '#FF6B6B', fontSize: '0.75rem', fontWeight: '600' }}>
-                              {c.active !== false ? 'ACTIVE' : 'INACTIVE'}
-                            </span>
-                          </td>
-                          <td style={styles.td}>
-                            <span style={{ color: '#FFF' }}>{c.usedCount || c.usageCount || 0} times</span>
-                          </td>
-                          <td style={styles.td}>
-                            <span style={{ color: '#888' }}>{c.maxUses ? `${c.maxUses} uses` : 'Unlimited'}</span>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* PRODUCTS CATALOG TAB */}
-        {activeTab === 'products' && (
-          <div>
-            <div style={styles.pageTitleRow}>
-              <div>
-                <h1 style={styles.headingTitle}>Product Catalog CMS</h1>
-                <p style={styles.headingSub}>Add, edit, or customize product listings, pricing, and custom order flags</p>
-              </div>
-            </div>
-
-            <div style={styles.statsGrid}>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Total Catalog Products</span>
-                <span style={styles.statVal}>{products.length}</span>
-              </div>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Customizable Products</span>
-                <span style={styles.statVal}>{products.filter((p) => p.allowsCustomization).length}</span>
-              </div>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Database Status</span>
-                <span style={styles.statVal}>LIVE</span>
-              </div>
-            </div>
-
-            <div style={styles.tableContainer}>
-              <table style={styles.table}>
-                <thead>
-                  <tr style={styles.trHeader}>
-                    <th style={styles.th}>Image</th>
-                    <th style={styles.th}>Title & Subtitle</th>
-                    <th style={styles.th}>Category</th>
-                    <th style={styles.th}>Price</th>
-                    <th style={styles.th}>Stock Status</th>
-                    <th style={styles.th}>Custom Order?</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {products.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
-                        No products found. Click "Add Product" to create one.
-                      </td>
-                    </tr>
-                  ) : (
-                    products.map((prod) => (
-                      <tr key={prod.id} style={styles.trBody}>
-                        <td style={styles.td}>
-                          <img src={prod.image} alt={prod.title} style={styles.thumbImg} />
-                        </td>
-                        <td style={styles.td}>
-                          <div style={{ color: '#FFF', fontWeight: '400' }}>{prod.title}</div>
-                          <div style={{ fontSize: '0.78rem', color: '#888' }}>{prod.subtitle || '—'}</div>
-                        </td>
-                        <td style={styles.td}>
-                          <span style={styles.catBadge}>{prod.category || 'CARDS'}</span>
-                        </td>
-                        <td style={styles.td}>
-                          <span style={{ color: '#FFF', fontWeight: '400' }}>₦{prod.price.toLocaleString()}</span>
-                        </td>
-                        <td style={styles.td}>
-                          <button
-                            onClick={() => handleToggleStock(prod)}
-                            style={{
-                              padding: '0.25rem 0.75rem',
-                              borderRadius: '9999px',
-                              fontSize: '0.72rem',
-                              fontWeight: '600',
-                              border: 'none',
-                              cursor: 'pointer',
-                              backgroundColor: prod.inStock !== false ? 'rgba(102, 187, 106, 0.2)' : 'rgba(255, 107, 107, 0.2)',
-                              color: prod.inStock !== false ? '#66BB6A' : '#FF6B6B',
-                            }}
-                            title="Click to toggle stock availability"
-                          >
-                            {prod.inStock !== false ? 'IN STOCK' : 'OUT OF STOCK'}
-                          </button>
-                        </td>
-                        <td style={styles.td}>
-                          {prod.allowsCustomization ? (
-                            <span style={{ color: '#66BB6A', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <CheckCircle size={14} /> Yes
-                            </span>
-                          ) : (
-                            <span style={{ color: '#666', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
-                              <XCircle size={14} /> No
-                            </span>
-                          )}
-                        </td>
-                        <td style={{ ...styles.td, textAlign: 'right' }}>
-                          <button onClick={() => handleOpenEdit(prod)} style={styles.actionBtn} title="Edit Product">
-                            <Edit2 size={16} color="#FFF" />
-                          </button>
-                          <button onClick={() => handleDeleteProduct(prod.id)} style={styles.actionBtn} title="Delete Product">
-                            <Trash2 size={16} color="#FF6B6B" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* CATEGORIES MANAGEMENT TAB */}
-        {activeTab === 'categories' && (
-          <div>
-            <div style={styles.pageTitleRow}>
-              <div>
-                <h1 style={styles.headingTitle}>Categories Manager</h1>
-                <p style={styles.headingSub}>Create, edit, or delete product categories dynamically — linked directly to product listings</p>
-              </div>
-            </div>
-
-            <div style={styles.statsGrid}>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Total Categories</span>
-                <span style={styles.statVal}>{categories.length}</span>
-              </div>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Active Catalog Products</span>
-                <span style={styles.statVal}>{products.length}</span>
-              </div>
-            </div>
-
-            <div style={styles.tableContainer}>
-              <table style={styles.table}>
-                <thead>
-                  <tr style={styles.trHeader}>
-                    <th style={styles.th}>Category Name</th>
-                    <th style={styles.th}>URL Slug</th>
-                    <th style={styles.th}>Description</th>
-                    <th style={styles.th}>Assigned Products</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {categories.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
-                        No categories configured. Click "Add Category" to create one.
-                      </td>
-                    </tr>
-                  ) : (
-                    categories.map((cat) => {
-                      const assignedCount = products.filter((p) => p.category === cat.name).length;
-                      return (
-                        <tr key={cat.id} style={styles.trBody}>
-                          <td style={styles.td}>
-                            <span style={styles.catBadge}>{cat.name}</span>
-                          </td>
-                          <td style={styles.td}>
-                            <code style={{ fontSize: '0.8rem', color: '#C5A059' }}>{cat.slug || cat.name.toLowerCase()}</code>
-                          </td>
-                          <td style={styles.td}>
-                            <span style={{ color: '#AAA', fontSize: '0.82rem' }}>{cat.description || '—'}</span>
-                          </td>
-                          <td style={styles.td}>
-                            <span style={{ color: '#FFF', fontWeight: '500' }}>{assignedCount} items</span>
-                          </td>
-                          <td style={{ ...styles.td, textAlign: 'right' }}>
-                            <button onClick={() => handleOpenEditCategory(cat)} style={styles.actionBtn} title="Edit Category">
-                              <Edit2 size={16} color="#FFF" />
-                            </button>
-                            <button onClick={() => handleDeleteCategory(cat.id, cat.name)} style={styles.actionBtn} title="Delete Category">
-                              <Trash2 size={16} color="#FF6B6B" />
-                            </button>
-                          </td>
-                        </tr>
-                      );
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* COUPONS MANAGER TAB */}
-        {activeTab === 'coupons' && (
-          <div>
-            <div style={styles.pageTitleRow}>
-              <div>
-                <h1 style={styles.headingTitle}>Promo Codes & Coupon Engine</h1>
-                <p style={styles.headingSub}>Manage store discounts, fixed & percentage promo codes, expiry dates, and usage limits</p>
-              </div>
-            </div>
-
-            <div style={styles.statsGrid}>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Active Promo Codes</span>
-                <span style={styles.statVal}>{coupons.filter((c) => c.active !== false).length}</span>
-              </div>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Total Coupon Redemptions</span>
-                <span style={styles.statVal}>{coupons.reduce((acc, c) => acc + (c.usageCount || 0), 0)}</span>
-              </div>
-              <div style={styles.statCard}>
-                <span style={styles.statLabel}>Total Configured Coupons</span>
-                <span style={styles.statVal}>{coupons.length}</span>
-              </div>
-            </div>
-
-            <div style={styles.tableContainer}>
-              <table style={styles.table}>
-                <thead>
-                  <tr style={styles.trHeader}>
-                    <th style={styles.th}>Promo Code</th>
-                    <th style={styles.th}>Discount Type</th>
-                    <th style={styles.th}>Discount Value</th>
-                    <th style={styles.th}>Status</th>
-                    <th style={styles.th}>Redemptions</th>
-                    <th style={{ ...styles.th, textAlign: 'right' }}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {coupons.length === 0 ? (
-                    <tr>
-                      <td colSpan={6} style={{ textAlign: 'center', padding: '3rem', color: '#888' }}>
-                        No promo codes found. Click "Create Promo Code" to generate one.
-                      </td>
-                    </tr>
-                  ) : (
-                    coupons.map((coup) => (
-                      <tr key={coup.id} style={styles.trBody}>
-                        <td style={styles.td}>
-                          <span style={{ color: '#C5A059', fontWeight: 'bold', fontFamily: 'monospace', fontSize: '1rem', letterSpacing: '0.05em' }}>
-                            {coup.code}
-                          </span>
-                        </td>
-                        <td style={styles.td}>
-                          <span style={{ textTransform: 'capitalize', color: '#AAA' }}>{coup.discountType}</span>
-                        </td>
-                        <td style={styles.td}>
-                          <span style={{ color: '#FFF', fontWeight: '500' }}>
-                            {coup.discountType === 'percentage' ? `${coup.discountValue}% OFF` : `₦${Number(coup.discountValue).toLocaleString()} OFF`}
-                          </span>
-                        </td>
-                        <td style={styles.td}>
-                          <button
-                            onClick={() => handleToggleCouponActive(coup)}
-                            style={{
-                              padding: '0.25rem 0.75rem',
-                              borderRadius: '9999px',
-                              fontSize: '0.72rem',
-                              fontWeight: '600',
-                              border: 'none',
-                              cursor: 'pointer',
-                              backgroundColor: coup.active !== false ? 'rgba(102, 187, 106, 0.2)' : 'rgba(255, 107, 107, 0.2)',
-                              color: coup.active !== false ? '#66BB6A' : '#FF6B6B',
-                            }}
-                          >
-                            {coup.active !== false ? 'ACTIVE' : 'INACTIVE'}
-                          </button>
-                        </td>
-                        <td style={styles.td}>
-                          <span style={{ color: '#AAA', fontSize: '0.85rem' }}>
-                            {coup.usageCount || 0} {coup.maxUses ? `/ ${coup.maxUses}` : 'uses'}
-                          </span>
-                        </td>
-                        <td style={{ ...styles.td, textAlign: 'right' }}>
-                          <button onClick={() => handleOpenEditCoupon(coup)} style={styles.actionBtn} title="Edit Coupon">
-                            <Edit2 size={16} color="#FFF" />
-                          </button>
-                          <button onClick={() => handleDeleteCoupon(coup.id, coup.code)} style={styles.actionBtn} title="Delete Coupon">
-                            <Trash2 size={16} color="#FF6B6B" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
-
-        {/* Modal / Product Form Overlay */}
-        {isFormOpen && (
-          <div style={styles.modalOverlay} onClick={resetForm}>
-            <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-              <div style={styles.modalHeader}>
-                <h2 style={styles.modalTitle}>
-                  {editingProduct ? 'Edit Product' : 'Create New Product'}
-                </h2>
-                <button onClick={resetForm} style={styles.closeBtn}>✕</button>
-              </div>
-
-              <form onSubmit={handleProductSubmit} style={styles.form}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Product Title *</label>
-                  <input
-                    type="text"
-                    value={title}
-                    onChange={(e) => setTitle(e.target.value)}
-                    placeholder="e.g. Handwritten Luxury Cards"
-                    style={styles.input}
-                    required
-                  />
-                </div>
-
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Subtitle / Tagline</label>
-                  <input
-                    type="text"
-                    value={subtitle}
-                    onChange={(e) => setSubtitle(e.target.value)}
-                    placeholder="e.g. linen texture finish"
-                    style={styles.input}
-                  />
-                </div>
-
-                <div style={styles.formRow}>
-                  <div style={{ flex: 1 }}>
-                    <label style={styles.label}>Price (NGN) *</label>
-                    <input
-                      type="number"
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value)}
-                      placeholder="30000"
-                      style={styles.input}
-                      required
-                    />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={styles.label}>Category (Dynamic)</label>
-                    <select
-                      value={category}
-                      onChange={(e) => setCategory(e.target.value)}
-                      style={styles.select}
-                    >
-                      {categories.length === 0 ? (
-                        <>
-                          <option value="CARDS">CARDS</option>
-                          <option value="FLOWERS">FLOWERS</option>
-                          <option value="CHOCOLATES">CHOCOLATES</option>
-                          <option value="JEWELRY">JEWELRY</option>
-                        </>
-                      ) : (
-                        categories.map((cat) => (
-                          <option key={cat.id} value={cat.name}>
-                            {cat.name}
-                          </option>
-                        ))
-                      )}
-                    </select>
-                  </div>
-                </div>
-
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Product Image *</label>
-                  
-                  {/* File Upload Box */}
-                  <div style={styles.uploadBox}>
-                    {image ? (
-                      <div style={styles.imagePreviewRow}>
-                        <img src={image} alt="Preview" style={styles.uploadPreviewImg} />
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontSize: '0.85rem', color: '#FFFFFF', fontWeight: '500' }}>Product Photo Selected</div>
-                          <div style={{ fontSize: '0.72rem', color: '#888888', wordBreak: 'break-all', marginTop: '2px' }}>
-                            {image.startsWith('data:') ? 'Local file attached (Ready to save)' : image}
-                          </div>
-                          <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
-                            <label style={styles.changeFileBtn}>
-                              <Upload size={12} /> Replace Image
-                              <input type="file" accept="image/*" onChange={handleFileUpload} style={{ display: 'none' }} />
-                            </label>
-                            <button type="button" onClick={() => setImage('')} style={styles.removeFileBtn}>
-                              Remove
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <label style={styles.dropzone}>
-                        {uploading ? (
-                          <div style={styles.dropzoneContent}>
-                            <RefreshCw size={24} color="#C5A059" style={{ animation: 'spin 1s linear infinite' }} />
-                            <span style={{ fontSize: '0.85rem', color: '#C5A059' }}>Uploading image to server...</span>
-                          </div>
-                        ) : (
-                          <div style={styles.dropzoneContent}>
-                            <Upload size={28} color="#C5A059" />
-                            <div style={{ fontSize: '0.88rem', color: '#FFFFFF', fontWeight: '500' }}>
-                              Click to select image file from computer
-                            </div>
-                            <div style={{ fontSize: '0.75rem', color: '#888888' }}>
-                              Supports PNG, JPG, WEBP, GIF (High resolution)
-                            </div>
-                          </div>
-                        )}
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleFileUpload}
-                          disabled={uploading}
-                          style={{ display: 'none' }}
-                        />
-                      </label>
-                    )}
-                  </div>
-
-                  {uploadError && <div style={styles.errorAlert}>{uploadError}</div>}
-
-                  {/* Optional Toggle for Manual URL */}
-                  <div style={{ marginTop: '6px', textAlign: 'right' }}>
-                    <button
-                      type="button"
-                      onClick={() => setUseUrlInput(!useUrlInput)}
-                      style={{ background: 'none', border: 'none', color: '#888', fontSize: '0.72rem', cursor: 'pointer', textDecoration: 'underline' }}
-                    >
-                      {useUrlInput ? 'Hide URL paste input' : 'Paste external image URL instead'}
-                    </button>
-                  </div>
-
-                  {useUrlInput && (
-                    <div style={{ marginTop: '8px' }}>
-                      <input
-                        type="text"
-                        value={image}
-                        onChange={(e) => setImage(e.target.value)}
-                        placeholder="https://images.unsplash.com/photo-..."
-                        style={styles.input}
-                      />
-                    </div>
-                  )}
-                </div>
-
-                <div style={styles.checkboxRow}>
-                  <input
-                    type="checkbox"
-                    id="allowsCustomization"
-                    checked={allowsCustomization}
-                    onChange={(e) => setAllowsCustomization(e.target.checked)}
-                    style={styles.checkbox}
-                  />
-                  <label htmlFor="allowsCustomization" style={{ fontSize: '0.85rem', color: '#FFF', cursor: 'pointer' }}>
-                    Accommodates Custom 3D Orders / Personalization
-                  </label>
-                </div>
-
-                <div style={styles.formActions}>
-                  <button type="button" onClick={resetForm} className="btn-pill btn-pill-dark">
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn-pill btn-pill-solid">
-                    {editingProduct ? 'Save Changes' : 'Create Product'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Modal / Category Form Overlay */}
-        {isCategoryModalOpen && (
-          <div style={styles.modalOverlay} onClick={resetCategoryForm}>
-            <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-              <div style={styles.modalHeader}>
-                <h2 style={styles.modalTitle}>
-                  {editingCategory ? 'Edit Category' : 'Create New Category'}
-                </h2>
-                <button onClick={resetCategoryForm} style={styles.closeBtn}>✕</button>
-              </div>
-
-              <form onSubmit={handleCategorySubmit} style={styles.form}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Category Name *</label>
-                  <input
-                    type="text"
-                    value={catName}
-                    onChange={(e) => setCatName(e.target.value)}
-                    placeholder="e.g. LUXURY GIFTS"
-                    style={styles.input}
-                    required
-                    autoFocus
-                  />
-                </div>
-
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Description</label>
-                  <textarea
-                    value={catDescription}
-                    onChange={(e) => setCatDescription(e.target.value)}
-                    placeholder="Brief description of products in this category..."
-                    style={{ ...styles.input, height: '80px', resize: 'vertical' }}
-                  />
-                </div>
-
-                <div style={styles.formActions}>
-                  <button type="button" onClick={resetCategoryForm} className="btn-pill btn-pill-dark">
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    style={{
-                      padding: '0.75rem 1.8rem',
-                      fontSize: '0.85rem',
-                      fontWeight: '600',
-                      backgroundColor: '#C5A059',
-                      color: '#000',
-                      border: 'none',
-                      borderRadius: '9999px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {editingCategory ? 'Save Changes' : 'Create Category'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Modal / Coupon Form Overlay */}
-        {isCouponModalOpen && (
-          <div style={styles.modalOverlay} onClick={resetCouponForm}>
-            <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-              <div style={styles.modalHeader}>
-                <h2 style={styles.modalTitle}>
-                  {editingCoupon ? 'Edit Promo Code' : 'Create Promo Code'}
-                </h2>
-                <button onClick={resetCouponForm} style={styles.closeBtn}>✕</button>
-              </div>
-
-              <form onSubmit={handleCouponSubmit} style={styles.form}>
-                <div style={styles.formGroup}>
-                  <label style={styles.label}>Promo Code *</label>
-                  <input
-                    type="text"
-                    value={cCode}
-                    onChange={(e) => setCCode(e.target.value.toUpperCase())}
-                    placeholder="e.g. KEEPSAKE10"
-                    style={{ ...styles.input, textTransform: 'uppercase', fontFamily: 'monospace', letterSpacing: '0.05em' }}
-                    required
-                  />
-                </div>
-
-                <div style={styles.formRow}>
-                  <div style={{ flex: 1 }}>
-                    <label style={styles.label}>Discount Type *</label>
-                    <select
-                      value={cDiscountType}
-                      onChange={(e) => setCDiscountType(e.target.value)}
-                      style={styles.select}
-                    >
-                      <option value="percentage">Percentage (%)</option>
-                      <option value="fixed">Fixed Amount (₦)</option>
-                    </select>
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={styles.label}>Discount Value *</label>
-                    <input
-                      type="number"
-                      value={cDiscountValue}
-                      onChange={(e) => setCDiscountValue(e.target.value)}
-                      placeholder={cDiscountType === 'percentage' ? '10' : '5000'}
-                      style={styles.input}
-                      required
-                    />
-                  </div>
-                </div>
-
-                <div style={styles.formRow}>
-                  <div style={{ flex: 1 }}>
-                    <label style={styles.label}>Max Usage Limit (Optional)</label>
-                    <input
-                      type="number"
-                      value={cMaxUses}
-                      onChange={(e) => setCMaxUses(e.target.value)}
-                      placeholder="e.g. 100"
-                      style={styles.input}
-                    />
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <label style={styles.label}>Active Status</label>
-                    <select
-                      value={cActive ? 'true' : 'false'}
-                      onChange={(e) => setCActive(e.target.value === 'true')}
-                      style={styles.select}
-                    >
-                      <option value="true">Active</option>
-                      <option value="false">Inactive</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div style={styles.formActions}>
-                  <button type="button" onClick={resetCouponForm} className="btn-pill btn-pill-dark">
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    style={{
-                      padding: '0.75rem 1.8rem',
-                      fontSize: '0.85rem',
-                      fontWeight: '600',
-                      backgroundColor: '#C5A059',
-                      color: '#000',
-                      border: 'none',
-                      borderRadius: '9999px',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    {editingCoupon ? 'Save Changes' : 'Create Promo Code'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* LIVE COUNTDOWN TIMER SETTINGS TAB */}
-        {activeTab === 'timer' && (
-          <div>
-            <div style={styles.pageTitleRow}>
-              <div>
-                <h1 style={styles.headingTitle}>Live Homepage Countdown Timer Settings</h1>
-                <p style={styles.headingSub}>Set up the countdown hours, minutes, and seconds stored in the database for the live homepage timer</p>
-              </div>
-            </div>
-
-            <div style={{ maxWidth: '640px', backgroundColor: '#161616', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '20px', padding: '2.5rem', marginTop: '2rem' }}>
-              <form onSubmit={handleSaveTimerSettings} style={{ display: 'flex', flexDirection: 'column', gap: '1.8rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label style={{ fontSize: '0.75rem', color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: '0.08em' }}>HOURS</label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={999}
-                      value={timerHours}
-                      onChange={(e) => setTimerHours(e.target.value)}
-                      style={{ padding: '1rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '12px', color: '#FFF', fontSize: '1.4rem', textAlign: 'center', outline: 'none' }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label style={{ fontSize: '0.75rem', color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: '0.08em' }}>MINUTES</label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={59}
-                      value={timerMinutes}
-                      onChange={(e) => setTimerMinutes(e.target.value)}
-                      style={{ padding: '1rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '12px', color: '#FFF', fontSize: '1.4rem', textAlign: 'center', outline: 'none' }}
-                    />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                    <label style={{ fontSize: '0.75rem', color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: '0.08em' }}>SECONDS</label>
-                    <input
-                      type="number"
-                      min={0}
-                      max={59}
-                      value={timerSeconds}
-                      onChange={(e) => setTimerSeconds(e.target.value)}
-                      style={{ padding: '1rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.18)', borderRadius: '12px', color: '#FFF', fontSize: '1.4rem', textAlign: 'center', outline: 'none' }}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
-                  <button
-                    type="submit"
-                    disabled={savingTimer}
-                    style={{ padding: '0.9rem 2.2rem', backgroundColor: '#C5A059', color: '#000', border: 'none', borderRadius: '9999px', fontWeight: '600', fontSize: '0.9rem', cursor: 'pointer' }}
-                  >
-                    {savingTimer ? 'Saving to Database...' : 'Save & Update Homepage Timer'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* Modal / Order Details View Overlay */}
-        {viewingOrder && (
-          <div style={styles.modalOverlay} onClick={() => setViewingOrder(null)}>
-            <div style={{ ...styles.modalContent, maxWidth: '640px' }} onClick={(e) => e.stopPropagation()}>
-              <div style={styles.modalHeader}>
-                <div>
-                  <h2 style={styles.modalTitle}>Order Details #{viewingOrder.id}</h2>
-                  <div style={{ fontSize: '0.78rem', color: '#888', marginTop: '4px' }}>
-                    Placed on {new Date(viewingOrder.createdAt).toLocaleString()}
-                  </div>
-                </div>
-                <button onClick={() => setViewingOrder(null)} style={styles.closeBtn}>
-                  <X size={18} color="#AAA" />
-                </button>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                {/* Order Type & Status Banner with Quick Status Dropdown */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#0F0F0F', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.1)' }}>
-                  <div>
-                    <div style={{ fontSize: '0.72rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Fulfillment Classification</div>
-                    <div style={{ fontSize: '0.95rem', color: '#FFF', fontWeight: '500', marginTop: '2px' }}>
-                      {viewingOrder.fulfillmentType === 'physical_card' ? 'Physical Card & Luxury Package' : 'Digital 3D Portal Experience'}
-                    </div>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <select
-                      value={viewingOrder.status}
-                      onChange={(e) => {
-                        const newStatus = e.target.value;
-                        handleOrderStatusToggle(viewingOrder.id, newStatus);
-                        setViewingOrder({ ...viewingOrder, status: newStatus });
-                      }}
-                      style={{
-                        backgroundColor: '#161616',
-                        border: '1px solid #C5A059',
-                        color: '#C5A059',
-                        fontSize: '0.75rem',
-                        fontWeight: '600',
-                        padding: '5px 10px',
-                        cursor: 'pointer',
-                        outline: 'none',
-                        letterSpacing: '0.05em',
-                      }}
-                    >
-                      <option value="pending">PENDING</option>
-                      <option value="in_production">IN PRODUCTION</option>
-                      <option value="ready">READY</option>
-                      <option value="delivered">DELIVERED</option>
-                    </select>
-                  </div>
-                </div>
-
-                {/* 12-Char Access Code Section */}
-                <div style={{ backgroundColor: '#0F0F0F', padding: '1rem', border: '1px solid rgba(197, 160, 89, 0.3)' }}>
-                  <div style={{ fontSize: '0.72rem', color: '#C5A059', textTransform: 'uppercase', letterSpacing: '0.08em' }}>12-Character Access Code Key</div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '8px' }}>
-                    <div style={{ fontFamily: 'monospace', fontSize: '1.2rem', color: '#FFF', letterSpacing: '0.12em', fontWeight: '600' }}>
-                      {viewingOrder.accessCode}
-                    </div>
-                    <button
-                      onClick={() => {
-                        if (typeof window !== 'undefined' && navigator.clipboard) {
-                          navigator.clipboard.writeText(viewingOrder.accessCode);
-                          setCopiedCode(true);
-                          setTimeout(() => setCopiedCode(false), 2000);
-                        }
-                      }}
-                      className="btn-pill"
-                      style={{
-                        fontSize: '0.75rem',
-                        padding: '0.4rem 0.9rem',
-                        backgroundColor: copiedCode ? '#66BB6A' : 'rgba(255, 255, 255, 0.1)',
-                        color: '#FFF',
-                        border: '1px solid rgba(255, 255, 255, 0.2)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                      }}
-                    >
-                      {copiedCode ? <Check size={12} /> : <Copy size={12} />}
-                      {copiedCode ? 'Copied!' : 'Copy Code'}
-                    </button>
-                  </div>
-                </div>
-
-                {/* Purchaser Details (Lower Recipient Box Removed) */}
-                <div style={{ backgroundColor: '#0F0F0F', padding: '1rem', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                  <div style={{ fontSize: '0.72rem', color: '#888', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Purchaser Information</div>
-                  <div style={{ fontSize: '0.95rem', color: '#FFF', marginTop: '4px', fontWeight: '500' }}>{viewingOrder.purchaserName}</div>
-                  <div style={{ fontSize: '0.82rem', color: '#AAA', marginTop: '2px' }}>{viewingOrder.purchaserEmail}</div>
-                </div>
-
-                {/* Package Items Breakdown */}
-                <div>
-                  <div style={{ fontSize: '0.78rem', color: '#888', textTransform: 'uppercase', marginBottom: '8px' }}>Package Items Breakdown</div>
-                  <div style={{ backgroundColor: '#0F0F0F', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '0.75rem 1rem' }}>
-                    {viewingOrder.items && viewingOrder.items.length > 0 ? (
-                      viewingOrder.items.map((item, idx) => (
-                        <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', padding: '0.4rem 0', borderBottom: idx < viewingOrder.items.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none' }}>
-                          <span style={{ fontSize: '0.85rem', color: '#FFF' }}>{item.title || item.name} {item.quantity > 1 ? `x${item.quantity}` : ''}</span>
-                          <span style={{ fontSize: '0.85rem', color: '#AAA' }}>₦{(item.price * (item.quantity || 1)).toLocaleString()}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <div style={{ fontSize: '0.85rem', color: '#AAA' }}>Keepsake Custom Package</div>
-                    )}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '0.75rem', marginTop: '0.5rem', borderTop: '1px solid rgba(255, 255, 255, 0.15)', fontWeight: '600' }}>
-                      <span style={{ color: '#FFF' }}>Total Order Value</span>
-                      <span style={{ color: '#C5A059' }}>₦{viewingOrder.totalAmount.toLocaleString()}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Production WebGL Asset Builder Section */}
-                <div style={{ backgroundColor: '#0F0F0F', border: '1px solid rgba(197, 160, 89, 0.3)', padding: '1.2rem', marginTop: '0.5rem' }}>
-                  <div style={{ fontSize: '0.75rem', color: '#C5A059', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: '600', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <Package size={14} /> Production WebGL Scene & Personalization Assets
-                  </div>
-
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                    <div>
-                      <label style={{ fontSize: '0.72rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>WebGL Build Package URL (packages.thekeepsakesmith.com)</label>
-                      <input
-                        type="text"
-                        value={pkgUrl}
-                        onChange={(e) => setPkgUrl(e.target.value)}
-                        placeholder="e.g. https://packages.thekeepsakesmith.com/builds/pkg_1001.json"
-                        style={{ width: '100%', padding: '0.6rem', backgroundColor: '#161616', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#FFF', fontSize: '0.82rem', fontFamily: 'monospace', outline: 'none' }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: '0.72rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Background Audio Track URL</label>
-                      <input
-                        type="text"
-                        value={pkgAudio}
-                        onChange={(e) => setPkgAudio(e.target.value)}
-                        placeholder="e.g. https://packages.thekeepsakesmith.com/audio/sample-ambient.mp3"
-                        style={{ width: '100%', padding: '0.6rem', backgroundColor: '#161616', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#FFF', fontSize: '0.82rem', fontFamily: 'monospace', outline: 'none' }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ fontSize: '0.72rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Personalization & Dedication Note</label>
-                      <textarea
-                        value={pkgNote}
-                        onChange={(e) => setPkgNote(e.target.value)}
-                        placeholder="Enter custom message injected into recipient 3D scene..."
-                        style={{ width: '100%', height: '70px', padding: '0.6rem', backgroundColor: '#161616', border: '1px solid rgba(255, 255, 255, 0.15)', color: '#FFF', fontSize: '0.82rem', resize: 'vertical', outline: 'none' }}
-                      />
-                    </div>
-
-                    <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                      <button
-                        onClick={() => handleSaveProductionAssets(viewingOrder.id)}
-                        disabled={savingPkgAssets}
-                        style={{
-                          fontSize: '0.78rem',
-                          padding: '0.5rem 1.2rem',
-                          backgroundColor: '#C5A059',
-                          color: '#000',
-                          border: 'none',
-                          borderRadius: '9999px',
-                          fontWeight: '600',
-                          cursor: 'pointer',
-                        }}
-                      >
-                        {savingPkgAssets ? 'Saving Assets...' : 'Save Production Assets'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Controls */}
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '1rem' }}>
-                  {viewingOrder.status === 'in_production' && (
-                    <button
-                      onClick={() => {
-                        handleOrderStatusToggle(viewingOrder.id, 'ready');
-                        setViewingOrder({ ...viewingOrder, status: 'ready' });
-                      }}
-                      style={{
-                        fontSize: '0.8rem',
-                        padding: '0.6rem 1.2rem',
-                        backgroundColor: '#C5A059',
-                        color: '#000',
-                        border: 'none',
-                        borderRadius: '9999px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                      }}
-                    >
-                      Mark Ready & Send Email
-                    </button>
-                  )}
-                  <button
-                    onClick={() => handleSendNotification(viewingOrder.id)}
-                    className="btn-pill"
-                    style={{
-                      fontSize: '0.8rem',
-                      padding: '0.6rem 1.2rem',
-                    }}
-                  >
-                    Resend Email Notification
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL: ADD NEW GIFT ORDER MANUALLY */}
-        {isAddOrderOpen && (
-          <div style={styles.modalOverlay} onClick={() => setIsAddOrderOpen(false)}>
-            <div style={{ ...styles.modalContent, maxWidth: '600px' }} onClick={(e) => e.stopPropagation()}>
-              <div style={styles.modalHeader}>
-                <div>
-                  <h2 style={styles.modalTitle}>Create New Gift Order</h2>
-                  <div style={{ fontSize: '0.78rem', color: '#888', marginTop: '4px' }}>
-                    Generate an access code and setup personalized 3D experience assets
-                  </div>
-                </div>
-                <button onClick={() => setIsAddOrderOpen(false)} style={styles.closeBtn}>
-                  <X size={18} color="#AAA" />
-                </button>
-              </div>
-
-              <form onSubmit={handleCreateOrder} style={{ display: 'flex', flexDirection: 'column', gap: '1.2rem' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Purchaser Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={newPurchaserName}
-                      onChange={(e) => setNewPurchaserName(e.target.value)}
-                      placeholder="e.g. Arthur Vance"
-                      style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.85rem' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Purchaser Email</label>
-                    <input
-                      type="email"
-                      value={newPurchaserEmail}
-                      onChange={(e) => setNewPurchaserEmail(e.target.value)}
-                      placeholder="arthur@example.com"
-                      style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.85rem' }}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Recipient Name *</label>
-                    <input
-                      type="text"
-                      required
-                      value={newRecipientName}
-                      onChange={(e) => setNewRecipientName(e.target.value)}
-                      placeholder="e.g. Eleanor Vance"
-                      style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.85rem' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Recipient Email</label>
-                    <input
-                      type="email"
-                      value={newRecipientEmail}
-                      onChange={(e) => setNewRecipientEmail(e.target.value)}
-                      placeholder="eleanor@example.com"
-                      style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.85rem' }}
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Personalization & Dedication Letter</label>
-                  <textarea
-                    value={newNote}
-                    onChange={(e) => setNewNote(e.target.value)}
-                    rows={3}
-                    placeholder="To Eleanor, every moment we share is a chapter I want to revisit forever..."
-                    style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.85rem', resize: 'vertical' }}
-                  />
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Custom Photo URL</label>
-                    <input
-                      type="text"
-                      value={newPhotoUrl}
-                      onChange={(e) => setNewPhotoUrl(e.target.value)}
-                      placeholder="https://... (or leave blank for default)"
-                      style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.85rem' }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '4px' }}>Fulfillment Classification</label>
-                    <select
-                      value={newFulfillment}
-                      onChange={(e) => setNewFulfillment(e.target.value)}
-                      style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.85rem' }}
-                    >
-                      <option value="digital_physical">Physical Card & 3D Experience</option>
-                      <option value="digital_only">Digital 3D Portal Only</option>
-                      <option value="physical_card">Physical Card Only</option>
-                    </select>
-                  </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '0.5rem' }}>
-                  <input
-                    type="checkbox"
-                    id="newSendEmail"
-                    checked={newSendEmail}
-                    onChange={(e) => setNewSendEmail(e.target.checked)}
-                  />
-                  <label htmlFor="newSendEmail" style={{ fontSize: '0.78rem', color: '#CCC', cursor: 'pointer' }}>
-                    Send "3D Keepsake Access Code Ready" email immediately if email is provided
-                  </label>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '1rem' }}>
-                  <button
-                    type="button"
-                    onClick={() => setIsAddOrderOpen(false)}
-                    style={{ padding: '0.6rem 1.2rem', backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#FFF', borderRadius: '9999px', cursor: 'pointer' }}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    disabled={creatingOrder}
-                    style={{ padding: '0.6rem 1.6rem', backgroundColor: '#C5A059', color: '#000', border: 'none', borderRadius: '9999px', fontWeight: '600', cursor: 'pointer' }}
-                  >
-                    {creatingOrder ? 'Creating...' : 'Create Order & Generate Code'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {/* MODAL: BULK UPLOAD DAILY CSV */}
-        {isCsvModalOpen && (
-          <div style={styles.modalOverlay} onClick={() => setIsCsvModalOpen(false)}>
-            <div style={{ ...styles.modalContent, maxWidth: '640px' }} onClick={(e) => e.stopPropagation()}>
-              <div style={styles.modalHeader}>
-                <div>
-                  <h2 style={styles.modalTitle}>Upload Daily Orders CSV</h2>
-                  <div style={{ fontSize: '0.78rem', color: '#888', marginTop: '4px' }}>
-                    Batch create orders and automatically generate 12-character access codes
-                  </div>
-                </div>
-                <button onClick={() => setIsCsvModalOpen(false)} style={styles.closeBtn}>
-                  <X size={18} color="#AAA" />
-                </button>
-              </div>
-
-              {!csvResults ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  <div style={{ padding: '0.85rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(197, 160, 89, 0.25)', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '0.78rem', color: '#C5A059', fontWeight: '600', marginBottom: '4px' }}>
-                      ✦ Expected CSV Columns:
-                    </div>
-                    <code style={{ fontSize: '0.72rem', color: '#AAA', wordBreak: 'break-all' }}>
-                      purchaser_name,purchaser_email,recipient_name,recipient_email,message,photo_url
-                    </code>
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '6px' }}>
-                      Option A: Select CSV File from Computer
-                    </label>
-                    <input
-                      type="file"
-                      accept=".csv,text/csv"
-                      onChange={handleCsvFileUpload}
-                      style={{ fontSize: '0.8rem', color: '#CCC' }}
-                    />
-                  </div>
-
-                  <div>
-                    <label style={{ fontSize: '0.75rem', color: '#AAA', display: 'block', marginBottom: '6px' }}>
-                      Option B: Paste Raw CSV Text
-                    </label>
-                    <textarea
-                      value={csvText}
-                      onChange={(e) => setCsvText(e.target.value)}
-                      rows={6}
-                      placeholder={`purchaser_name,purchaser_email,recipient_name,recipient_email,message\nArthur Vance,arthur@example.com,Eleanor Vance,eleanor@example.com,"Happy Anniversary, my love."`}
-                      style={{ width: '100%', padding: '0.65rem', backgroundColor: '#0F0F0F', border: '1px solid rgba(255,255,255,0.15)', color: '#FFF', fontSize: '0.8rem', fontFamily: 'monospace' }}
-                    />
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '0.5rem' }}>
-                    <button
-                      type="button"
-                      onClick={() => setIsCsvModalOpen(false)}
-                      style={{ padding: '0.6rem 1.2rem', backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#FFF', borderRadius: '9999px', cursor: 'pointer' }}
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      disabled={importingCsv || !csvText.trim()}
-                      onClick={handleProcessCsvImport}
-                      style={{ padding: '0.6rem 1.6rem', backgroundColor: '#C5A059', color: '#000', border: 'none', borderRadius: '9999px', fontWeight: '600', cursor: 'pointer' }}
-                    >
-                      {importingCsv ? 'Processing...' : 'Import & Generate Codes'}
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
-                  <div style={{ padding: '1rem', backgroundColor: 'rgba(80, 200, 120, 0.1)', border: '1px solid rgba(80, 200, 120, 0.3)', borderRadius: '8px', textAlign: 'center' }}>
-                    <CheckCircle size={28} color="#50C878" style={{ margin: '0 auto 6px auto' }} />
-                    <div style={{ fontSize: '0.95rem', color: '#50C878', fontWeight: '600' }}>
-                      Successfully Generated {csvResults.length} Orders!
-                    </div>
-                    <div style={{ fontSize: '0.78rem', color: '#AAA', marginTop: '4px' }}>
-                      All access codes have been created and queued in the production vault.
-                    </div>
-                  </div>
-
-                  <div style={{ maxHeight: '240px', overflowY: 'auto', border: '1px solid rgba(255,255,255,0.1)' }}>
-                    <table style={{ width: '100%', fontSize: '0.75rem', textAlign: 'left', borderCollapse: 'collapse' }}>
-                      <thead>
-                        <tr style={{ backgroundColor: '#0F0F0F', color: '#888' }}>
-                          <th style={{ padding: '6px 10px' }}>Order ID</th>
-                          <th style={{ padding: '6px 10px' }}>Recipient</th>
-                          <th style={{ padding: '6px 10px' }}>Access Code</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {csvResults.map((r) => (
-                          <tr key={r.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                            <td style={{ padding: '6px 10px', color: '#CCC' }}>{r.id}</td>
-                            <td style={{ padding: '6px 10px', color: '#FFF' }}>{r.recipientName}</td>
-                            <td style={{ padding: '6px 10px', color: '#C5A059', fontFamily: 'monospace' }}>{r.accessCode}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px' }}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const csvHeader = 'Order ID,Purchaser,Recipient,Access Code,Status\n';
-                        const csvData = csvResults.map((r) => `"${r.id}","${r.purchaserName}","${r.recipientName}","${r.accessCode}","${r.status}"`).join('\n');
-                        const blob = new Blob([csvHeader + csvData], { type: 'text/csv' });
-                        const url = URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.href = url;
-                        a.download = `keepsake-access-codes-${Date.now()}.csv`;
-                        a.click();
-                      }}
-                      style={{ padding: '0.6rem 1.4rem', backgroundColor: '#C5A059', color: '#000', border: 'none', borderRadius: '9999px', fontWeight: '600', cursor: 'pointer' }}
-                    >
-                      Download CSV with Access Codes
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsCsvModalOpen(false)}
-                      style={{ padding: '0.6rem 1.2rem', backgroundColor: 'transparent', border: '1px solid rgba(255,255,255,0.2)', color: '#FFF', borderRadius: '9999px', cursor: 'pointer' }}
-                    >
-                      Done
-                    </button>
-                  </div>
-                </div>
+                />
+              )}
+
+              {activeTab === 'vault' && (
+                <AdminCodeVault orders={orders} onOpenOrder={setViewingOrder} />
+              )}
+
+              {activeTab === 'catalog' && (
+                <AdminCatalog products={products} onRefresh={fetchData} />
+              )}
+
+              {activeTab === 'settings' && (
+                <AdminSettings
+                  currentAccent={accentColor}
+                  onChangeAccent={handleChangeAccent}
+                  user={currentUser}
+                />
               )}
             </div>
-          </div>
-        )}
+          </main>
+        </div>
+
+        <OrderDetailsModal
+          order={viewingOrder}
+          isOpen={Boolean(viewingOrder)}
+          onClose={() => setViewingOrder(null)}
+          onSaveAssets={handleSaveAssets}
+          onSendEmail={handleSendEmail}
+        />
       </div>
+    );
+  }
+
+  return body;
+}
+
+export default function AdminPage() {
+  // Theme state lives above ToastProvider on purpose: the provider renders its
+  // toast stack as a sibling of `children`, so anything that must inherit
+  // `.admin-root` or `.dark` has to be wrapped further out than the provider.
+  //
+  // Dark-first, matching the obsidian storefront. The initial value is
+  // deterministic so SSR and the first client render agree; the saved
+  // preference is applied after mount.
+  const [darkMode, setDarkMode] = useState(true);
+  const [accentColor, setAccentColor] = useState(DEFAULT_ACCENT);
+
+  useEffect(() => {
+    try {
+      const savedDark = window.localStorage.getItem(STORAGE_DARK);
+      const savedAccent = window.localStorage.getItem(STORAGE_ACCENT);
+      if (savedDark !== null) setDarkMode(savedDark === 'true');
+      if (savedAccent) setAccentColor(savedAccent);
+    } catch {
+      /* localStorage unavailable (private mode) — keep the defaults. */
+    }
+  }, []);
+
+  /**
+   * Accent tokens are set inline on the console root so they cascade to every
+   * child and stay scoped to /admin. `--accent-light-text` is shifted toward
+   * the readable end of the hue for the active theme, keeping `.text-accent`
+   * legible on both obsidian and paper surfaces.
+   */
+  const accentVars = useMemo(
+    () => ({
+      '--accent': accentColor,
+      '--accent-hover': adjustColor(accentColor, -24),
+      '--accent-light': hexToRgba(accentColor, darkMode ? 0.16 : 0.12),
+      '--accent-light-text': darkMode
+        ? adjustColor(accentColor, 30)
+        : adjustColor(accentColor, -60),
+      '--accent-muted': adjustColor(accentColor, 30),
+    }),
+    [accentColor, darkMode]
+  );
+
+  // `.admin-root` scopes the stylesheet's reset; `.dark` drives every `dark:`
+  // variant beneath it. Keeping both here rather than on <html> is what stops
+  // the admin theme from reaching the storefront.
+  return (
+    <div
+      className={`admin-root${darkMode ? ' dark' : ''}`}
+      style={accentVars}
+    >
+      <ToastProvider>
+        <AdminPortalInner
+          darkMode={darkMode}
+          setDarkMode={setDarkMode}
+          accentColor={accentColor}
+          setAccentColor={setAccentColor}
+        />
+      </ToastProvider>
     </div>
   );
 }
-
-const styles = {
-  // Login Gate Styles
-  loginPage: {
-    minHeight: '100vh',
-    backgroundColor: '#111111',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '2rem 1rem',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  loginCard: {
-    width: '100%',
-    maxWidth: '440px',
-    backgroundColor: '#161616',
-    border: '1px solid rgba(255, 255, 255, 0.15)',
-    padding: '3rem 2.5rem',
-    textAlign: 'center',
-  },
-  loginLogo: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '0.5rem',
-    marginBottom: '2rem',
-  },
-  loginTitle: {
-    fontSize: '1.2rem',
-    fontWeight: '300',
-    letterSpacing: '0.1em',
-    color: '#FFFFFF',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-    marginTop: '0.5rem',
-  },
-  loginSub: {
-    fontSize: '0.7rem',
-    letterSpacing: '0.15em',
-    color: '#C5A059',
-  },
-  loginForm: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.25rem',
-  },
-  inputWrap: {
-    display: 'flex',
-    alignItems: 'center',
-    backgroundColor: '#0F0F0F',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-  },
-  passwordInput: {
-    width: '100%',
-    padding: '1rem',
-    backgroundColor: 'transparent',
-    border: 'none',
-    color: '#FFFFFF',
-    fontSize: '0.95rem',
-    outline: 'none',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  loginBtn: {
-    width: '100%',
-    padding: '0.9rem',
-    fontSize: '0.9rem',
-    fontWeight: '600',
-    marginTop: '0.5rem',
-    backgroundColor: '#C5A059',
-    color: '#000000',
-    border: '1px solid #C5A059',
-    borderRadius: '9999px',
-    cursor: 'pointer',
-    letterSpacing: '0.05em',
-    textTransform: 'uppercase',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-    transition: 'all 0.2s ease',
-  },
-  errorAlert: {
-    fontSize: '0.8rem',
-    color: '#FF6B6B',
-    backgroundColor: 'rgba(255, 107, 107, 0.1)',
-    padding: '0.65rem',
-  },
-  hintText: {
-    fontSize: '0.72rem',
-    color: '#666666',
-    marginTop: '2rem',
-    lineHeight: '1.4',
-  },
-
-  // Main Authenticated Admin Styles
-  adminPage: {
-    minHeight: '100vh',
-    backgroundColor: '#111111',
-    color: '#FFFFFF',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif !important",
-  },
-  adminNavHeader: {
-    width: '100%',
-    backgroundColor: '#161616',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
-    padding: '1.25rem 0',
-  },
-  adminHeaderRow: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    flexWrap: 'wrap',
-    gap: '1.5rem',
-  },
-  brandGroup: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.85rem',
-  },
-  brandTitle: {
-    fontSize: '0.95rem',
-    fontWeight: '300',
-    letterSpacing: '0.08em',
-    color: '#FFFFFF',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  subdomainLabel: {
-    fontSize: '0.68rem',
-    letterSpacing: '0.12em',
-    color: '#C5A059',
-  },
-  navTabs: {
-    display: 'flex',
-    gap: '1.5rem',
-  },
-  navTabBtn: {
-    fontSize: '0.85rem',
-    letterSpacing: '0.05em',
-    padding: '0.5rem 0',
-    backgroundColor: 'transparent',
-    border: 'none',
-    cursor: 'pointer',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  rightActions: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.75rem',
-  },
-
-  mainContent: {
-    paddingTop: '2.5rem',
-    paddingBottom: '6rem',
-  },
-  pageTitleRow: {
-    marginBottom: '2rem',
-  },
-  headingTitle: {
-    fontSize: '2rem',
-    fontWeight: '300',
-    letterSpacing: '-0.02em',
-    color: '#FFFFFF',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif !important",
-  },
-  headingSub: {
-    fontSize: '0.82rem',
-    color: '#888888',
-    marginTop: '4px',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  alertBanner: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '1rem 1.25rem',
-    backgroundColor: 'rgba(197, 160, 89, 0.15)',
-    border: '1px solid #C5A059',
-    color: '#FFFFFF',
-    marginBottom: '2rem',
-    fontSize: '0.85rem',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  statsGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
-    gap: '1.5rem',
-    marginBottom: '3rem',
-  },
-  statCard: {
-    backgroundColor: '#161616',
-    border: '1px solid rgba(255, 255, 255, 0.1)',
-    padding: '1.5rem',
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  statLabel: {
-    fontSize: '0.72rem',
-    color: '#888888',
-    letterSpacing: '0.08em',
-    textTransform: 'uppercase',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  statVal: {
-    fontSize: '2.2rem',
-    fontWeight: '300',
-    color: '#FFFFFF',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  tableContainer: {
-    width: '100%',
-    overflowX: 'auto',
-    backgroundColor: '#161616',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
-  },
-  table: {
-    width: '100%',
-    borderCollapse: 'collapse',
-    textAlign: 'left',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif !important",
-  },
-  trHeader: {
-    backgroundColor: 'rgba(255, 255, 255, 0.04)',
-    borderBottom: '1px solid rgba(255, 255, 255, 0.12)',
-  },
-  th: {
-    padding: '1.1rem 1.25rem',
-    fontSize: '0.75rem',
-    letterSpacing: '0.08em',
-    color: '#888888',
-    textTransform: 'uppercase',
-    fontWeight: '400',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  trBody: {
-    borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-  },
-  td: {
-    padding: '1.1rem 1.25rem',
-    verticalAlign: 'middle',
-    fontSize: '0.88rem',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  thumbImg: {
-    width: '54px',
-    height: '54px',
-    objectFit: 'cover',
-  },
-  catBadge: {
-    fontSize: '0.7rem',
-    letterSpacing: '0.08em',
-    padding: '4px 8px',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    color: '#AAA',
-  },
-  codeBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    padding: '4px 10px',
-    backgroundColor: '#0F0F0F',
-    border: '1px solid rgba(197, 160, 89, 0.4)',
-    color: '#FFFFFF',
-    fontFamily: 'monospace',
-    fontSize: '0.85rem',
-    letterSpacing: '0.1em',
-  },
-  statusTag: {
-    fontSize: '0.7rem',
-    letterSpacing: '0.08em',
-    padding: '4px 8px',
-    border: '1px solid',
-  },
-  actionBtn: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    padding: '6px',
-    marginLeft: '8px',
-  },
-  modalOverlay: {
-    position: 'fixed',
-    top: 0,
-    left: 0,
-    width: '100vw',
-    height: '100vh',
-    backgroundColor: 'rgba(0, 0, 0, 0.85)',
-    backdropFilter: 'blur(8px)',
-    zIndex: 1000,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '1.5rem',
-  },
-  modalContent: {
-    width: '100%',
-    maxWidth: '560px',
-    backgroundColor: '#161616',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    padding: '2.5rem',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  modalHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '2rem',
-  },
-  modalTitle: {
-    fontSize: '1.5rem',
-    fontWeight: '300',
-    color: '#FFFFFF',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  closeBtn: {
-    fontSize: '1.2rem',
-    color: '#888',
-    cursor: 'pointer',
-    background: 'none',
-    border: 'none',
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1.25rem',
-  },
-  formGroup: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '0.5rem',
-  },
-  formRow: {
-    display: 'flex',
-    gap: '1rem',
-  },
-  label: {
-    fontSize: '0.78rem',
-    color: '#888888',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  input: {
-    width: '100%',
-    padding: '0.9rem 1rem',
-    backgroundColor: '#0F0F0F',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    color: '#FFFFFF',
-    fontSize: '0.9rem',
-    outline: 'none',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  select: {
-    width: '100%',
-    padding: '0.9rem 1rem',
-    backgroundColor: '#0F0F0F',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    color: '#FFFFFF',
-    fontSize: '0.9rem',
-    outline: 'none',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-  },
-  checkboxRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    marginTop: '0.5rem',
-  },
-  checkbox: {
-    width: '18px',
-    height: '18px',
-    cursor: 'pointer',
-  },
-  formActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '1rem',
-    marginTop: '1.5rem',
-  },
-  uploadBox: {
-    backgroundColor: '#0F0F0F',
-    border: '1px dashed rgba(255, 255, 255, 0.25)',
-    padding: '1rem',
-    textAlign: 'center',
-    transition: 'all 0.2s ease',
-  },
-  dropzone: {
-    display: 'block',
-    cursor: 'pointer',
-    padding: '1.25rem',
-  },
-  dropzoneContent: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '8px',
-  },
-  imagePreviewRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1.25rem',
-    textAlign: 'left',
-  },
-  uploadPreviewImg: {
-    width: '70px',
-    height: '70px',
-    objectFit: 'cover',
-    border: '1px solid #C5A059',
-  },
-  changeFileBtn: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '4px 10px',
-    fontSize: '0.75rem',
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    color: '#FFF',
-    cursor: 'pointer',
-  },
-  removeFileBtn: {
-    padding: '4px 10px',
-    fontSize: '0.75rem',
-    backgroundColor: 'transparent',
-    border: '1px solid rgba(255, 107, 107, 0.4)',
-    color: '#FF6B6B',
-    cursor: 'pointer',
-  },
-  filterPill: {
-    padding: '0.5rem 1.1rem',
-    fontSize: '0.78rem',
-    fontWeight: '500',
-    border: '1px solid',
-    borderRadius: '9999px',
-    cursor: 'pointer',
-    letterSpacing: '0.04em',
-    fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif",
-    transition: 'all 0.2s ease',
-  },
-  physicalTag: {
-    fontSize: '0.72rem',
-    fontWeight: '500',
-    letterSpacing: '0.04em',
-    padding: '4px 8px',
-    backgroundColor: 'rgba(197, 160, 89, 0.15)',
-    border: '1px solid #C5A059',
-    color: '#C5A059',
-    borderRadius: '0px',
-    whiteSpace: 'nowrap',
-  },
-  digitalTag: {
-    fontSize: '0.72rem',
-    fontWeight: '500',
-    letterSpacing: '0.04em',
-    padding: '4px 8px',
-    backgroundColor: 'rgba(255, 255, 255, 0.05)',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    color: '#AAA',
-    borderRadius: '0px',
-    whiteSpace: 'nowrap',
-  },
-};

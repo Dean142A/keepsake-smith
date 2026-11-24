@@ -18,6 +18,12 @@
     "next": "^15.1.7",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
+    "recharts": "^3.11.1",
     "three": "^0.186.1"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.5",
+    "autoprefixer": "^10.7.0",
+    "tailwindcss": "^4.3.5"
   }
 }
