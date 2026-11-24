@@ -9,6 +9,17 @@ export async function sendEmail({ to, subject, html, text }) {
   const senderName = process.env.BREVO_SENDER_NAME || 'The Keepsake Smith';
 
   if (!apiKey) {
+    // In production a missing key must not look like a sent email: reporting
+    // success here would hide every undelivered gift notification, the same
+    // way continue-on-error hid the broken deploy.
+    if (process.env.NODE_ENV === 'production') {
+      console.error('[Mailer] BREVO_API_KEY is not set — refusing to report a simulated send as delivered.');
+      return {
+        success: false,
+        error: 'Email is not configured on this environment (BREVO_API_KEY missing).',
+      };
+    }
+
     console.log('----------------------------------------------------');
     console.log(`[Brevo Mailer Simulation] (Set BREVO_API_KEY in env to send live)`);
     console.log(`To: ${to}`);

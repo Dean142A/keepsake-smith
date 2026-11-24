@@ -1,42 +1,43 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { atom, useAtom } from 'jotai';
-import { Volume2, VolumeX, ArrowLeft, Mail, ChevronLeft, ChevronRight, X } from 'lucide-react';
-
-const defaultPictures = [
-  'DSC00680',
-  'DSC00933',
-  'DSC00966',
-  'DSC00983',
-  'DSC01011',
-  'DSC01040',
-];
+import { Volume2, VolumeX, ArrowLeft, Mail, ChevronLeft, ChevronRight, X, Mic, Pause } from 'lucide-react';
 
 export const pageAtom = atom(0);
 
-export const pages = [
-  {
-    front: 'book-cover',
-    back: defaultPictures[0],
-  },
-];
-
-for (let i = 1; i < defaultPictures.length - 1; i += 2) {
-  pages.push({
-    front: defaultPictures[i % defaultPictures.length],
-    back: defaultPictures[(i + 1) % defaultPictures.length],
-  });
-}
-
-pages.push({
-  front: defaultPictures[defaultPictures.length - 1],
-  back: 'book-back',
-});
-
-export const UI = ({ personalization, onExit, musicActive, onToggleMusic }) => {
+export const UI = ({
+  personalization,
+  experience,
+  leafCount = 0,
+  onExit,
+  musicActive,
+  onToggleMusic,
+}) => {
   const [page, setPage] = useAtom(pageAtom);
   const [showDedication, setShowDedication] = useState(false);
+  const [voicePlaying, setVoicePlaying] = useState(false);
+  const voiceRef = useRef(null);
+
+  const voiceNoteUrl = experience?.voiceNoteUrl || '';
+
+  // Stop the voice note when the experience unmounts.
+  useEffect(() => () => voiceRef.current?.pause?.(), []);
+
+  const toggleVoiceNote = () => {
+    if (!voiceNoteUrl) return;
+    if (!voiceRef.current) {
+      voiceRef.current = new Audio(voiceNoteUrl);
+      voiceRef.current.addEventListener('ended', () => setVoicePlaying(false));
+    }
+    if (voicePlaying) {
+      voiceRef.current.pause();
+      setVoicePlaying(false);
+    } else {
+      voiceRef.current.play().catch(() => setVoicePlaying(false));
+      setVoicePlaying(true);
+    }
+  };
 
   // Play page flip sound
   useEffect(() => {
@@ -50,7 +51,7 @@ export const UI = ({ personalization, onExit, musicActive, onToggleMusic }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === 'ArrowRight' || e.key === 'PageDown') {
-        setPage((prev) => Math.min(pages.length, prev + 1));
+        setPage((prev) => Math.min(leafCount, prev + 1));
       } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
         setPage((prev) => Math.max(0, prev - 1));
       } else if (e.key === 'Escape') {
@@ -62,7 +63,7 @@ export const UI = ({ personalization, onExit, musicActive, onToggleMusic }) => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [setPage]);
 
-  const maxPage = pages.length;
+  const maxPage = leafCount;
 
   return (
     <main style={styles.uiOverlay}>
@@ -88,7 +89,25 @@ export const UI = ({ personalization, onExit, musicActive, onToggleMusic }) => {
               onClick={() => setShowDedication(true)}
               style={styles.dedicationBtn}
             >
-              <Mail size={14} style={{ marginRight: '6px', color: '#C5A059' }} /> Read Dedication Note
+              <Mail size={14} style={{ marginRight: '6px', color: '#C5A059' }} /> Read the Letter
+            </button>
+          )}
+
+          {voiceNoteUrl && (
+            <button
+              onClick={toggleVoiceNote}
+              style={styles.dedicationBtn}
+              title={voicePlaying ? 'Pause the voice note' : 'Play the voice note'}
+            >
+              {voicePlaying ? (
+                <>
+                  <Pause size={14} style={{ marginRight: '6px', color: '#C5A059' }} /> Pause Voice Note
+                </>
+              ) : (
+                <>
+                  <Mic size={14} style={{ marginRight: '6px', color: '#C5A059' }} /> Play Voice Note
+                </>
+              )}
             </button>
           )}
         </div>
@@ -138,7 +157,7 @@ export const UI = ({ personalization, onExit, musicActive, onToggleMusic }) => {
       {/* Page Switcher Navigation */}
       <div style={styles.navRow}>
         <div style={styles.navBar}>
-          {[...pages].map((_, index) => (
+          {Array.from({ length: leafCount }).map((_, index) => (
             <button
               key={index}
               style={{
@@ -153,9 +172,9 @@ export const UI = ({ personalization, onExit, musicActive, onToggleMusic }) => {
           <button
             style={{
               ...styles.pageBtn,
-              ...(page === pages.length ? styles.pageBtnActive : styles.pageBtnInactive),
+              ...(page === leafCount ? styles.pageBtnActive : styles.pageBtnInactive),
             }}
-            onClick={() => setPage(pages.length)}
+            onClick={() => setPage(leafCount)}
           >
             Back Cover
           </button>

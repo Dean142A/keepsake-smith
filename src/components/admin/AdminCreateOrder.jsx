@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import ExperienceBuilder from './ExperienceBuilder';
+import { emptyExperience } from '@/lib/keepsake';
 import {
   UserPlus,
   Upload,
@@ -23,9 +25,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
   const [purchaserEmail, setPurchaserEmail] = useState('');
   const [recipientName, setRecipientName] = useState('');
   const [recipientEmail, setRecipientEmail] = useState('');
-  const [personalizationNote, setPersonalizationNote] = useState('');
-  const [customPhoto, setCustomPhoto] = useState('');
-  const [audioUrl, setAudioUrl] = useState('');
+  const [experience, setExperience] = useState(emptyExperience());
   const [fulfillmentType, setFulfillmentType] = useState('digital_physical');
   const [sendNotification, setSendNotification] = useState(true);
   const [submittingSingle, setSubmittingSingle] = useState(false);
@@ -52,9 +52,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
           purchaserEmail,
           recipientName,
           recipientEmail,
-          personalizationNote,
-          customPhoto,
-          audioUrl,
+          experience,
           fulfillmentType,
           sendNotification,
         }),
@@ -66,9 +64,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
         setPurchaserEmail('');
         setRecipientName('');
         setRecipientEmail('');
-        setPersonalizationNote('');
-        setCustomPhoto('');
-        setAudioUrl('');
+        setExperience(emptyExperience());
         onOrderCreated();
       } else {
         toast(data?.error || 'Failed to create order', 'error');
@@ -229,7 +225,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
                   type="text"
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
-                  placeholder="e.g. Eleanor Vance"
+                  placeholder="Recipient full name"
                   className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
                   required
                 />
@@ -241,50 +237,29 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
                   type="email"
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
-                  placeholder="eleanor@example.com"
+                  placeholder="recipient@email.com"
                   className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
             </div>
+
 
             <div>
-              <label className="uppercase-label text-neutral-400 block mb-1">
-                Personalized Dedication Letter (Rendered in 3D)
-              </label>
-              <textarea
-                rows={3}
-                value={personalizationNote}
-                onChange={(e) => setPersonalizationNote(e.target.value)}
-                placeholder="To Eleanor, Wishing you a wonderful birthday..."
-                className="w-full rounded-xl border border-neutral-200/60 dark:border-neutral-700 p-3 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
-              />
+              <label className="uppercase-label text-neutral-400 block mb-1">Fulfillment Mode</label>
+              <select
+                value={fulfillmentType}
+                onChange={(e) => setFulfillmentType(e.target.value)}
+                className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+              >
+                <option value="digital_physical">Physical Box + 3D Portal Experience</option>
+                <option value="digital_only">Purely Digital 3D Experience</option>
+                <option value="physical_only">Physical Keepsake Box Only</option>
+              </select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="uppercase-label text-neutral-400 block mb-1">Fulfillment Mode</label>
-                <select
-                  value={fulfillmentType}
-                  onChange={(e) => setFulfillmentType(e.target.value)}
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
-                >
-                  <option value="digital_physical">Physical Box + 3D Portal Experience</option>
-                  <option value="digital_only">Purely Digital 3D Experience</option>
-                  <option value="physical_only">Physical Keepsake Box Only</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="uppercase-label text-neutral-400 block mb-1">Audio Recording Stream URL</label>
-                <input
-                  type="text"
-                  value={audioUrl}
-                  onChange={(e) => setAudioUrl(e.target.value)}
-                  placeholder="https://.../audio/message.mp3"
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
-                />
-              </div>
-            </div>
+            {/* Per-order media: photos become the book's pages, so no new
+                template is needed for each customer. */}
+            <ExperienceBuilder value={experience} onChange={setExperience} />
 
             <div className="pt-2">
               <label className="flex items-center gap-2 cursor-pointer text-xs text-neutral-700 dark:text-neutral-300">

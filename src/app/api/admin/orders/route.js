@@ -3,6 +3,38 @@ import fs from 'fs';
 import path from 'path';
 import { sendEmail, getGiftReadyHtml, getOrderConfirmationHtml } from '@/lib/mailer';
 import { validateAdminRequest } from '@/lib/auth';
+import { MAX_PAGES } from '@/lib/keepsake';
+
+/**
+ * Normalise whatever the admin submitted into the stored experience shape.
+ * Accepts the rich payload from the create-order form, and falls back to the
+ * legacy single-photo fields so CSV imports keep working.
+ */
+function buildExperiencePayload(experience, legacy = {}) {
+  const pages = Array.isArray(experience?.pages)
+    ? experience.pages
+        .map((p) => ({
+          imageUrl: (p?.imageUrl || '').trim(),
+          caption: (p?.caption || '').trim(),
+        }))
+        .filter((p) => p.imageUrl)
+        .slice(0, MAX_PAGES)
+    : legacy.customPhoto
+      ? [{ imageUrl: legacy.customPhoto, caption: '' }]
+      : [];
+
+  return {
+    title: (experience?.title || '').trim(),
+    letter: {
+      body: (experience?.letter?.body ?? legacy.personalizationNote ?? '').trim(),
+      signature: (experience?.letter?.signature || legacy.purchaserName || '').trim(),
+    },
+    pages,
+    voiceNoteUrl: (experience?.voiceNoteUrl || '').trim(),
+    backgroundMusicUrl: (experience?.backgroundMusicUrl || legacy.audioUrl || '').trim(),
+  };
+}
+
 
 const ordersFilePath = path.join(process.cwd(), 'src', 'data', 'orders.json');
 
@@ -77,9 +109,14 @@ export async function POST(request) {
           totalAmount: Number(row.totalAmount || 29000),
           accessCode,
           personalizationNote: row.personalizationNote || row.message || 'We craft gifts that are truly memorable.',
-          customPhoto: row.customPhoto || row.photoUrl || 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
-          audioUrl: row.audioUrl || '/audios/background-music.mp3',
-          packageUrl: row.packageUrl || 'https://packages.thekeepsakesmith.com/builds/default-v1/',
+          customPhoto: row.customPhoto || row.photoUrl || '',
+          audioUrl: row.audioUrl || '',
+          experience: buildExperiencePayload(null, {
+            personalizationNote: row.personalizationNote || row.message,
+            customPhoto: row.customPhoto || row.photoUrl,
+            audioUrl: row.audioUrl,
+            purchaserName: row.purchaserName,
+          }),
           items: [
             {
               id: '3d-keepsake-experience',
@@ -118,6 +155,7 @@ export async function POST(request) {
       fulfillmentType,
       status,
       sendNotification,
+      experience,
     } = body;
 
     if (!purchaserName && !recipientName) {
@@ -142,10 +180,17 @@ export async function POST(request) {
       status: status || 'ready',
       totalAmount: 29000,
       accessCode,
-      personalizationNote: personalizationNote || 'We craft gifts that are memorable.',
-      customPhoto: customPhoto || 'https://images.unsplash.com/photo-1544717305-2782549b5136?q=80&w=800&auto=format&fit=crop',
-      audioUrl: audioUrl || '/audios/background-music.mp3',
-      packageUrl: 'https://packages.thekeepsakesmith.com/builds/default-v1/',
+      personalizationNote: personalizationNote || '',
+      customPhoto: customPhoto || '',
+      audioUrl: audioUrl || '',
+      // The experience is what the 3D book renders: an ordered page list plus
+      // the letter and voice note. Page count follows the uploaded photos.
+      experience: buildExperiencePayload(experience, {
+        personalizationNote,
+        customPhoto,
+        audioUrl,
+        purchaserName,
+      }),
       items: [
         {
           id: '3d-keepsake-experience',
@@ -198,7 +243,16 @@ export async function PUT(request) {
 
   try {
     const body = await request.json();
-    const { id, status, sendNotification, packageUrl, personalizationNote, audioUrl, customPhoto } = body;
+    const {
+      id,
+      status,
+      sendNotification,
+      packageUrl,
+      personalizationNote,
+      audioUrl,
+      customPhoto,
+      experience,
+    } = body;
 
     if (!id) {
       return NextResponse.json(
@@ -223,6 +277,17 @@ export async function PUT(request) {
     if (personalizationNote !== undefined) orders[index].personalizationNote = personalizationNote;
     if (audioUrl !== undefined) orders[index].audioUrl = audioUrl;
     if (customPhoto !== undefined) orders[index].customPhoto = customPhoto;
+
+    // Replacing the experience replaces the whole page list, so the book's
+    // leaf count tracks the edit rather than keeping stale pages around.
+    if (experience !== undefined) {
+      orders[index].experience = buildExperiencePayload(experience, {
+        personalizationNote: orders[index].personalizationNote,
+        customPhoto: orders[index].customPhoto,
+        audioUrl: orders[index].audioUrl,
+        purchaserName: orders[index].purchaserName,
+      });
+    }
 
     orders[index].updatedAt = new Date().toISOString();
     writeOrders(orders);

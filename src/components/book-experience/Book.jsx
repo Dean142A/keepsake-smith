@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { useCursor, useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import { useAtom } from 'jotai';
@@ -14,11 +14,11 @@ import {
   MeshStandardMaterial,
   Skeleton,
   SkinnedMesh,
-  SRGBColorSpace,
   Uint16BufferAttribute,
   Vector3,
 } from 'three';
-import { pageAtom, pages } from './UI';
+import { pageAtom } from './UI';
+import { usePageTextures } from './pageTexture';
 
 const easingFactor = 1.0;
 const easingFactorFold = 0.6;
@@ -77,34 +77,33 @@ const pageMaterials = [
   new MeshStandardMaterial({ color: whiteColor }),
 ];
 
-// Preload static texture maps
 if (typeof window !== 'undefined') {
-  pages.forEach((page) => {
-    useTexture.preload(`/textures/${page.front}.jpg`);
-    useTexture.preload(`/textures/${page.back}.jpg`);
-  });
   useTexture.preload(`/textures/book-cover-roughness.jpg`);
 }
 
-const Page = ({ number, front, back, page, opened, bookClosed, ...props }) => {
-  const [picture, picture2, pictureRoughness] = useTexture([
-    `/textures/${front}.jpg`,
-    `/textures/${back}.jpg`,
-    ...(number === 0 || number === pages.length - 1
-      ? [`/textures/book-cover-roughness.jpg`]
-      : []),
-  ]);
+/**
+ * `front` and `back` are full image URLs for this order (CDN-hosted customer
+ * photos, or the local cover artwork), not names of files baked into the
+ * build. Captions are composited into the texture by usePageTextures so the
+ * text bends with the paper.
+ */
+const Page = ({
+  number,
+  front,
+  back,
+  frontCaption,
+  backCaption,
+  totalLeaves,
+  page,
+  opened,
+  bookClosed,
+  ...props
+}) => {
+  const [picture, picture2] = usePageTextures(front, back, frontCaption, backCaption);
+  // Static cover roughness map; applied only to the outer leaves below.
+  const pictureRoughness = useTexture('/textures/book-cover-roughness.jpg');
 
-  useEffect(() => {
-    if (picture) {
-      picture.colorSpace = SRGBColorSpace;
-      picture.needsUpdate = true;
-    }
-    if (picture2) {
-      picture2.colorSpace = SRGBColorSpace;
-      picture2.needsUpdate = true;
-    }
-  }, [picture, picture2]);
+  const isCoverLeaf = number === 0 || number === totalLeaves - 1;
 
   const group = useRef();
   const turnedAt = useRef(0);
@@ -133,16 +132,14 @@ const Page = ({ number, front, back, page, opened, bookClosed, ...props }) => {
       new MeshStandardMaterial({
         color: whiteColor,
         map: picture,
-        ...(number === 0
-          ? { roughnessMap: pictureRoughness }
-          : { roughness: 1 }),
+        ...(number === 0 ? { roughnessMap: pictureRoughness } : { roughness: 1 }),
         emissive: emissiveColor,
         emissiveIntensity: 0,
       }),
       new MeshStandardMaterial({
         color: whiteColor,
         map: picture2,
-        ...(number === pages.length - 1
+        ...(number === totalLeaves - 1
           ? { roughnessMap: pictureRoughness }
           : { roughness: 1 }),
         emissive: emissiveColor,
@@ -157,7 +154,7 @@ const Page = ({ number, front, back, page, opened, bookClosed, ...props }) => {
     mesh.add(skeleton.bones[0]);
     mesh.bind(skeleton);
     return mesh;
-  }, [number, picture, picture2, pictureRoughness]);
+  }, [number, totalLeaves, picture, picture2, pictureRoughness]);
 
   const [highlighted, setHighlighted] = useState(false);
   useCursor(highlighted);
@@ -193,7 +190,7 @@ const Page = ({ number, front, back, page, opened, bookClosed, ...props }) => {
     let targetRotation = opened ? -Math.PI : 0;
     if (!bookClosed) {
       if (opened) {
-        targetRotation = -Math.PI + (pages.length - number) * 0.005;
+        targetRotation = -Math.PI + (totalLeaves - number) * 0.005;
       } else {
         targetRotation = -number * 0.005;
       }
@@ -259,18 +256,26 @@ const Page = ({ number, front, back, page, opened, bookClosed, ...props }) => {
   );
 };
 
-export const Book = ({ ...props }) => {
+/**
+ * `leaves` comes from buildSpreads() for this specific order, so the book has
+ * exactly as many leaves as the customer's photos require.
+ */
+export const Book = ({ leaves = [], ...props }) => {
   const [page] = useAtom(pageAtom);
 
   return (
     <group {...props} rotation-y={-Math.PI / 6}>
-      {pages.map((pageData, index) => (
+      {leaves.map((leaf, index) => (
         <Page
-          key={index}
+          key={`${index}-${leaf.front}`}
           number={index}
+          totalLeaves={leaves.length}
           opened={page > index}
-          bookClosed={page === 0 || page === pages.length}
-          {...pageData}
+          bookClosed={page === 0 || page === leaves.length}
+          front={leaf.front}
+          back={leaf.back}
+          frontCaption={leaf.frontCaption}
+          backCaption={leaf.backCaption}
         />
       ))}
     </group>
