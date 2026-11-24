@@ -4,6 +4,14 @@ on:
   push:
     branches:
       - main
+  # Pull requests build the image to prove it still compiles. They never
+  # publish or deploy — see the guards on the steps below.
+  pull_request:
+    branches:
+      - main
+  # Allows the deploy to be re-run on demand, e.g. to retest Bunny
+  # credentials without having to push to main.
+  workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
@@ -24,6 +32,7 @@ jobs:
         uses: docker/setup-buildx-action@v3
 
       - name: Log in to GitHub Container Registry (ghcr.io)
+        if: github.event_name != 'pull_request'
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
@@ -43,23 +52,25 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: true
+          # Build everywhere, publish only from main and manual runs.
+          push: ${{ github.event_name != 'pull_request' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Trigger rolling deployment on Bunny.net Magic Containers when credentials are set
+      # Deliberately NOT continue-on-error: a failed rolling update must fail
+      # the run. Eight consecutive runs reported success while this step errored
+      # with "Could not obtain app configuration: HTTP status 404", which hid a
+      # mistyped APP_ID for a week.
+      #
+      # The previous `if:` guard tested env.BUNNY_API_KEY, which was defined in
+      # this step's own env block and so never gated anything. Removed.
       - name: Trigger Rolling Update on Bunny Magic Containers
-        if: ${{ env.BUNNY_API_KEY != '' && env.BUNNY_APP_ID != '' }}
-        continue-on-error: true
+        if: github.event_name != 'pull_request'
         uses: BunnyWay/actions/container-update-image@main
-        env:
-          BUNNY_API_KEY: ${{ secrets.BUNNYNET_API_KEY }}
-          BUNNY_APP_ID: ${{ vars.APP_ID }}
         with:
           app_id: ${{ vars.APP_ID }}
           api_key: ${{ secrets.BUNNYNET_API_KEY }}
           container: nodejs
           image_tag: latest
-
