@@ -1,27 +1,33 @@
 import { NextResponse } from 'next/server';
+import { getAdminKey, getAdminPassword, secureEquals } from '@/lib/auth';
 
 export async function POST(request) {
   try {
     const body = await request.json().catch(() => ({}));
     const { username, password } = body;
 
-    const expectedPassword = process.env.ADMIN_PASSWORD || process.env.ADMIN_API_KEY || 'keepsake_admin_secret_2026';
-    const fallbackPassword = 'keepsake2026'; // friendly fallback for the team
+    const expectedPassword = getAdminPassword();
+    const cookieValue = getAdminKey();
+
+    // No shared secret configured means no way to tell staff from a stranger,
+    // so the door stays shut rather than opening on a value from source control.
+    if (!expectedPassword || !cookieValue) {
+      console.error('[Admin Login] ADMIN_PASSWORD / ADMIN_API_KEY are not set — refusing to sign anyone in.');
+      return NextResponse.json(
+        { success: false, error: 'Admin access is not configured on this environment.' },
+        { status: 503 }
+      );
+    }
 
     const trimmedPassword = (password || '').trim();
 
-    // Verify credentials
-    const isValid = trimmedPassword === expectedPassword || trimmedPassword === fallbackPassword;
-
-    if (!isValid) {
+    if (!secureEquals(trimmedPassword, expectedPassword)) {
       return NextResponse.json(
         { success: false, error: 'Invalid administrative credentials' },
         { status: 401 }
       );
     }
 
-    // Set secure session cookie matching validateAdminRequest's expectation
-    const cookieValue = process.env.ADMIN_API_KEY || 'keepsake_admin_secret_2026';
     const response = NextResponse.json({
       success: true,
       message: 'Authentication successful',
@@ -31,6 +37,7 @@ export async function POST(request) {
       },
     });
 
+    // Matches validateAdminRequest's expectation for the admin_session cookie.
     response.cookies.set('admin_session', cookieValue, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
@@ -48,4 +55,3 @@ export async function POST(request) {
     );
   }
 }
-
