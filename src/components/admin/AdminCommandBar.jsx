@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Sparkles, Filter, Package, CalendarDays, ArrowUp, X } from 'lucide-react';
+import { Search, ArrowUp, X } from 'lucide-react';
 
 /**
  * The bar pinned to the foot of the centre column. The reference puts a
@@ -37,7 +37,7 @@ export default function AdminCommandBar({ value, onChange, filters, onFilters, r
 
   const active = (key) => (filters[key] || 'all') !== 'all';
 
-  const pill = (key, options, Icon) => (
+  const pill = (key, options) => (
     <button
       type="button"
       onClick={() => cyclePill(key, options)}
@@ -47,7 +47,6 @@ export default function AdminCommandBar({ value, onChange, filters, onFilters, r
           : 'text-neutral-600 dark:text-neutral-300'
       }`}
     >
-      <Icon size={16} className={active(key) ? '' : 'text-neutral-400'} />
       <span>{label(key, options)}</span>
     </button>
   );
@@ -55,7 +54,7 @@ export default function AdminCommandBar({ value, onChange, filters, onFilters, r
   return (
     <div className="card-surface px-5 pt-5 pb-4">
       <div className="flex items-center gap-3 px-1 pb-4">
-        <Sparkles size={18} className="text-neutral-400 flex-shrink-0" />
+        <Search size={18} className="text-neutral-400 flex-shrink-0" />
         <input
           type="text"
           value={value}
@@ -76,8 +75,8 @@ export default function AdminCommandBar({ value, onChange, filters, onFilters, r
       </div>
 
       <div className="flex items-center gap-2.5 flex-wrap">
-        {pill('status', STATUS, Filter)}
-        {pill('fulfillmentType', FULFILMENT, Package)}
+        {pill('status', STATUS)}
+        {pill('fulfillmentType', FULFILMENT)}
         <button
           type="button"
           onClick={() => onFilters({ ...filters, recent: !filters.recent })}
@@ -86,9 +85,7 @@ export default function AdminCommandBar({ value, onChange, filters, onFilters, r
               ? 'text-neutral-950 dark:text-white font-medium'
               : 'text-neutral-600 dark:text-neutral-300'
           }`}
-        >
-          <CalendarDays size={16} className={filters.recent ? '' : 'text-neutral-400'} />
-          <span>{filters.recent ? 'Last 7 days' : 'Any date'}</span>
+        ><span>{filters.recent ? 'Last 7 days' : 'Any date'}</span>
         </button>
 
         <div className="ml-auto flex items-center gap-2.5">

@@ -64,7 +64,7 @@ export default function AdminSettings({ currentAccent, onChangeAccent, user }) {
     <div className="max-w-5xl mx-auto space-y-6 md:space-y-8 animate-fade-in">
       {/* 1. BRANDING & ACCENT COLOR (TeleFlow Theme Picker) */}
       <div className="card-surface overflow-hidden animate-slide-up">
-        <div className="p-5 bg-neutral-50/50 dark:bg-neutral-800/30 flex items-center justify-between">
+        <div className="p-5 bg-neutral-50 dark:bg-neutral-800 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <Palette size={16} className="text-accent" />
             <div>
@@ -107,7 +107,7 @@ export default function AdminSettings({ currentAccent, onChangeAccent, user }) {
 
       {/* 2. INFRASTRUCTURE & ARCHITECTURE SPECS */}
       <div className="card-surface overflow-hidden animate-slide-up">
-        <div className="p-5 bg-neutral-50/50 dark:bg-neutral-800/30">
+        <div className="p-5 bg-neutral-50 dark:bg-neutral-800">
           <h3 className="font-semibold text-sm text-neutral-900 dark:text-white tracking-[-0.025em]">
             Infrastructure &amp; Security Architecture
           </h3>
@@ -143,7 +143,7 @@ export default function AdminSettings({ currentAccent, onChangeAccent, user }) {
 
       {/* 3. SMTP EMAIL DISPATCH TEST */}
       <div className="card-surface overflow-hidden animate-slide-up">
-        <div className="p-5 bg-neutral-50/50 dark:bg-neutral-800/30">
+        <div className="p-5 bg-neutral-50 dark:bg-neutral-800">
           <h3 className="font-semibold text-sm text-neutral-900 dark:text-white tracking-[-0.025em]">
             SMTP Notification Dispatcher
           </h3>
@@ -159,16 +159,14 @@ export default function AdminSettings({ currentAccent, onChangeAccent, user }) {
               value={testEmail}
               onChange={(e) => setTestEmail(e.target.value)}
               placeholder="Enter your email for test dispatch..."
-              className="flex-1 rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+              className="flex-1 rounded-full px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
               required
             />
             <button
               type="submit"
               disabled={sendingTest}
               className="primary-button text-xs py-2 px-5 btn-press whitespace-nowrap disabled:opacity-50"
-            >
-              <Send size={13} />
-              <span>{sendingTest ? 'Sending...' : 'Send Test'}</span>
+            ><span>{sendingTest ? 'Sending...' : 'Send Test'}</span>
             </button>
           </form>
         </div>

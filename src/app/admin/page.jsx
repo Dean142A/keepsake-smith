@@ -459,18 +459,6 @@ export default function AdminPage() {
    * the readable end of the hue for the active theme, keeping `.text-accent`
    * legible on both obsidian and paper surfaces.
    */
-  const accentVars = useMemo(
-    () => ({
-      '--accent': accentColor,
-      '--accent-hover': adjustColor(accentColor, -24),
-      '--accent-light': hexToRgba(accentColor, darkMode ? 0.16 : 0.12),
-      '--accent-light-text': darkMode
-        ? adjustColor(accentColor, 30)
-        : adjustColor(accentColor, -60),
-      '--accent-muted': adjustColor(accentColor, 30),
-    }),
-    [accentColor, darkMode]
-  );
 
   // `.admin-root` scopes the stylesheet's reset; `.dark` drives every `dark:`
   // variant beneath it. Keeping both here rather than on <html> is what stops
@@ -478,7 +466,6 @@ export default function AdminPage() {
   return (
     <div
       className={`admin-root${darkMode ? ' dark' : ''}`}
-      style={accentVars}
     >
       <ToastProvider>
         <AdminPortalInner

@@ -62,7 +62,7 @@ export default function AdminTopBar({
             placeholder="Search orders, codes, recipients... (⌘K)"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full rounded-full border border-transparent bg-neutral-100/80 dark:bg-neutral-800/80 px-4 pl-9 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-accent focus:bg-white dark:focus:bg-neutral-900 transition-all text-neutral-900 dark:text-neutral-100"
+            className="w-full rounded-full bg-neutral-100/80 dark:bg-neutral-800/80 px-4 pl-9 py-1.5 text-xs focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-accent focus:bg-white dark:focus:bg-neutral-900 transition-all text-neutral-900 dark:text-neutral-100"
           />
           {searchTerm && (
             <button
@@ -82,9 +82,7 @@ export default function AdminTopBar({
           <button
             onClick={onOpenAddOrder}
             className="primary-button text-xs btn-press hidden sm:inline-flex items-center gap-1.5 py-1.5 px-3.5"
-          >
-            <Plus size={14} />
-            <span>New Gift Order</span>
+          ><span>New Gift Order</span>
           </button>
         )}
 
@@ -92,7 +90,7 @@ export default function AdminTopBar({
         {onOpenCsvModal && (
           <button
             onClick={onOpenCsvModal}
-            className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all btn-press"
+            className="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all btn-press"
           >
             <Upload size={13} />
             <span>Daily CSV</span>
@@ -122,13 +120,13 @@ export default function AdminTopBar({
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 top-full mt-2 w-[280px] bg-white dark:bg-neutral-900 rounded-xl shadow-lg p-3 z-50 animate-scale-in">
+            <div className="absolute right-0 top-full mt-2 w-[280px] bg-white dark:bg-neutral-900 rounded-xl p-3 z-50 animate-scale-in">
               <div className="flex items-center justify-between pb-2 text-xs font-semibold text-neutral-800 dark:text-neutral-200">
                 <span>System Notifications</span>
                 <span className="text-[10px] text-accent font-normal">Active</span>
               </div>
               <div className="py-2 space-y-2 text-xs">
-                <div className="p-2 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
+                <div className="p-2 rounded-lg bg-neutral-50 dark:bg-neutral-800">
                   <span className="font-medium text-neutral-900 dark:text-white block">
                     Magic Containers Active
                   </span>
@@ -136,7 +134,7 @@ export default function AdminTopBar({
                     app. & admin. endpoints healthy on Bunny CDN.
                   </span>
                 </div>
-                <div className="p-2 rounded-lg bg-neutral-50 dark:bg-neutral-800/50">
+                <div className="p-2 rounded-lg bg-neutral-50 dark:bg-neutral-800">
                   <span className="font-medium text-neutral-900 dark:text-white block">
                     Access Code Engine
                   </span>
@@ -161,7 +159,7 @@ export default function AdminTopBar({
           </button>
 
           {showProfileMenu && (
-            <div className="absolute right-0 top-full mt-2 w-[230px] bg-white dark:bg-neutral-900 rounded-xl shadow-lg overflow-hidden z-50 animate-scale-in">
+            <div className="absolute right-0 top-full mt-2 w-[230px] bg-white dark:bg-neutral-900 rounded-xl overflow-hidden z-50 animate-scale-in">
               <div className="p-3.5 border-b border-neutral-100 dark:border-neutral-800">
                 <div className="font-semibold text-xs text-neutral-900 dark:text-white truncate">
                   {user?.username || 'admin@thekeepsakesmith.com'}
@@ -180,9 +178,7 @@ export default function AdminTopBar({
                     onLogout();
                   }}
                   className="w-full text-left px-3 py-2 rounded-lg text-xs text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 flex items-center gap-2 transition-colors"
-                >
-                  <LogOut size={13} />
-                  <span>Sign Out</span>
+                ><span>Sign Out</span>
                 </button>
               </div>
             </div>

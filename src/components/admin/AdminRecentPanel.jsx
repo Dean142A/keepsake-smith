@@ -133,9 +133,7 @@ export default function AdminRecentPanel({ orders = [], onOpenOrder, onNewOrder,
       </div>
 
       <div className="p-6 pt-4">
-        <button onClick={onNewOrder} className="primary-button w-full py-3.5 text-[15px] btn-press">
-          <Plus size={17} />
-          <span>New gift order</span>
+        <button onClick={onNewOrder} className="primary-button w-full py-3.5 text-[15px] btn-press"><span>New gift order</span>
         </button>
       </div>
     </div>

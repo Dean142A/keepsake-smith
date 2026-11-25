@@ -57,7 +57,7 @@ export default function AdminLogin({ onLoginSuccess }) {
         </div>
 
         {/* Login Card */}
-        <div className=" rounded-xl bg-white dark:bg-neutral-900 p-8 shadow-sm animate-slide-up">
+        <div className=" rounded-xl bg-white dark:bg-neutral-900 p-8 animate-slide-up">
           <div className="text-center mb-6">
             <h1 className="font-bold text-xl mb-1 tracking-[-0.035em] text-neutral-900 dark:text-white">
               Sign in to your account
@@ -76,7 +76,7 @@ export default function AdminLogin({ onLoginSuccess }) {
                 type="text"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2.5 text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-accent transition-all"
+                className="w-full rounded-full px-4 py-2.5 text-sm bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-accent transition-all"
                 required
               />
             </div>
@@ -91,7 +91,7 @@ export default function AdminLogin({ onLoginSuccess }) {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Enter passcode"
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2.5 pr-10 text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-accent transition-all bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
+                  className="w-full rounded-full px-4 py-2.5 pr-10 text-sm focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-accent transition-all bg-white dark:bg-neutral-800 text-neutral-900 dark:text-neutral-100"
                   required
                   autoFocus
                 />
@@ -106,7 +106,7 @@ export default function AdminLogin({ onLoginSuccess }) {
               </div>
             </div>
 
-            <div className="flex items-start gap-2.5 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/50 rounded-xl mb-6">
+            <div className="flex items-start gap-2.5 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl mb-6">
               <Shield size={15} className="text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
                 Secure access for authorized administrators only. Session cookies are encrypted and verified server-side.
@@ -114,7 +114,7 @@ export default function AdminLogin({ onLoginSuccess }) {
             </div>
 
             {error && (
-              <div className="p-3 mb-4 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 border border-red-200/60 dark:border-red-900/50 rounded-xl">
+              <div className="p-3 mb-4 text-xs text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/40 rounded-xl">
                 {error}
               </div>
             )}

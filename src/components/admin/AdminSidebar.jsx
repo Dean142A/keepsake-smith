@@ -126,9 +126,7 @@ export default function AdminSidebar({
             <button
               onClick={onLogout}
               className="primary-button flex-1 text-[13px] py-2.5 btn-press"
-            >
-              <LogOut size={14} />
-              <span>Sign Out</span>
+            ><span>Sign Out</span>
             </button>
             <button
               onClick={toggleDarkMode}

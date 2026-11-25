@@ -64,21 +64,24 @@
    reads the accent through them — pointing them at the near-black is the
    whole swap, the same trick that re-skinned TeleFlow. */
 :root {
-  --accent: #0b151d;
-  --accent-hover: #1a2027;
-  --accent-light: rgba(11, 21, 29, 0.05);
-  --accent-light-text: #0b151d;
+  --accent: #000000;
+  --accent-hover: #1a1a1a;
+  --accent-light: rgba(0, 0, 0, 0.05);
+  --accent-light-text: #000000;
   --accent-muted: #626262;
 
   /* Surfaces float rather than sit in boxes: the reference card edge fades
      #f6f6f6 → #ffffff across three pixels, which is shadow, not a border. */
-  --shadow-card: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
-  --shadow-raised: 0 2px 4px rgba(16, 24, 40, 0.05), 0 4px 12px rgba(16, 24, 40, 0.08);
+  /* Surfaces are told apart by tone alone: white against the #f6f6f6
+     canvas, and the canvas tone again for controls that sit on white. */
+  --shadow-card: none;
+  --shadow-raised: none;
+  --surface-recessed: #f6f6f6;
 }
 
 .dark {
-  --accent: #f6f6f6;
-  --accent-hover: #e4e4e4;
+  --accent: #ffffff;
+  --accent-hover: #ebebeb;
   --accent-light: rgba(246, 246, 246, 0.08);
   --accent-light-text: #f6f6f6;
   --shadow-card: none;
@@ -203,30 +206,26 @@
     background-color: #ffffff;
     color: var(--color-neutral-950);
     font-weight: 600;
-    box-shadow: var(--shadow-card);
   }
   .dark .active-nav-item {
     background-color: var(--color-neutral-800);
     color: #ffffff;
-    box-shadow: none;
   }
 
   .input-field {
     width: 100%;
     border-radius: 9999px;
-    background-color: #ffffff;
-    box-shadow: var(--shadow-card);
+    background-color: var(--surface-recessed);
     padding: 0.625rem 1rem;
     font-size: 0.8125rem;
     color: var(--color-neutral-950);
     transition: box-shadow 0.15s ease;
   }
   .input-field::placeholder { color: var(--color-neutral-500); }
-  .input-field:focus { box-shadow: var(--shadow-raised); }
+  .input-field:focus { background-color: #ededed; }
   .dark .input-field {
     background-color: var(--color-neutral-800);
     color: #ffffff;
-    box-shadow: none;
   }
 
   /* A card is a surface. The reference card edge fades #f6f6f6 -> #ffffff
@@ -234,34 +233,32 @@
   .card-surface {
     border-radius: var(--radius-card);
     background-color: #ffffff;
-    box-shadow: var(--shadow-card);
   }
   .dark .card-surface {
     background-color: var(--color-neutral-900);
-    box-shadow: none;
   }
 
   /* The panel on the right, and anything else that reads as a sheet. */
   .panel-surface {
     border-radius: var(--radius-panel);
     background-color: #ffffff;
-    box-shadow: var(--shadow-card);
   }
   .dark .panel-surface {
     background-color: var(--color-neutral-900);
-    box-shadow: none;
   }
 
   /* Pills: the reference uses them for every secondary control and input. */
+  /* Pills live on white cards, so white would make them disappear now that
+     nothing is outlined. They take the canvas tone instead. */
   .pill {
     border-radius: 9999px;
-    background-color: #ffffff;
-    box-shadow: var(--shadow-card);
-    transition: box-shadow 0.15s ease, transform 0.1s ease;
+    background-color: var(--surface-recessed);
+    transition: background-color 0.15s ease, transform 0.1s ease;
   }
-  .pill:hover { box-shadow: var(--shadow-raised); }
+  .pill:hover { background-color: #ededed; }
   .pill:active { transform: scale(0.98); }
-  .dark .pill { background-color: var(--color-neutral-800); box-shadow: none; }
+  .dark .pill { background-color: var(--color-neutral-800); }
+  .dark .pill:hover { background-color: var(--color-neutral-700); }
 
   /* Hairline, sampled from the dividers inside the reference panel. */
   .hairline { border-color: var(--color-neutral-200); }

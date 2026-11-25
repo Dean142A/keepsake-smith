@@ -229,7 +229,7 @@ export default function OrderDetailsModal({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in"
+        className="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -280,7 +280,7 @@ export default function OrderDetailsModal({
           </div>
 
           {/* Access Code & 1-Click Link Card */}
-          <div className="p-4 rounded-xl bg-accent-soft border border-accent/20">
+          <div className="p-4 rounded-xl bg-accent-soft">
             <div className="flex items-center justify-between">
               <span className="uppercase-label text-accent font-bold text-[10px]">
                 Cryptographic 12-Char Access Code
@@ -306,7 +306,7 @@ export default function OrderDetailsModal({
                   href={portalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="p-1.5 rounded-full bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:text-accent border border-neutral-200 dark:border-neutral-700 transition-colors"
+                  className="p-1.5 rounded-full bg-white dark:bg-neutral-800 text-neutral-700 dark:text-neutral-200 hover:text-accent transition-colors"
                   title="Test in 3D Portal"
                 >
                   <ExternalLink size={14} />
@@ -327,9 +327,7 @@ export default function OrderDetailsModal({
                 />
 
                 <div className="min-w-0">
-                  <div className="flex items-center gap-1.5 mb-0.5">
-                    <QrCode size={13} className="text-accent" />
-                    <span className="text-xs font-medium text-neutral-900 dark:text-white">
+                  <div className="flex items-center gap-1.5 mb-0.5"><span className="text-xs font-medium text-neutral-900 dark:text-white">
                       Print on the keepsake
                     </span>
                   </div>
@@ -341,14 +339,14 @@ export default function OrderDetailsModal({
                     <button
                       type="button"
                       onClick={() => downloadQr('svg')}
-                      className="px-2.5 py-1 rounded-full border border-neutral-200 dark:border-neutral-700 text-[11px] font-medium text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-800 transition-all btn-press inline-flex items-center gap-1"
+                      className="px-2.5 py-1 rounded-full text-[11px] font-medium text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-800 transition-all btn-press inline-flex items-center gap-1"
                     >
                       <Download size={11} /> SVG
                     </button>
                     <button
                       type="button"
                       onClick={() => downloadQr('png')}
-                      className="px-2.5 py-1 rounded-full border border-neutral-200 dark:border-neutral-700 text-[11px] font-medium text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-800 transition-all btn-press inline-flex items-center gap-1"
+                      className="px-2.5 py-1 rounded-full text-[11px] font-medium text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-800 transition-all btn-press inline-flex items-center gap-1"
                     >
                       <Download size={11} /> PNG
                     </button>
@@ -441,7 +439,7 @@ export default function OrderDetailsModal({
                   type="text"
                   value={details.recipientName}
                   onChange={(e) => setDetails({ ...details, recipientName: e.target.value })}
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                  className="w-full rounded-full px-4 py-2 text-xs bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
               <div>
@@ -450,7 +448,7 @@ export default function OrderDetailsModal({
                   type="email"
                   value={details.recipientEmail}
                   onChange={(e) => setDetails({ ...details, recipientEmail: e.target.value })}
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                  className="w-full rounded-full px-4 py-2 text-xs bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
               <div>
@@ -459,7 +457,7 @@ export default function OrderDetailsModal({
                   type="text"
                   value={details.purchaserName}
                   onChange={(e) => setDetails({ ...details, purchaserName: e.target.value })}
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                  className="w-full rounded-full px-4 py-2 text-xs bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
               <div>
@@ -468,7 +466,7 @@ export default function OrderDetailsModal({
                   type="email"
                   value={details.purchaserEmail}
                   onChange={(e) => setDetails({ ...details, purchaserEmail: e.target.value })}
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                  className="w-full rounded-full px-4 py-2 text-xs bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
                 <div className="sm:col-span-2">
@@ -476,7 +474,7 @@ export default function OrderDetailsModal({
                   <select
                     value={details.fulfillmentType}
                     onChange={(e) => setDetails({ ...details, fulfillmentType: e.target.value })}
-                    className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                    className="w-full rounded-full px-4 py-2 text-xs bg-neutral-50 dark:bg-neutral-800 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
                   >
                     <option value="digital_physical">Digital + physical</option>
                     <option value="digital_only">Digital only</option>
@@ -490,9 +488,7 @@ export default function OrderDetailsModal({
                   onClick={() => patchOrder(details, 'Order details')}
                   disabled={Boolean(busy)}
                   className="primary-button text-xs py-2 px-5 btn-press disabled:opacity-60"
-                >
-                  <Save size={13} />
-                  <span>{busy === 'Order details' ? 'Saving...' : 'Save Details'}</span>
+                ><span>{busy === 'Order details' ? 'Saving...' : 'Save Details'}</span>
                 </button>
               </div>
             </div>
@@ -512,9 +508,7 @@ export default function OrderDetailsModal({
                   onClick={() => patchOrder({ experience }, 'Keepsake content')}
                   disabled={Boolean(busy)}
                   className="primary-button text-xs py-2 px-5 btn-press disabled:opacity-60"
-                >
-                  <Save size={13} />
-                  <span>{busy === 'Keepsake content' ? 'Saving...' : 'Save Photos & Letter'}</span>
+                ><span>{busy === 'Keepsake content' ? 'Saving...' : 'Save Photos & Letter'}</span>
                 </button>
               </div>
             </div>
@@ -544,7 +538,7 @@ export default function OrderDetailsModal({
                 type="button"
                 onClick={toggleAccess}
                 disabled={Boolean(busy)}
-                className="px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-[11px] font-medium text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-800 transition-all btn-press whitespace-nowrap disabled:opacity-60"
+                className="px-3 py-1.5 rounded-full text-[11px] font-medium text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-800 transition-all btn-press whitespace-nowrap disabled:opacity-60"
               >
                 {busy === 'access' ? '...' : access === 'suspended' ? 'Reinstate' : 'Suspend'}
               </button>
@@ -595,10 +589,8 @@ export default function OrderDetailsModal({
               type="button"
               onClick={handleSendNotification}
               disabled={sendingEmail || !order.recipientEmail}
-              className="px-3.5 py-2 rounded-full border border-neutral-200 dark:border-neutral-700 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all btn-press inline-flex items-center gap-1.5 disabled:opacity-50"
-            >
-              <Mail size={13} />
-              <span>{sendingEmail ? 'Sending...' : 'Dispatch Email'}</span>
+              className="px-3.5 py-2 rounded-full text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all btn-press inline-flex items-center gap-1.5 disabled:opacity-50"
+            ><span>{sendingEmail ? 'Sending...' : 'Dispatch Email'}</span>
             </button>
 
             <button
