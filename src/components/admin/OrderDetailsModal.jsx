@@ -14,7 +14,10 @@ import {
   Music,
   FileText,
   User,
+  QrCode,
+  Download,
 } from 'lucide-react';
+import QRCode from 'qrcode';
 import { useToast } from './AdminToast';
 
 /**
@@ -45,6 +48,7 @@ export default function OrderDetailsModal({
   // The parent keeps its own copy of the selected order, so it does not
   // re-render with the new status after a stage change. Track it here too.
   const [stage, setStage] = useState('');
+  const [qrSvg, setQrSvg] = useState('');
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -55,10 +59,67 @@ export default function OrderDetailsModal({
     }
   }, [order]);
 
+  const accessCode = order?.accessCode || '';
+  const portalUrl = `https://app.thekeepsakesmith.com/?code=${accessCode}`;
+
+  // The physical keepsake carries this code printed on a card, so the QR has
+  // to survive being small on paper: high error correction, generous quiet
+  // zone, pure black on white.
+  useEffect(() => {
+    if (!accessCode) {
+      setQrSvg('');
+      return;
+    }
+    let alive = true;
+    QRCode.toString(portalUrl, {
+      type: 'svg',
+      errorCorrectionLevel: 'H',
+      margin: 2,
+      width: 260,
+      color: { dark: '#111111', light: '#ffffff' },
+    })
+      .then((svg) => {
+        if (alive) setQrSvg(svg);
+      })
+      .catch(() => {
+        if (alive) setQrSvg('');
+      });
+    return () => {
+      alive = false;
+    };
+  }, [accessCode, portalUrl]);
+
   if (!isOpen || !order) return null;
 
-  const accessCode = order.accessCode || '';
-  const portalUrl = `https://app.thekeepsakesmith.com/?code=${accessCode}`;
+  const downloadQr = async (format) => {
+    try {
+      if (format === 'svg') {
+        const blob = new Blob([qrSvg], { type: 'image/svg+xml' });
+        triggerDownload(URL.createObjectURL(blob), `keepsake-${accessCode}.svg`, true);
+      } else {
+        // 2048px so it stays crisp at print resolution.
+        const dataUrl = await QRCode.toDataURL(portalUrl, {
+          errorCorrectionLevel: 'H',
+          margin: 2,
+          width: 2048,
+          color: { dark: '#111111', light: '#ffffff' },
+        });
+        triggerDownload(dataUrl, `keepsake-${accessCode}.png`, false);
+      }
+    } catch (err) {
+      toast('Could not generate the QR code', 'error');
+    }
+  };
+
+  const triggerDownload = (href, filename, revoke) => {
+    const a = document.createElement('a');
+    a.href = href;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    if (revoke) URL.revokeObjectURL(href);
+  };
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(portalUrl);
@@ -209,6 +270,45 @@ export default function OrderDetailsModal({
             <div className="text-[10px] text-neutral-500 dark:text-neutral-400 mt-2 font-mono truncate">
               {portalUrl}
             </div>
+
+            {/* Printable QR for the physical keepsake */}
+            {qrSvg && (
+              <div className="mt-4 pt-4 border-t border-accent/15 flex items-center gap-4">
+                <div
+                  className="shrink-0 rounded-lg bg-white p-1.5 [&>svg]:block [&>svg]:h-[104px] [&>svg]:w-[104px]"
+                  dangerouslySetInnerHTML={{ __html: qrSvg }}
+                />
+
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5 mb-0.5">
+                    <QrCode size={13} className="text-accent" />
+                    <span className="text-xs font-medium text-neutral-900 dark:text-white">
+                      Print on the keepsake
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-neutral-500 dark:text-neutral-400 mb-2">
+                    Opens the 3D experience straight away, no code to type.
+                  </p>
+
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() => downloadQr('svg')}
+                      className="px-2.5 py-1 rounded-full border border-neutral-200 dark:border-neutral-700 text-[11px] font-medium text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-800 transition-all btn-press inline-flex items-center gap-1"
+                    >
+                      <Download size={11} /> SVG
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => downloadQr('png')}
+                      className="px-2.5 py-1 rounded-full border border-neutral-200 dark:border-neutral-700 text-[11px] font-medium text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-800 transition-all btn-press inline-flex items-center gap-1"
+                    >
+                      <Download size={11} /> PNG
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* 3D WebGL Production Assets Form */}

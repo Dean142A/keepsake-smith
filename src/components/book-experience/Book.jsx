@@ -240,25 +240,49 @@ const Page = ({
       );
     }
 
-    // Bend inner page segment bones into organic parabolic arc during flip
-    const foldIntensity = Math.sin(turningTime * Math.PI);
+    // Stack the leaves through the book's thickness. Until now every leaf sat
+    // in the same plane and only a fraction of a degree of fan kept them
+    // apart, which is why surfaces tore into each other when the book was
+    // turned side-on. One page-depth per leaf is what a real book does: the
+    // sheets touch, and no two faces are ever coplanar.
+    if (group.current) {
+      const fromTop = opened ? page - 1 - number : number - page;
+      easing.damp(
+        group.current.position,
+        'z',
+        -Math.max(0, fromTop) * PAGE_DEPTH,
+        0.22,
+        delta
+      );
+    }
+
+    // Bend the leaf as it turns. The curve travels from the spine out to the
+    // edge rather than the whole sheet pivoting rigidly: a stiff inner curve
+    // near the binding, a softer one towards the fore-edge, and a wave that
+    // runs along the page over the course of the turn.
+    const bendDirection = opened ? -1 : 1;
+    const lastBone = bones.length - 1;
 
     bones.forEach((bone, index) => {
       if (index === 0) return;
 
-      let rotationAngle = insideCurveStrength * Math.sin(index * 0.15) * (opened ? -0.4 : 0.4);
+      let rotationAngle = 0;
+      let foldAngle = 0;
 
-      if (bookClosed) {
-        rotationAngle = 0;
+      if (!bookClosed) {
+        const along = index / lastBone; // 0 at the spine, 1 at the fore-edge
+        const inside = insideCurveStrength * Math.sin(along * Math.PI);
+        const outside = outsideCurveStrength * Math.cos(along * Math.PI * 0.5);
+        const travelling =
+          turningCurveStrength * Math.sin(along * Math.PI * 1.5 - turningTime * Math.PI);
+
+        rotationAngle = bendDirection * (inside + outside + travelling) * turningTime;
+        // A little lift across the sheet so a turning page is not a flat plane.
+        foldAngle = bendDirection * Math.sin(along * Math.PI) * turningTime * 0.05;
       }
 
-      easing.dampAngle(
-        bone.rotation,
-        'y',
-        rotationAngle * foldIntensity,
-        easingFactorFold,
-        delta
-      );
+      easing.dampAngle(bone.rotation, 'y', rotationAngle, easingFactorFold, delta);
+      easing.dampAngle(bone.rotation, 'x', foldAngle, easingFactorFold, delta);
     });
   });
 
@@ -311,6 +335,7 @@ export const Book = ({ leaves = [], ...props }) => {
           key={`${index}-${leaf.front?.imageUrl || leaf.front?.kind}`}
           number={index}
           totalLeaves={leaves.length}
+          page={page}
           opened={page > index}
           bookClosed={page === 0 || page === leaves.length}
           front={leaf.front}
