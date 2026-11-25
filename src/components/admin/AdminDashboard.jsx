@@ -1,36 +1,55 @@
 'use client';
 
 import React from 'react';
-import {
-  Package,
-  Clock,
-  Sparkles,
-  Key,
-  TrendingUp,
-  ArrowRight,
-  CheckCircle2,
-  AlertCircle,
-  ExternalLink,
-  Plus,
-  Upload,
-} from 'lucide-react';
+import { Clock, CheckCircle2, ArrowRight, UploadCloud, Key, Gift } from 'lucide-react';
 import { isExperienceReady } from '@/lib/keepsake';
 
-function getGreeting() {
-  const hour = new Date().getHours();
-  if (hour < 12) return 'Good morning';
-  if (hour < 17) return 'Good afternoon';
-  return 'Good evening';
+/**
+ * The centre column. Follows the reference: a hero mark, a large greeting
+ * with a single question beneath it, then a row of three cards, each an
+ * icon above a title and two lines of description.
+ *
+ * Recent orders are not repeated here — they are the right-hand panel.
+ */
+function HeroMark() {
+  return (
+    <svg width="150" height="150" viewBox="0 0 150 150" aria-hidden="true" className="mx-auto">
+      <defs>
+        <radialGradient id="keepsakeStar" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#ffb38a" stopOpacity="0.95" />
+          <stop offset="45%" stopColor="#b9a8d6" stopOpacity="0.75" />
+          <stop offset="100%" stopColor="#c7cbd4" stopOpacity="0.25" />
+        </radialGradient>
+      </defs>
+      {/* The reference hero is a soft four-pointed star. */}
+      <path
+        d="M75 4 C80 46 104 70 146 75 C104 80 80 104 75 146 C70 104 46 80 4 75 C46 70 70 46 75 4 Z"
+        fill="url(#keepsakeStar)"
+      />
+    </svg>
+  );
 }
 
-function getFormattedDate() {
-  return new Date().toLocaleDateString('en-US', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
-}
+const Tile = ({ label, value, hint, tone = 'neutral', Icon }) => (
+  <div className="card-surface p-5">
+    <div className="flex items-center justify-between mb-3">
+      <span className="text-[12px] text-neutral-500 dark:text-neutral-400">{label}</span>
+      <span
+        className={`w-8 h-8 rounded-full flex items-center justify-center ${
+          tone === 'warn'
+            ? 'bg-amber-500/10 text-amber-500'
+            : tone === 'good'
+            ? 'bg-emerald-500/10 text-emerald-500'
+            : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500'
+        }`}
+      >
+        <Icon size={15} />
+      </span>
+    </div>
+    <div className="text-[30px] font-semibold tracking-[-0.03em] leading-none">{value}</div>
+    <div className="text-[12px] text-neutral-400 mt-1.5">{hint}</div>
+  </div>
+);
 
 export default function AdminDashboard({
   orders = [],
@@ -38,274 +57,122 @@ export default function AdminDashboard({
   onOpenAddOrder,
   onOpenCsvModal,
   setActiveTab,
+  userName,
 }) {
-  const totalOrders = orders.length;
-  const pendingAssets = orders.filter((o) => !isExperienceReady(o)).length;
-  const redeemedOrders = orders.filter((o) => o.status === 'redeemed' || o.hasBeenOpened).length;
-  const activeCodes = orders.filter((o) => o.accessCode).length;
+  const total = orders.length;
+  const pending = orders.filter((o) => !isExperienceReady(o)).length;
+  const redeemed = orders.filter((o) => o.status === 'redeemed' || o.hasBeenOpened).length;
+  const queue = orders.filter((o) => !isExperienceReady(o)).slice(0, 4);
 
-  const urgentQueue = orders
-    .filter((o) => !isExperienceReady(o))
-    .slice(0, 5);
-
-  const recentOrders = [...orders].slice(0, 6);
+  const actions = [
+    {
+      title: 'New gift order',
+      body: 'Create an order and issue its access code',
+      glyph: '🎁',
+      onClick: onOpenAddOrder,
+    },
+    {
+      title: 'Daily CSV import',
+      body: 'Bring a batch of orders in at once',
+      glyph: '📥',
+      onClick: onOpenCsvModal,
+    },
+    {
+      title: 'Access codes',
+      body: 'Every code issued, and who holds it',
+      glyph: '🔑',
+      onClick: () => setActiveTab && setActiveTab('vault'),
+    },
+  ];
 
   return (
-    <div className="space-y-6 md:space-y-8 animate-fade-in">
-      {/* Top Greeting & Date Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
-        <div>
-          <h2 className="text-xl md:text-2xl font-bold tracking-[-0.035em] text-neutral-900 dark:text-white">
-            {getGreeting()}, Administrator
-          </h2>
-          <p className="text-xs text-neutral-500 mt-1">{getFormattedDate()}</p>
-        </div>
-        <div className="flex items-center gap-2.5">
-          <button
-            onClick={onOpenAddOrder}
-            className="primary-button text-xs btn-press py-2 px-4 shadow-sm"
-          >
-            <Plus size={14} />
-            <span>Create Gift Order</span>
-          </button>
-          <button
-            onClick={onOpenCsvModal}
-            className="px-3.5 py-2 rounded-full border border-neutral-200 dark:border-neutral-700 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all btn-press inline-flex items-center gap-1.5"
-          >
-            <Upload size={13} />
-            <span>Daily CSV Import</span>
-          </button>
-        </div>
+    <div className="animate-fade-in">
+      <div className="pt-6 pb-10 text-center">
+        <HeroMark />
+        <h1 className="text-[46px] leading-[1.05] font-bold tracking-[-0.04em] mt-6">
+          Welcome, {userName || 'Administrator'}!
+        </h1>
+        <p className="text-[18px] text-neutral-500 dark:text-neutral-400 mt-4">
+          What would you like to do today?
+        </p>
       </div>
 
-      {/* 4 TeleFlow KPI Stat Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
-        {/* Card 1: Total Orders */}
-        <div className="card-surface p-5 card-hover">
-          <div className="flex items-center justify-between">
-            <span className="uppercase-label text-neutral-400">Total Gift Orders</span>
-            <div className="w-8 h-8 rounded-full bg-accent-soft text-accent flex items-center justify-center">
-              <Package size={16} />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl md:text-3xl font-bold tracking-[-0.035em] font-mono text-neutral-900 dark:text-white">
-              {totalOrders}
+      <div className="grid sm:grid-cols-3 gap-5 mb-10">
+        {actions.map(({ title, body, glyph, onClick }) => (
+          <button
+            key={title}
+            onClick={onClick}
+            className="card-surface card-hover p-6 text-left min-h-[190px] flex flex-col"
+          >
+            <span className="text-[34px] leading-none mb-auto select-none" aria-hidden="true">
+              {glyph}
             </span>
-            <span className="text-[11px] font-medium text-accent flex items-center">
-              <TrendingUp size={11} className="mr-0.5" /> All-time
+            <span className="block text-[16px] font-semibold mt-6">{title}</span>
+            <span className="block text-[14px] text-neutral-500 dark:text-neutral-400 leading-snug mt-1.5">
+              {body}
             </span>
-          </div>
-          <span className="text-[11px] text-neutral-400 block mt-1">Processed through system</span>
-        </div>
-
-        {/* Card 2: Pending WebGL Assets */}
-        <div className="card-surface p-5 card-hover">
-          <div className="flex items-center justify-between">
-            <span className="uppercase-label text-neutral-400">Pending 3D Assets</span>
-            <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">
-              <Clock size={16} />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl md:text-3xl font-bold tracking-[-0.035em] font-mono text-neutral-900 dark:text-white">
-              {pendingAssets}
-            </span>
-            {pendingAssets > 0 ? (
-              <span className="text-[11px] font-medium text-amber-600 dark:text-amber-400">
-                Action required
-              </span>
-            ) : (
-              <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                All assigned
-              </span>
-            )}
-          </div>
-          <span className="text-[11px] text-neutral-400 block mt-1">Awaiting 3D book config</span>
-        </div>
-
-        {/* Card 3: Redeemed in Portal */}
-        <div className="card-surface p-5 card-hover">
-          <div className="flex items-center justify-between">
-            <span className="uppercase-label text-neutral-400">Redeemed in Portal</span>
-            <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center">
-              <Sparkles size={16} />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl md:text-3xl font-bold tracking-[-0.035em] font-mono text-neutral-900 dark:text-white">
-              {redeemedOrders}
-            </span>
-            <span className="text-[11px] font-medium text-blue-600 dark:text-blue-400">
-              {totalOrders > 0 ? Math.round((redeemedOrders / totalOrders) * 100) : 0}% rate
-            </span>
-          </div>
-          <span className="text-[11px] text-neutral-400 block mt-1">Unlocked 3D keepsake experience</span>
-        </div>
-
-        {/* Card 4: Active Access Codes */}
-        <div className="card-surface p-5 card-hover">
-          <div className="flex items-center justify-between">
-            <span className="uppercase-label text-neutral-400">Active Access Codes</span>
-            <div className="w-8 h-8 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center">
-              <Key size={16} />
-            </div>
-          </div>
-          <div className="mt-3 flex items-baseline gap-2">
-            <span className="text-2xl md:text-3xl font-bold tracking-[-0.035em] font-mono text-neutral-900 dark:text-white">
-              {activeCodes}
-            </span>
-            <span className="text-[11px] font-medium text-purple-600 dark:text-purple-400">
-              KPSK tokens
-            </span>
-          </div>
-          <span className="text-[11px] text-neutral-400 block mt-1">12-char cryptographic codes</span>
-        </div>
+          </button>
+        ))}
       </div>
 
-      {/* Urgent Production Queue */}
-      {urgentQueue.length > 0 && (
-        <div className="card-surface overflow-hidden animate-slide-up">
-          <div className="p-4 md:p-5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-800/40 flex items-center justify-between">
-            <div className="flex items-center gap-2.5">
-              <AlertCircle size={16} className="text-amber-500" />
-              <div>
-                <h3 className="font-semibold text-sm text-neutral-900 dark:text-white tracking-[-0.025em]">
-                  Production Queue &bull; Missing 3D WebGL Assets
-                </h3>
-                <p className="text-[11px] text-neutral-400 mt-0.5">
-                  These orders require package textures or personalized audio before recipient redemption.
-                </p>
-              </div>
+      <div className="grid sm:grid-cols-3 gap-5 mb-8">
+        <Tile label="Total orders" value={total} hint="All time" Icon={Gift} />
+        <Tile
+          label="Awaiting photos"
+          value={pending}
+          hint={pending ? 'Needs your attention' : 'All assigned'}
+          tone={pending ? 'warn' : 'good'}
+          Icon={pending ? Clock : CheckCircle2}
+        />
+        <Tile
+          label="Opened in portal"
+          value={redeemed}
+          hint={total ? `${Math.round((redeemed / total) * 100)}% of orders` : '—'}
+          tone="good"
+          Icon={CheckCircle2}
+        />
+      </div>
+
+      {queue.length > 0 && (
+        <div className="card-surface p-6 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-[16px] font-semibold">Waiting on content</h3>
+              <p className="text-[13px] text-neutral-500 dark:text-neutral-400 mt-0.5">
+                These orders have no photographs yet, so their books cannot render.
+              </p>
             </div>
             <button
-              onClick={() => setActiveTab('orders')}
-              className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
+              onClick={() => setActiveTab && setActiveTab('orders')}
+              className="text-[13px] text-neutral-500 hover:text-neutral-900 dark:hover:text-white inline-flex items-center gap-1 flex-shrink-0"
             >
-              <span>View All</span>
-              <ArrowRight size={13} />
+              View all <ArrowRight size={13} />
             </button>
           </div>
 
-          <div className="divide-y divide-neutral-100 dark:divide-neutral-800">
-            {urgentQueue.map((ord) => (
-              <div
-                key={ord.id}
-                className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-neutral-50/50 dark:hover:bg-neutral-800/20 transition-colors"
+          <div className="space-y-1">
+            {queue.map((o) => (
+              <button
+                key={o.id}
+                onClick={() => onOpenOrder && onOpenOrder(o)}
+                className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl hover:bg-neutral-50 dark:hover:bg-neutral-800/60 transition-colors text-left"
               >
-                <div className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center font-bold text-xs">
-                    {(ord.recipientName || ord.customer || 'U')[0]}
-                  </div>
-                  <div>
-                    <div className="text-xs font-semibold text-neutral-900 dark:text-white">
-                      {ord.recipientName || ord.customer || 'Recipient'}
-                      <span className="text-neutral-400 font-normal ml-1">
-                        from {ord.purchaserName || ord.customer || 'Purchaser'}
-                      </span>
-                    </div>
-                    <div className="text-[11px] text-neutral-400 font-mono mt-0.5">
-                      Code: <span className="text-accent font-semibold">{ord.accessCode || 'Pending'}</span> &bull; Order #{ord.id}
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={() => onOpenOrder(ord)}
-                  className="px-3 py-1.5 rounded-full bg-accent-soft text-accent hover:bg-accent hover:text-neutral-950 transition-all text-xs font-medium self-start sm:self-auto btn-press"
-                >
-                  Configure 3D Assets
-                </button>
-              </div>
+                <span className="min-w-0">
+                  <span className="block text-[14px] font-medium truncate">
+                    {o.recipientName || 'Recipient'}
+                  </span>
+                  <span className="block text-[12px] text-neutral-400 truncate">
+                    From {o.purchaserName || 'a purchaser'} · {o.accessCode}
+                  </span>
+                </span>
+                <span className="text-[12px] text-amber-500 font-medium flex-shrink-0">
+                  Needs photos
+                </span>
+              </button>
             ))}
           </div>
         </div>
       )}
-
-      {/* Recent Activity & Orders List */}
-      <div className="card-surface overflow-hidden">
-        <div className="p-4 md:p-5 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-sm text-neutral-900 dark:text-white tracking-[-0.025em]">
-              Recent Gift Orders
-            </h3>
-            <p className="text-[11px] text-neutral-400 mt-0.5">
-              Latest gift packages received in the portal
-            </p>
-          </div>
-          <button
-            onClick={() => setActiveTab('orders')}
-            className="text-xs font-medium text-accent hover:underline flex items-center gap-1"
-          >
-            <span>Full CRM Directory</span>
-            <ArrowRight size={13} />
-          </button>
-        </div>
-
-        {recentOrders.length === 0 ? (
-          <div className="p-8 text-center text-xs text-neutral-400">
-            No gift orders found. Click &quot;Create Gift Order&quot; to add your first customer order.
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs">
-              <thead className="bg-neutral-50/50 dark:bg-neutral-800/30 border-b border-neutral-100 dark:border-neutral-800">
-                <tr>
-                  <th className="py-2.5 px-4 uppercase-label text-neutral-400">Recipient & Purchaser</th>
-                  <th className="py-2.5 px-4 uppercase-label text-neutral-400">Access Code</th>
-                  <th className="py-2.5 px-4 uppercase-label text-neutral-400">Fulfillment</th>
-                  <th className="py-2.5 px-4 uppercase-label text-neutral-400">3D Assets</th>
-                  <th className="py-2.5 px-4 uppercase-label text-neutral-400 text-right">Action</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                {recentOrders.map((ord) => (
-                  <tr
-                    key={ord.id}
-                    className="hover:bg-neutral-50 dark:hover:bg-neutral-800/40 transition-colors"
-                  >
-                    <td className="py-3 px-4">
-                      <div className="font-medium text-neutral-900 dark:text-white">
-                        {ord.recipientName || ord.customer || 'Recipient'}
-                      </div>
-                      <div className="text-[11px] text-neutral-400">
-                        {ord.purchaserName || ord.customer || 'Purchaser'} ({ord.purchaserEmail || ord.email || 'N/A'})
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 font-mono font-medium text-accent">
-                      {ord.accessCode || 'Pending'}
-                    </td>
-                    <td className="py-3 px-4">
-                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-medium bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300 capitalize">
-                        {(ord.fulfillmentType || 'digital_physical').replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      {isExperienceReady(ord) ? (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
-                          <CheckCircle2 size={12} /> Ready
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-amber-500 font-medium">
-                          <Clock size={12} /> Needs Assets
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-3 px-4 text-right">
-                      <button
-                        onClick={() => onOpenOrder(ord)}
-                        className="px-2.5 py-1 rounded-full text-[11px] font-medium text-accent hover:bg-accent-soft transition-colors"
-                      >
-                        Inspect
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
     </div>
   );
 }

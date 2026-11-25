@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { ToastProvider, useToast } from '@/components/admin/AdminToast';
 import AdminLogin from '@/components/admin/AdminLogin';
 import AdminSidebar, { ADMIN_NAV_ITEMS } from '@/components/admin/AdminSidebar';
+import { Menu } from 'lucide-react';
+import AdminRecentPanel from '@/components/admin/AdminRecentPanel';
+import AdminCommandBar from '@/components/admin/AdminCommandBar';
 import AdminTopBar from '@/components/admin/AdminTopBar';
 import AdminDashboard from '@/components/admin/AdminDashboard';
 import AdminOrders from '@/components/admin/AdminOrders';
@@ -17,7 +20,9 @@ const STORAGE_DARK = 'keepsake_admin_dark_mode';
 const STORAGE_ACCENT = 'keepsake_admin_accent';
 
 /** Keepsake gold — the console's default accent. */
-const DEFAULT_ACCENT = '#C5A059';
+// The reference has no coloured accent: the primary is near-black and
+// everything else is greyscale. Sampled from the 'Create new chat' button.
+const DEFAULT_ACCENT = '#0b151d';
 
 /** Shift a hex colour lighter (positive) or darker (negative). */
 function adjustColor(hex, amount) {
@@ -58,6 +63,7 @@ function AdminPortalInner({
   // ── Navigation ────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('dashboard');
   const [globalSearch, setGlobalSearch] = useState('');
+  const [searchFilters, setSearchFilters] = useState({ status: 'all', fulfillmentType: 'all', recent: false });
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   // ── Data ──────────────────────────────────────────────────────────────
@@ -217,6 +223,40 @@ function AdminPortalInner({
     return () => document.removeEventListener('keydown', onKeyDown);
   }, []);
 
+  // One filtered list, shared by the bar that sets it and the panel that
+  // shows it, so the count beside the bar is never out of step.
+  const filteredOrders = useMemo(() => {
+    const q = globalSearch.trim().toLowerCase();
+    const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
+    return orders.filter((o) => {
+      if (q) {
+        const hay = [o.recipientName, o.purchaserName, o.accessCode, o.id, o.recipientEmail, o.purchaserEmail]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
+      if (searchFilters.status && searchFilters.status !== 'all' && o.status !== searchFilters.status) return false;
+      if (
+        searchFilters.fulfillmentType &&
+        searchFilters.fulfillmentType !== 'all' &&
+        (o.fulfillmentType || 'digital_physical') !== searchFilters.fulfillmentType
+      ) return false;
+      if (searchFilters.recent && new Date(o.createdAt || 0).getTime() < weekAgo) return false;
+      return true;
+    });
+  }, [orders, globalSearch, searchFilters]);
+
+  // "admin@thekeepsakesmith.com" is not a name. The reference greets a
+  // person, so take the local part and title-case it.
+  const displayName = useMemo(() => {
+    const raw = (currentUser?.username || '').trim();
+    if (!raw) return 'Administrator';
+    const local = raw.split('@')[0].replace(/[._-]+/g, ' ').trim();
+    if (!local) return 'Administrator';
+    return local.charAt(0).toUpperCase() + local.slice(1);
+  }, [currentUser]);
+
   const currentNav =
     ADMIN_NAV_ITEMS.find((n) => n.id === activeTab) || ADMIN_NAV_ITEMS[0];
 
@@ -247,7 +287,7 @@ function AdminPortalInner({
     body = (
       <div className="flex h-screen bg-neutral-50 dark:bg-neutral-950 overflow-hidden text-neutral-900 dark:text-neutral-100 font-sans transition-colors">
         {/* Desktop sidebar */}
-        <aside className="hidden md:flex w-[210px] flex-shrink-0 flex-col z-20">
+        <aside className="hidden md:flex w-[280px] flex-shrink-0 flex-col z-20 border-r hairline">
           <AdminSidebar
             activeTab={activeTab}
             setActiveTab={setActiveTab}
@@ -265,7 +305,7 @@ function AdminPortalInner({
               className="absolute inset-0 bg-neutral-950/60"
               onClick={() => setMobileMenuOpen(false)}
             />
-            <aside className="absolute left-0 top-0 bottom-0 w-[240px] flex flex-col z-10 animate-slide-up">
+            <aside className="absolute left-0 top-0 bottom-0 w-[280px] flex flex-col z-10 animate-slide-up">
               <AdminSidebar
                 activeTab={activeTab}
                 setActiveTab={setActiveTab}
@@ -279,23 +319,28 @@ function AdminPortalInner({
           </div>
         )}
 
-        {/* Main viewport */}
-        <div className="flex-1 flex flex-col h-full overflow-hidden">
-          <AdminTopBar
-            pageTitle={currentNav.name}
-            searchTerm={globalSearch}
-            setSearchTerm={setGlobalSearch}
-            onOpenAddOrder={() => setActiveTab('create')}
-            onOpenCsvModal={() => setActiveTab('create')}
-            onOpenMobileMenu={() => setMobileMenuOpen(true)}
-            onLogout={handleLogout}
-            user={currentUser}
-          />
+        {/* Main viewport. The reference has no top bar: the brand lives in
+            the sidebar and search lives in the bar at the foot of the centre
+            column. Only the mobile trigger survives, since the reference is
+            a desktop shot and a phone still needs a way to the nav. */}
+        <div className="flex-1 flex min-w-0">
+          <div className="flex-1 flex flex-col h-full overflow-hidden min-w-0">
+            <div className="md:hidden flex items-center gap-3 px-4 py-3">
+              <button
+                onClick={() => setMobileMenuOpen(true)}
+                className="w-10 h-10 rounded-full bg-white dark:bg-neutral-800 flex items-center justify-center btn-press"
+                aria-label="Open navigation"
+              >
+                <Menu size={18} />
+              </button>
+              <span className="font-semibold text-[15px]">{currentNav.name}</span>
+            </div>
 
-          <main className="flex-1 overflow-y-auto p-4 md:p-8">
-            <div className="max-w-7xl mx-auto">
+            <main className="flex-1 overflow-y-auto px-5 md:px-10 pb-4">
+              <div className="max-w-[880px] mx-auto w-full">
               {activeTab === 'dashboard' && (
                 <AdminDashboard
+                  userName={displayName}
                   orders={orders}
                   onOpenOrder={setViewingOrder}
                   onOpenAddOrder={() => setActiveTab('create')}
@@ -341,8 +386,32 @@ function AdminPortalInner({
                   user={currentUser}
                 />
               )}
+              </div>
+            </main>
+
+            {/* The bar the reference pins to the foot of the centre column. */}
+            <div className="px-5 md:px-10 pb-5 md:pb-8">
+              <div className="max-w-[880px] mx-auto w-full">
+                <AdminCommandBar
+                  value={globalSearch}
+                  onChange={setGlobalSearch}
+                  filters={searchFilters}
+                  onFilters={setSearchFilters}
+                  resultCount={filteredOrders.length}
+                />
+              </div>
             </div>
-          </main>
+          </div>
+
+          {/* Right-hand panel, as in the reference */}
+          <aside className="hidden xl:flex w-[340px] flex-shrink-0 py-5 pr-5">
+            <AdminRecentPanel
+              orders={filteredOrders}
+              onOpenOrder={setViewingOrder}
+              onNewOrder={() => setActiveTab('create')}
+              onRefresh={fetchData}
+            />
+          </aside>
         </div>
 
         <OrderDetailsModal
