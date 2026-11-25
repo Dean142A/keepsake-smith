@@ -125,3 +125,23 @@ export async function deleteObject(key) {
   });
   return { success: res.ok, storage: 'bunny' };
 }
+
+/**
+ * The object key behind one of our public media URLs, or null if the URL
+ * points somewhere else. Used when an order is deleted, so its photographs
+ * and recordings go with it rather than lingering in the bucket.
+ */
+export function objectKeyFromUrl(value) {
+  const host = process.env.BUNNY_CDN_HOSTNAME;
+  if (!host || !value || typeof value !== 'string') return null;
+  try {
+    const parsed = new URL(value);
+    if (parsed.hostname.toLowerCase() !== host.toLowerCase()) return null;
+    const key = decodeURIComponent(parsed.pathname.replace(/^\/+/, ''));
+    // Never let a crafted URL walk out of the orders prefix.
+    if (!key.startsWith('orders/') || key.includes('..')) return null;
+    return key;
+  } catch {
+    return null;
+  }
+}

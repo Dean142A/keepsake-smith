@@ -56,6 +56,10 @@ function keyFor(order) {
 }
 
 // ── Bunny Storage ────────────────────────────────────────────────────────
+function url_(key) {
+  return `https://${storageHost()}/${ZONE}/${key}`;
+}
+
 async function bunnyPut(key, obj) {
   const res = await fetch(`https://${storageHost()}/${ZONE}/${key}`, {
     method: 'PUT',
@@ -151,6 +155,31 @@ export async function getOrderById(id) {
  * Fails fast in production when nothing durable is configured, rather than
  * writing orders to a container filesystem that is about to be replaced.
  */
+/**
+ * Remove an order entirely. Returns false when there was nothing to remove,
+ * so a caller can tell a miss from a failure.
+ */
+export async function deleteOrder(order) {
+  const code = normaliseCode(order.accessCode || order.id);
+  if (!code) return false;
+
+  if (remoteReady()) {
+    const res = await fetch(url_(`${PREFIX}/${code}.json`), {
+      method: 'DELETE',
+      headers: { AccessKey: KEY },
+    });
+    if (res.status === 404) return false;
+    if (!res.ok) throw new Error(`Order delete failed (${res.status}) for ${code}`);
+    return true;
+  }
+
+  const all = localAll();
+  const next = all.filter((o) => normaliseCode(o.accessCode || o.id) !== code);
+  if (next.length === all.length) return false;
+  localWriteAll(next);
+  return true;
+}
+
 export function assertDurable() {
   if (process.env.NODE_ENV === 'production' && backendName() === 'local-file') {
     throw new Error(

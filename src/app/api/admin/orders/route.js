@@ -1,14 +1,9 @@
 import { NextResponse } from 'next/server';
 import { sendEmail, getGiftReadyHtml, getOrderConfirmationHtml, stageFor } from '@/lib/mailer';
 import { validateAdminRequest } from '@/lib/auth';
-import { MAX_PAGES, generateAccessCode } from '@/lib/keepsake';
-import {
-  listOrders,
-  saveOrder,
-  getOrderById,
-  assertDurable,
-  backendName,
-} from '@/lib/orders-store';
+import { deleteObject, objectKeyFromUrl } from '@/lib/storage';
+import { MAX_PAGES, generateAccessCode, normaliseCode } from '@/lib/keepsake';
+import { assertDurable, backendName, deleteOrder, getOrderById, listOrders, saveOrder } from '@/lib/orders-store';
 
 /**
  * Normalise whatever the admin submitted into the stored experience shape.
@@ -223,12 +218,18 @@ export async function PUT(request) {
     const {
       id,
       status,
+      access,
       sendNotification,
       packageUrl,
       personalizationNote,
       audioUrl,
       customPhoto,
       experience,
+      recipientName,
+      recipientEmail,
+      purchaserName,
+      purchaserEmail,
+      fulfillmentType,
     } = body;
 
     if (!id) {
@@ -252,6 +253,28 @@ export async function PUT(request) {
 
     const prevStatus = orders[index].status;
     if (status) orders[index].status = status;
+
+    // Suspension is deliberately separate from the fulfilment stage: a parcel
+    // can be out for delivery while the code is revoked, and a code can be
+    // revoked long after the gift was opened.
+    if (access === 'active' || access === 'suspended') {
+      orders[index].access = access;
+      orders[index].accessChangedAt = new Date().toISOString();
+    }
+
+    // Details are editable after the fact — a mistyped address should not
+    // mean recreating the order and reissuing the code.
+    const editable = {
+      recipientName,
+      recipientEmail,
+      purchaserName,
+      purchaserEmail,
+      fulfillmentType,
+    };
+    for (const [field, value] of Object.entries(editable)) {
+      if (value !== undefined) orders[index][field] = value;
+    }
+
     if (packageUrl !== undefined) orders[index].packageUrl = packageUrl;
     if (personalizationNote !== undefined) orders[index].personalizationNote = personalizationNote;
     if (audioUrl !== undefined) orders[index].audioUrl = audioUrl;
@@ -320,6 +343,78 @@ export async function PUT(request) {
       deliveries,
     });
   } catch (err) {
+    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+  }
+}
+
+/**
+ * DELETE /api/admin/orders — remove an order and the media that belongs to it.
+ *
+ * The access code must be supplied alongside the id and must match. Deleting a
+ * keepsake is irreversible and takes a customer's photographs with it, so a
+ * stray request carrying only an id does not get to do it.
+ */
+export async function DELETE(request) {
+  const authCheck = validateAdminRequest(request);
+  if (!authCheck.authenticated) return authCheck.response;
+
+  try {
+    const body = await request.json().catch(() => ({}));
+    const { id, accessCode } = body;
+
+    if (!id || !accessCode) {
+      return NextResponse.json(
+        { success: false, error: 'Both the order id and its access code are required.' },
+        { status: 400 }
+      );
+    }
+
+    assertDurable();
+    const order = await getOrderById(id);
+    if (!order) {
+      return NextResponse.json({ success: false, error: 'Order not found' }, { status: 404 });
+    }
+
+    if (normaliseCode(order.accessCode) !== normaliseCode(accessCode)) {
+      return NextResponse.json(
+        { success: false, error: 'The access code does not match this order.' },
+        { status: 409 }
+      );
+    }
+
+    // Take the media with it. Keys are derived from the stored URLs, so this
+    // reaches files uploaded before the order had an id as well.
+    const experience = order.experience || {};
+    const mediaUrls = [
+      ...(experience.pages || []).map((p) => p && p.imageUrl),
+      experience.voiceNoteUrl,
+      experience.backgroundMusicUrl,
+      order.customPhoto,
+      order.audioUrl,
+    ];
+
+    const media = { removed: 0, failed: 0 };
+    for (const key of [...new Set(mediaUrls.map(objectKeyFromUrl).filter(Boolean))]) {
+      try {
+        await deleteObject(key);
+        media.removed += 1;
+      } catch {
+        // A file that will not delete must not strand the record; the object
+        // is unreachable without the record anyway.
+        media.failed += 1;
+      }
+    }
+
+    const removed = await deleteOrder(order);
+
+    return NextResponse.json({
+      success: true,
+      removed,
+      media,
+      message: `Order ${order.id} and ${media.removed} media file(s) deleted.`,
+    });
+  } catch (err) {
+    console.error('Order delete error:', err);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
