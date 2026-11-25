@@ -68,7 +68,7 @@ export default function AdminOrders({
   return (
     <div className="flex flex-col gap-4 md:gap-6 animate-fade-in">
       {/* TeleFlow Page Guide Banner */}
-      <div className="p-4 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/50 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs text-neutral-600 dark:text-neutral-400">
+      <div className="p-4 rounded-xl bg-neutral-100/70 dark:bg-neutral-800 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs text-neutral-600 dark:text-neutral-400">
         <div className="flex items-center gap-2">
           <span className="text-base">🎁</span>
           <span>
@@ -79,17 +79,13 @@ export default function AdminOrders({
         <button
           onClick={onOpenAddOrder}
           className="primary-button text-xs py-1.5 px-3.5 self-start md:self-auto btn-press whitespace-nowrap"
-        >
-          <Plus size={13} />
-          <span>New Order</span>
+        ><span>New Order</span>
         </button>
       </div>
 
       {/* Directory Count & Filter Tabs */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Users size={16} className="text-accent" />
-          <span className="text-xs text-neutral-500">
+        <div className="flex items-center gap-2"><span className="text-xs text-neutral-500">
             <span className="font-bold font-mono text-neutral-900 dark:text-neutral-100">
               {filteredOrders.length}
             </span>{' '}
@@ -112,7 +108,7 @@ export default function AdminOrders({
               className={`px-3 py-1 rounded-full text-xs transition-all whitespace-nowrap ${
                 filter === pill.id
                   ? 'bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-semibold'
-                  : 'bg-white dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'
+                  : 'bg-white dark:bg-neutral-900 text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'
               }`}
             >
               {pill.label}
@@ -129,7 +125,7 @@ export default function AdminOrders({
           placeholder="Filter by customer, recipient, code..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 pl-9 py-2 text-xs focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-accent transition-all bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
+          className="w-full rounded-full px-4 pl-9 py-2 text-xs focus:outline-none focus:border-[var(--accent)] focus:ring-1 focus:ring-accent transition-all bg-white dark:bg-neutral-900 text-neutral-900 dark:text-neutral-100"
         />
       </div>
 
@@ -193,12 +189,10 @@ export default function AdminOrders({
                       }`}
                     >
                       {hasAssets ? (
-                        <>
-                          <CheckCircle2 size={11} /> 3D Ready
+                        <>3D Ready
                         </>
                       ) : (
-                        <>
-                          <Clock size={11} /> Needs Assets
+                        <>Needs Assets
                         </>
                       )}
                     </span>

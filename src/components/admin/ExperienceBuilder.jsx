@@ -139,9 +139,7 @@ export default function ExperienceBuilder({ value, onChange, orderId = 'unassign
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 text-[11px] text-accent font-medium">
-              <BookOpen size={13} />
-              {exp.pages.length} photo{exp.pages.length === 1 ? '' : 's'} → {leafCount} leaves
+            <span className="inline-flex items-center gap-1.5 text-[11px] text-accent font-medium">{exp.pages.length} photo{exp.pages.length === 1 ? '' : 's'} → {leafCount} leaves
             </span>
             <button
               type="button"
@@ -196,7 +194,7 @@ export default function ExperienceBuilder({ value, onChange, orderId = 'unassign
                   value={p.caption}
                   onChange={(e) => setCaption(i, e.target.value)}
                   placeholder="Caption printed on this page (optional)"
-                  className="flex-1 rounded-full border border-neutral-200/60 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3 py-1.5 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[var(--accent)]"
+                  className="flex-1 rounded-full bg-white dark:bg-neutral-900 px-3 py-1.5 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[var(--accent)]"
                 />
                 <div className="flex items-center gap-0.5 flex-shrink-0">
                   <button type="button" onClick={() => move(i, -1)} disabled={i === 0}
@@ -236,7 +234,7 @@ export default function ExperienceBuilder({ value, onChange, orderId = 'unassign
           value={exp.letter.signature}
           onChange={(e) => patch({ letter: { ...exp.letter, signature: e.target.value } })}
           placeholder="Signed — e.g. Arthur"
-          className="mt-2 w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-4 py-2 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[var(--accent)]"
+          className="mt-2 w-full rounded-full bg-white dark:bg-neutral-900 px-4 py-2 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[var(--accent)]"
         />
       </div>
 
@@ -260,8 +258,7 @@ export default function ExperienceBuilder({ value, onChange, orderId = 'unassign
             </div>
           ) : (
             <button type="button" onClick={() => voiceInput.current?.click()} disabled={uploading}
-              className="w-full rounded-full border border-neutral-200 dark:border-neutral-700 py-2 text-xs inline-flex items-center justify-center gap-2 hover:border-accent transition-colors">
-              <Mic size={13} /> Upload voice note
+              className="w-full rounded-full py-2 text-xs inline-flex items-center justify-center gap-2 hover:border-accent transition-colors">Upload voice note
             </button>
           )}
         </div>
@@ -272,7 +269,6 @@ export default function ExperienceBuilder({ value, onChange, orderId = 'unassign
           <input ref={musicInput} type="file" accept="audio/*" hidden onChange={addMusic} />
           {exp.backgroundMusicUrl ? (
             <div className="flex items-center gap-2">
-              <Music size={15} className="text-accent flex-shrink-0" />
               <span className="text-[11px] text-neutral-500 truncate flex-1">Track attached</span>
               <button type="button" onClick={() => patch({ backgroundMusicUrl: '' })}
                 className="p-1.5 rounded-full text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40">
@@ -281,16 +277,14 @@ export default function ExperienceBuilder({ value, onChange, orderId = 'unassign
             </div>
           ) : (
             <button type="button" onClick={() => musicInput.current?.click()} disabled={uploading}
-              className="w-full rounded-full border border-neutral-200 dark:border-neutral-700 py-2 text-xs inline-flex items-center justify-center gap-2 hover:border-accent transition-colors">
-              <Music size={13} /> Upload music
+              className="w-full rounded-full py-2 text-xs inline-flex items-center justify-center gap-2 hover:border-accent transition-colors">Upload music
             </button>
           )}
         </div>
       </div>
 
       {error && (
-        <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-200/60 dark:border-amber-900/50">
-          <AlertCircle size={14} className="text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+        <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30">
           <p className="text-[11px] text-amber-800 dark:text-amber-300">{error}</p>
         </div>
       )}

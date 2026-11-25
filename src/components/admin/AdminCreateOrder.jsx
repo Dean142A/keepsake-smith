@@ -163,9 +163,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
               ? 'bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white shadow-xs'
               : 'text-neutral-500 hover:text-neutral-900 dark:hover:text-white'
           }`}
-        >
-          <UserPlus size={14} />
-          <span>Single Gift Order</span>
+        ><span>Single Gift Order</span>
         </button>
         <button
           onClick={() => setActiveSubTab('csv')}
@@ -201,7 +199,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
                   value={purchaserName}
                   onChange={(e) => setPurchaserName(e.target.value)}
                   placeholder="e.g. John Sterling"
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                  className="w-full rounded-full px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
                   required
                 />
               </div>
@@ -213,7 +211,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
                   value={purchaserEmail}
                   onChange={(e) => setPurchaserEmail(e.target.value)}
                   placeholder="john@example.com"
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                  className="w-full rounded-full px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
             </div>
@@ -226,7 +224,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
                   value={recipientName}
                   onChange={(e) => setRecipientName(e.target.value)}
                   placeholder="Recipient full name"
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                  className="w-full rounded-full px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
                   required
                 />
               </div>
@@ -238,7 +236,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
                   value={recipientEmail}
                   onChange={(e) => setRecipientEmail(e.target.value)}
                   placeholder="recipient@email.com"
-                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                  className="w-full rounded-full px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
                 />
               </div>
             </div>
@@ -249,7 +247,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
               <select
                 value={fulfillmentType}
                 onChange={(e) => setFulfillmentType(e.target.value)}
-                className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                className="w-full rounded-full px-4 py-2 text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
               >
                 <option value="digital_physical">Physical Box + 3D Portal Experience</option>
                 <option value="digital_only">Purely Digital 3D Experience</option>
@@ -277,10 +275,8 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
               <button
                 type="submit"
                 disabled={submittingSingle}
-                className="primary-button text-xs py-2 px-6 btn-press shadow-sm"
-              >
-                <Sparkles size={14} />
-                <span>{submittingSingle ? 'Generating...' : 'Generate Order & Access Code'}</span>
+                className="primary-button text-xs py-2 px-6 btn-press"
+              ><span>{submittingSingle ? 'Generating...' : 'Generate Order & Access Code'}</span>
               </button>
             </div>
           </form>
@@ -298,9 +294,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
           </div>
 
           {/* Drag & Drop File Upload Area */}
-          <div className="border-2 border-dashed border-neutral-200 dark:border-neutral-700 rounded-2xl p-8 text-center hover:border-accent transition-colors">
-            <Upload size={32} className="mx-auto text-neutral-400 mb-3" />
-            <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 block">
+          <div className="border-2 border-dashed border-neutral-200 dark:border-neutral-700 rounded-2xl p-8 text-center hover:border-accent transition-colors"><span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 block">
               Drag and drop your daily orders CSV here
             </span>
             <span className="text-[11px] text-neutral-400 block mt-1">or browse from your computer</span>
@@ -339,7 +333,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
             <button
               onClick={handleProcessCsv}
               disabled={submittingCsv || !csvText.trim()}
-              className="primary-button text-xs py-2 px-6 btn-press shadow-sm disabled:opacity-50"
+              className="primary-button text-xs py-2 px-6 btn-press disabled:opacity-50"
             >
               <Upload size={14} />
               <span>{submittingCsv ? 'Processing Batch...' : 'Generate Codes & Import'}</span>

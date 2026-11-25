@@ -1,21 +1,24 @@
 /* ═══════════════════════════════════════════════════════════════════════
    Keepsake Smith — Admin Console
-   TeleFlow architecture & component system, Keepsake gold/obsidian skin.
+
+   Design system taken from the SETO reference: a light #f6f6f6 canvas,
+   white surfaces that float on soft shadow rather than sit inside borders,
+   fully-rounded pills, and a near-black primary. Every value below was
+   sampled from the reference image rather than guessed.
 
    Loaded ONLY by src/app/admin/layout.jsx, so it never reaches the storefront.
 
    IMPORTANT — Tailwind Preflight is deliberately NOT imported.
    Preflight is a global reset. The previous attempt at this redesign put
    `@import "tailwindcss"` into globals.css (commit 29052a0), which pulled
-   Preflight onto every storefront page and broke it; that is what commit
-   fe44eaf was fighting and why ed42009 reverted the lot. Instead we import
-   only theme + utilities, and supply a reset scoped to .admin-root below.
+   Preflight onto every storefront page and broke it. Instead we import only
+   theme + utilities, and supply a reset scoped to .admin-root below.
    ═══════════════════════════════════════════════════════════════════════ */
 
 /* Layer order, lowest precedence first. `legacy` is the storefront's
    globals.css (wrapped there). Declaring it first means every admin layer
-   outranks it, so Tailwind utilities are no longer defeated by its global
-   `*` and `button` resets — the bug that made this redesign look broken. */
+   outranks it, so Tailwind utilities are not defeated by its global `*` and
+   `button` resets — the bug that made the first attempt look broken. */
 @layer legacy, theme, base, components, utilities;
 
 @import "tailwindcss/theme.css" layer(theme);
@@ -25,43 +28,64 @@
 @source "./";
 @source "../../components/admin";
 
-/* Class-based dark mode, matching TeleFlow. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-/* ─── Design tokens ──────────────────────────────────────────────────── */
+/* ─── Design tokens, sampled from the reference ──────────────────────── */
 @theme {
-  --font-sans: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-  --font-mono: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI',
+    'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
 
-  /* Keepsake obsidian ramp, mapped onto Tailwind's neutral scale.
-     This is what re-skins TeleFlow without touching its markup:
-     `dark:bg-neutral-900` now resolves to Keepsake's #171717 surface. */
-  --color-neutral-50:  #faf8f4;  /* warm paper (light mode canvas) */
-  --color-neutral-100: #f2eee7;
-  --color-neutral-200: #e3ded4;
-  --color-neutral-300: #c9c4ba;
-  --color-neutral-400: #9e9e9e;  /* Keepsake --text-secondary */
-  --color-neutral-500: #8a8a8a;
-  --color-neutral-600: #666666;  /* Keepsake --text-muted */
-  --color-neutral-700: #2e2e2e;
-  --color-neutral-800: #202020;  /* Keepsake --bg-surface-hover */
-  --color-neutral-900: #171717;  /* Keepsake --bg-surface */
-  --color-neutral-950: #111111;  /* Keepsake --bg-primary */
+  /* The reference greyscale. 50 is the canvas, white is every surface,
+     950 is the primary button. Sampled values, not a stock ramp. */
+  --color-neutral-50:  #f6f6f6;  /* canvas            (sampled) */
+  --color-neutral-100: #efefef;
+  --color-neutral-200: #eeeeee;  /* hairline divider  (sampled) */
+  --color-neutral-300: #dedede;  /* column divider    (sampled) */
+  --color-neutral-400: #9a9a9a;
+  --color-neutral-500: #7b7b7b;
+  --color-neutral-600: #626262;  /* secondary text    (sampled) */
+  --color-neutral-700: #4a4a4a;
+  --color-neutral-800: #2a2f34;
+  --color-neutral-900: #1a2027;
+  --color-neutral-950: #0b151d;  /* primary button    (sampled) */
+
+  /* The shell's three columns, measured off the reference and scaled
+     (sidebar 334px of a 1797px window → 280px at 1440px wide). */
+  --admin-sidebar-w: 280px;
+  --admin-panel-w: 340px;
+
+  --radius-card: 1rem;
+  --radius-panel: 1.25rem;
 }
 
-/* Accent: Keepsake gold rather than TeleFlow emerald. Every TeleFlow
-   component reads the accent through these vars, so this is the whole swap. */
+/* The reference has no coloured accent: the primary is near-black and
+   everything else is greyscale. These vars stay because every component
+   reads the accent through them — pointing them at the near-black is the
+   whole swap, the same trick that re-skinned TeleFlow. */
 :root {
-  --accent: #c5a059;            /* Keepsake --accent-gold */
-  --accent-hover: #a88653;      /* Keepsake --accent-bronze */
-  --accent-light: rgba(197, 160, 89, 0.12);
-  --accent-light-text: #8a6d33; /* darkened for AA contrast on light surfaces */
-  --accent-muted: #d4b678;
+  --accent: #000000;
+  --accent-hover: #1a1a1a;
+  --accent-light: rgba(0, 0, 0, 0.05);
+  --accent-light-text: #000000;
+  --accent-muted: #626262;
+
+  /* Surfaces float rather than sit in boxes: the reference card edge fades
+     #f6f6f6 → #ffffff across three pixels, which is shadow, not a border. */
+  /* Surfaces are told apart by tone alone: white against the #f6f6f6
+     canvas, and the canvas tone again for controls that sit on white. */
+  --shadow-card: none;
+  --shadow-raised: none;
+  --surface-recessed: #f6f6f6;
 }
 
 .dark {
-  --accent-light: rgba(197, 160, 89, 0.16);
-  --accent-light-text: #d4b678; /* lightened for AA contrast on obsidian */
+  --accent: #ffffff;
+  --accent-hover: #ebebeb;
+  --accent-light: rgba(246, 246, 246, 0.08);
+  --accent-light-text: #f6f6f6;
+  --shadow-card: none;
+  --shadow-raised: none;
 }
 
 /* ─── Scoped reset (stands in for Preflight, admin only) ─────────────── */
@@ -166,63 +190,79 @@
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
-    background-color: var(--accent);
-    color: #111111;                 /* gold is light — dark ink reads better */
     border-radius: 9999px;
-    padding: 0.5rem 1rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
+    background-color: var(--accent);
+    color: #ffffff;
+    font-weight: 600;
+    transition: background-color 0.15s ease, transform 0.1s ease;
   }
+  .dark .primary-button { color: var(--color-neutral-950); }
   .primary-button:hover { background-color: var(--accent-hover); }
   .primary-button:active { transform: scale(0.97); }
   .primary-button:disabled { opacity: 0.6; cursor: not-allowed; }
 
+  /* Active navigation: a white pill lifted off the canvas, not a tint. */
   .active-nav-item {
-    color: var(--accent);
-    background-color: var(--accent-light);
-    font-weight: 500;
-    border-radius: 9999px;
+    background-color: #ffffff;
+    color: var(--color-neutral-950);
+    font-weight: 600;
+  }
+  .dark .active-nav-item {
+    background-color: var(--color-neutral-800);
+    color: #ffffff;
   }
 
   .input-field {
+    width: 100%;
     border-radius: 9999px;
-    border: 1px solid var(--color-neutral-200);
-    padding: 0.5rem 1rem;
-    background-color: #ffffff;
-    color: var(--color-neutral-900);
-    transition: all 0.2s ease;
+    background-color: var(--surface-recessed);
+    padding: 0.625rem 1rem;
+    font-size: 0.8125rem;
+    color: var(--color-neutral-950);
+    transition: box-shadow 0.15s ease;
   }
-  .input-field:focus {
-    border-color: var(--accent);
-    box-shadow: 0 0 0 1px var(--accent);
-    outline: none;
-  }
+  .input-field::placeholder { color: var(--color-neutral-500); }
+  .input-field:focus { background-color: #ededed; }
   .dark .input-field {
-    border-color: var(--color-neutral-700);
-    background-color: var(--color-neutral-900);
-    color: var(--color-neutral-100);
-  }
-  /* Keepsake's signature gold glow on focus. */
-  .dark .input-field:focus {
-    border-color: rgba(197, 160, 89, 0.65);
-    box-shadow: 0 0 16px rgba(197, 160, 89, 0.18);
+    background-color: var(--color-neutral-800);
+    color: #ffffff;
   }
 
-  /* Surfaces */
-  /* A card is a surface, not an outlined box. In dark the step from the
-     #111111 page to the #171717 card carries it on its own; in light, white
-     on warm paper needs a whisper of shadow or it dissolves. */
+  /* A card is a surface. The reference card edge fades #f6f6f6 -> #ffffff
+     over three pixels: that is shadow, not a border. */
   .card-surface {
-    border-radius: 0.75rem;
+    border-radius: var(--radius-card);
     background-color: #ffffff;
-    box-shadow:
-      0 1px 2px rgba(17, 17, 17, 0.04),
-      0 1px 1px rgba(17, 17, 17, 0.03);
   }
   .dark .card-surface {
     background-color: var(--color-neutral-900);
-    box-shadow: none;
   }
+
+  /* The panel on the right, and anything else that reads as a sheet. */
+  .panel-surface {
+    border-radius: var(--radius-panel);
+    background-color: #ffffff;
+  }
+  .dark .panel-surface {
+    background-color: var(--color-neutral-900);
+  }
+
+  /* Pills: the reference uses them for every secondary control and input. */
+  /* Pills live on white cards, so white would make them disappear now that
+     nothing is outlined. They take the canvas tone instead. */
+  .pill {
+    border-radius: 9999px;
+    background-color: var(--surface-recessed);
+    transition: background-color 0.15s ease, transform 0.1s ease;
+  }
+  .pill:hover { background-color: #ededed; }
+  .pill:active { transform: scale(0.98); }
+  .dark .pill { background-color: var(--color-neutral-800); }
+  .dark .pill:hover { background-color: var(--color-neutral-700); }
+
+  /* Hairline, sampled from the dividers inside the reference panel. */
+  .hairline { border-color: var(--color-neutral-200); }
+  .dark .hairline { border-color: rgba(255, 255, 255, 0.07); }
 
   .surface-secondary { background-color: var(--color-neutral-50); }
   .dark .surface-secondary { background-color: var(--color-neutral-900); }
