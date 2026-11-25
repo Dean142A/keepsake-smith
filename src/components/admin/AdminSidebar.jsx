@@ -25,7 +25,7 @@ export const ADMIN_NAV_ITEMS = [
   { id: 'orders', name: 'Orders & Gifts', icon: Users },
   { id: 'create', name: 'New Order / CSV', icon: UserPlus },
   { id: 'vault', name: 'Access Codes', icon: Key },
-  { id: 'catalog', name: 'Catalog & Covers', icon: Layers },
+  { id: 'catalog', name: 'Templates', icon: Layers, soon: true },
   { id: 'settings', name: 'Settings', icon: Settings },
 ];
 
@@ -68,6 +68,11 @@ export default function AdminSidebar({
           className={isActive ? 'text-neutral-950 dark:text-white' : 'text-neutral-400 dark:text-neutral-500'}
         />
         <span className="truncate">{item.name}</span>
+        {item.soon && (
+          <span className="ml-auto flex-shrink-0 px-2 py-0.5 rounded-full bg-neutral-200 dark:bg-neutral-800 text-[10px] font-medium text-neutral-500 dark:text-neutral-400">
+            Soon
+          </span>
+        )}
       </button>
     );
   };

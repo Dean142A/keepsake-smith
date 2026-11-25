@@ -42,7 +42,6 @@ function AdminPortalInner({
 
   // ── Data ──────────────────────────────────────────────────────────────
   const [orders, setOrders] = useState([]);
-  const [products, setProducts] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
 
   // ── Modals ────────────────────────────────────────────────────────────
@@ -68,14 +67,9 @@ function AdminPortalInner({
   const fetchData = useCallback(async () => {
     setLoadingData(true);
     try {
-      const [resOrders, resProducts] = await Promise.all([
-        fetch('/api/admin/orders'),
-        fetch('/api/admin/products'),
-      ]);
-      const dataOrders = await resOrders.json().catch(() => ({ orders: [] }));
-      const dataProducts = await resProducts.json().catch(() => ({ products: [] }));
-      if (dataOrders.success) setOrders(dataOrders.orders || []);
-      if (dataProducts.success) setProducts(dataProducts.products || []);
+      const res = await fetch('/api/admin/orders');
+      const data = await res.json().catch(() => ({ orders: [] }));
+      if (data.success) setOrders(data.orders || []);
     } catch (err) {
       console.error('Error fetching admin data:', err);
       toast('Could not load admin data', 'error');
@@ -342,7 +336,7 @@ function AdminPortalInner({
               )}
 
               {activeTab === 'catalog' && (
-                <AdminCatalog products={products} onRefresh={fetchData} />
+                <AdminCatalog />
               )}
 
               {activeTab === 'settings' && (
