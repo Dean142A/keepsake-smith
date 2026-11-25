@@ -19,33 +19,45 @@ const ALGORITHM = 'aes-256-gcm';
 const ENVELOPE_VERSION = 1;
 const KEY_SALT = 'keepsake-orders-at-rest-v1';
 
-let cachedKey = null;
+let cachedKeys = null;
+
+function deriveKey(secret) {
+  return crypto.scryptSync(secret, KEY_SALT, 32);
+}
 
 /**
- * The record key. ORDERS_ENCRYPTION_KEY is preferred; without it the key is
- * derived from ADMIN_API_KEY so an existing deployment is protected without
- * having to add a variable first. Production refuses to run on neither,
- * rather than quietly writing plaintext to a public bucket.
+ * Keys this process will try, newest first.
+ *
+ * The first is what new records are sealed with. The rest exist so a key can
+ * be rotated without orphaning everything already written: a record sealed
+ * with an older key still opens, and seals with the current one the next time
+ * it is saved. Without this, setting ORDERS_ENCRYPTION_KEY on a deployment
+ * that had been deriving its key from ADMIN_API_KEY would make every existing
+ * order unreadable.
  */
-function recordKey() {
-  if (cachedKey) return cachedKey;
+function recordKeys() {
+  if (cachedKeys) return cachedKeys;
 
-  const explicit = process.env.ORDERS_ENCRYPTION_KEY;
-  const derivedFrom = explicit || process.env.ADMIN_API_KEY;
+  const secrets = [
+    process.env.ORDERS_ENCRYPTION_KEY,
+    process.env.ORDERS_ENCRYPTION_KEY_PREVIOUS,
+    process.env.ADMIN_API_KEY,
+  ].filter((v) => v && v.trim());
 
-  if (!derivedFrom) {
+  if (secrets.length === 0) {
     if (process.env.NODE_ENV === 'production') {
       throw new Error(
         'Neither ORDERS_ENCRYPTION_KEY nor ADMIN_API_KEY is set; refusing to store order records.'
       );
     }
     // Development only, and deliberately not a secret.
-    cachedKey = crypto.scryptSync('keepsake-development', KEY_SALT, 32);
-    return cachedKey;
+    cachedKeys = [deriveKey('keepsake-development')];
+    return cachedKeys;
   }
 
-  cachedKey = crypto.scryptSync(derivedFrom, KEY_SALT, 32);
-  return cachedKey;
+  // De-duplicate so the same secret in two variables is not tried twice.
+  cachedKeys = [...new Set(secrets.map((v) => v.trim()))].map(deriveKey);
+  return cachedKeys;
 }
 
 /** True for an object written by seal(), as opposed to a legacy plaintext record. */
@@ -62,7 +74,7 @@ export function isSealed(value) {
 
 export function seal(record) {
   const iv = crypto.randomBytes(12);
-  const cipher = crypto.createCipheriv(ALGORITHM, recordKey(), iv);
+  const cipher = crypto.createCipheriv(ALGORITHM, recordKeys()[0], iv);
   const ct = Buffer.concat([
     cipher.update(JSON.stringify(record), 'utf8'),
     cipher.final(),
@@ -80,17 +92,28 @@ export function seal(record) {
 export function open(envelope) {
   if (!isSealed(envelope)) return envelope; // legacy plaintext record
 
-  const decipher = crypto.createDecipheriv(
-    ALGORITHM,
-    recordKey(),
-    Buffer.from(envelope.iv, 'base64')
+  const iv = Buffer.from(envelope.iv, 'base64');
+  const tag = Buffer.from(envelope.tag, 'base64');
+  const ct = Buffer.from(envelope.ct, 'base64');
+
+  let lastError = null;
+  for (const key of recordKeys()) {
+    try {
+      const decipher = crypto.createDecipheriv(ALGORITHM, key, iv);
+      decipher.setAuthTag(tag);
+      const plain = Buffer.concat([decipher.update(ct), decipher.final()]).toString('utf8');
+      return JSON.parse(plain);
+    } catch (err) {
+      // GCM rejects the wrong key outright, so this is how a record sealed
+      // under a previous key is recognised. Try the next one.
+      lastError = err;
+    }
+  }
+
+  throw new Error(
+    'Could not open an order record with any configured key. ' +
+      'If ORDERS_ENCRYPTION_KEY was changed, set the old value as ' +
+      'ORDERS_ENCRYPTION_KEY_PREVIOUS until every record has been re-saved.',
+    { cause: lastError }
   );
-  decipher.setAuthTag(Buffer.from(envelope.tag, 'base64'));
-
-  const plain = Buffer.concat([
-    decipher.update(Buffer.from(envelope.ct, 'base64')),
-    decipher.final(),
-  ]).toString('utf8');
-
-  return JSON.parse(plain);
 }
