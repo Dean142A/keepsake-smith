@@ -182,7 +182,7 @@ export default function OrderDetailsModal({
       onClick={onClose}
     >
       <div
-        className="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto border border-neutral-200/60 dark:border-neutral-800 shadow-2xl animate-scale-in"
+        className="bg-white dark:bg-neutral-900 rounded-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto shadow-2xl animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -211,7 +211,7 @@ export default function OrderDetailsModal({
         <div className="p-5 md:p-6 space-y-6">
           {/* Customer & Recipient Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/50 dark:border-neutral-800">
+            <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/40">
               <span className="uppercase-label text-neutral-400 block text-[10px]">Recipient</span>
               <div className="font-semibold text-xs text-neutral-900 dark:text-white mt-1">
                 {order.recipientName || 'N/A'}
@@ -221,7 +221,7 @@ export default function OrderDetailsModal({
               </div>
             </div>
 
-            <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/40 border border-neutral-200/50 dark:border-neutral-800">
+            <div className="p-3.5 rounded-xl bg-neutral-50 dark:bg-neutral-800/40">
               <span className="uppercase-label text-neutral-400 block text-[10px]">Purchaser</span>
               <div className="font-semibold text-xs text-neutral-900 dark:text-white mt-1">
                 {order.purchaserName || order.customer || 'N/A'}
@@ -408,7 +408,7 @@ export default function OrderDetailsModal({
                 value={pkgNote}
                 onChange={(e) => setPkgNote(e.target.value)}
                 placeholder="A cherished message, written onto the first page of the book..."
-                className="w-full rounded-xl border border-neutral-200/60 dark:border-neutral-700 p-3 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                className="w-full rounded-xl p-3 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
               />
             </div>
 

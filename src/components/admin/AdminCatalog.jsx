@@ -10,7 +10,7 @@ export default function AdminCatalog({ products = [], onRefresh }) {
 
   return (
     <div className="space-y-6 animate-fade-in">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-neutral-200/40 dark:border-neutral-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
         <div>
           <h2 className="text-xl font-bold tracking-[-0.035em] text-neutral-900 dark:text-white">
             Catalog &amp; 3D Keepsake Templates
@@ -23,7 +23,7 @@ export default function AdminCatalog({ products = [], onRefresh }) {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {products.map((prod) => (
-          <div key={prod.id} className="card-border overflow-hidden card-hover flex flex-col justify-between">
+          <div key={prod.id} className="card-surface overflow-hidden card-hover flex flex-col justify-between">
             <div>
               <div className="h-44 bg-neutral-100 dark:bg-neutral-800 relative overflow-hidden flex items-center justify-center">
                 {prod.image ? (

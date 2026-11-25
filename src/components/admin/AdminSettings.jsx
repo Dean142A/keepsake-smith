@@ -63,8 +63,8 @@ export default function AdminSettings({ currentAccent, onChangeAccent, user }) {
   return (
     <div className="max-w-5xl mx-auto space-y-6 md:space-y-8 animate-fade-in">
       {/* 1. BRANDING & ACCENT COLOR (TeleFlow Theme Picker) */}
-      <div className="card-border overflow-hidden animate-slide-up">
-        <div className="p-5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/30 flex items-center justify-between">
+      <div className="card-surface overflow-hidden animate-slide-up">
+        <div className="p-5 bg-neutral-50/50 dark:bg-neutral-800/30 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
             <Palette size={16} className="text-accent" />
             <div>
@@ -106,8 +106,8 @@ export default function AdminSettings({ currentAccent, onChangeAccent, user }) {
       </div>
 
       {/* 2. INFRASTRUCTURE & ARCHITECTURE SPECS */}
-      <div className="card-border overflow-hidden animate-slide-up">
-        <div className="p-5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/30">
+      <div className="card-surface overflow-hidden animate-slide-up">
+        <div className="p-5 bg-neutral-50/50 dark:bg-neutral-800/30">
           <h3 className="font-semibold text-sm text-neutral-900 dark:text-white tracking-[-0.025em]">
             Infrastructure &amp; Security Architecture
           </h3>
@@ -121,7 +121,7 @@ export default function AdminSettings({ currentAccent, onChangeAccent, user }) {
             {securitySpecs.map((item) => (
               <div
                 key={item.label}
-                className="flex items-start gap-3 p-4 bg-neutral-50/60 dark:bg-neutral-800/40 rounded-xl card-hover border border-neutral-100 dark:border-neutral-800"
+                className="flex items-start gap-3 p-4 bg-neutral-50/60 dark:bg-neutral-800/40 rounded-xl card-hover"
               >
                 <div className="w-9 h-9 rounded-full bg-accent-soft text-accent flex items-center justify-center flex-shrink-0">
                   <item.icon size={16} />
@@ -142,8 +142,8 @@ export default function AdminSettings({ currentAccent, onChangeAccent, user }) {
       </div>
 
       {/* 3. SMTP EMAIL DISPATCH TEST */}
-      <div className="card-border overflow-hidden animate-slide-up">
-        <div className="p-5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/50 dark:bg-neutral-800/30">
+      <div className="card-surface overflow-hidden animate-slide-up">
+        <div className="p-5 bg-neutral-50/50 dark:bg-neutral-800/30">
           <h3 className="font-semibold text-sm text-neutral-900 dark:text-white tracking-[-0.025em]">
             SMTP Notification Dispatcher
           </h3>

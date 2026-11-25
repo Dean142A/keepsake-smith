@@ -57,7 +57,7 @@ export default function AdminLogin({ onLoginSuccess }) {
         </div>
 
         {/* Login Card */}
-        <div className="border border-neutral-200/60 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 p-8 shadow-sm animate-slide-up">
+        <div className=" rounded-xl bg-white dark:bg-neutral-900 p-8 shadow-sm animate-slide-up">
           <div className="text-center mb-6">
             <h1 className="font-bold text-xl mb-1 tracking-[-0.035em] text-neutral-900 dark:text-white">
               Sign in to your account

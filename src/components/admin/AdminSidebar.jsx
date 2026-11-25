@@ -77,7 +77,7 @@ export default function AdminSidebar({
 
       {/* Logged in User Card */}
       <div className="px-3 pb-2">
-        <div className="px-3 py-2.5 bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/40 dark:border-neutral-800 rounded-xl text-center">
+        <div className="px-3 py-2.5 bg-neutral-50 dark:bg-neutral-800/60 rounded-xl text-center">
           <span className="uppercase font-medium text-[9px] text-neutral-400 block tracking-[0.08em]">
             Logged in as
           </span>

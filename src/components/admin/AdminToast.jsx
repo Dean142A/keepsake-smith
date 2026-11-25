@@ -60,7 +60,7 @@ export function ToastProvider({ children }) {
         {toasts.map((t) => (
           <div
             key={t.id}
-            className={`pointer-events-auto flex items-center gap-3 px-4 py-3 bg-white dark:bg-neutral-800 border border-neutral-200/60 dark:border-neutral-700 rounded-xl shadow-lg min-w-[280px] max-w-[380px] transition-all duration-200 ${
+            className={`pointer-events-auto flex items-center gap-3 px-4 py-3 bg-white dark:bg-neutral-800 rounded-xl shadow-lg min-w-[280px] max-w-[380px] transition-all duration-200 ${
               t.exiting ? 'opacity-0 translate-x-4' : 'animate-slide-up'
             }`}
           >
