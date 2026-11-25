@@ -63,6 +63,19 @@ export async function POST(req) {
       );
     }
 
+    // A code can be revoked: a gift sent to the wrong address, a refund, or a
+    // link that got out. The record stays; the door closes.
+    if (matchingOrder.access === 'suspended') {
+      return NextResponse.json(
+        {
+          error:
+            'This keepsake is not available at the moment. Please contact The Keepsake Smith if you think this is a mistake.',
+          suspended: true,
+        },
+        { status: 403 }
+      );
+    }
+
     FAILED_ATTEMPTS.delete(rateLimitKey);
 
     const experience = normaliseExperience(matchingOrder);

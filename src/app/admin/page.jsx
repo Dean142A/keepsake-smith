@@ -150,6 +150,32 @@ function AdminPortalInner({
   // creates a new order, so sending through it never reached the mailer.
   // Moves the order to a fulfilment stage, which is what triggers the
   // recipient and purchaser notifications for that stage.
+  const handleUpdateOrder = async (orderId, patch) => {
+    const res = await fetch('/api/admin/orders', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: orderId, ...patch }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to update the order');
+    fetchData();
+    return data;
+  };
+
+  // The access code goes with the id so a request carrying only an id can
+  // never delete a customer's keepsake by accident.
+  const handleDeleteOrder = async (orderId, accessCode) => {
+    const res = await fetch('/api/admin/orders', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: orderId, accessCode }),
+    });
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error || 'Failed to delete the order');
+    fetchData();
+    return data;
+  };
+
   const handleSetStage = async (orderId, stage) => {
     const res = await fetch('/api/admin/orders', {
       method: 'PUT',
@@ -326,6 +352,8 @@ function AdminPortalInner({
           onSaveAssets={handleSaveAssets}
           onSendEmail={handleSendEmail}
           onSetStage={handleSetStage}
+          onUpdateOrder={handleUpdateOrder}
+          onDeleteOrder={handleDeleteOrder}
         />
       </div>
     );

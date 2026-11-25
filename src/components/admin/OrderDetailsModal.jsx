@@ -15,9 +15,14 @@ import {
   FileText,
   User,
   QrCode,
+  Ban,
+  Trash2,
+  AlertTriangle,
   Download,
 } from 'lucide-react';
 import QRCode from 'qrcode';
+import ExperienceBuilder from './ExperienceBuilder';
+import { normaliseExperience } from '@/lib/keepsake';
 import { useToast } from './AdminToast';
 
 /**
@@ -38,24 +43,36 @@ export default function OrderDetailsModal({
   onSaveAssets,
   onSendEmail,
   onSetStage,
+  onUpdateOrder,
+  onDeleteOrder,
 }) {
   const { toast } = useToast();
-  const [pkgNote, setPkgNote] = useState('');
-  const [pkgAudio, setPkgAudio] = useState('');
-  const [saving, setSaving] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);
   const [stagePending, setStagePending] = useState('');
   // The parent keeps its own copy of the selected order, so it does not
   // re-render with the new status after a stage change. Track it here too.
   const [stage, setStage] = useState('');
   const [qrSvg, setQrSvg] = useState('');
+  const [details, setDetails] = useState(null);
+  const [experience, setExperience] = useState(null);
+  const [access, setAccess] = useState('active');
+  const [busy, setBusy] = useState('');
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     if (order) {
       setStage(order.status || '');
-      setPkgNote(order.personalizationNote || '');
-      setPkgAudio(order.audioUrl || '');
+      setAccess(order.access === 'suspended' ? 'suspended' : 'active');
+      setConfirmDelete(false);
+      setDetails({
+        recipientName: order.recipientName || '',
+        recipientEmail: order.recipientEmail || '',
+        purchaserName: order.purchaserName || '',
+        purchaserEmail: order.purchaserEmail || '',
+        fulfillmentType: order.fulfillmentType || 'digital_physical',
+      });
+      setExperience(normaliseExperience(order));
     }
   }, [order]);
 
@@ -121,6 +138,51 @@ export default function OrderDetailsModal({
     if (revoke) URL.revokeObjectURL(href);
   };
 
+  const patchOrder = async (patch, label) => {
+    setBusy(label);
+    try {
+      await onUpdateOrder(order.id, patch);
+      toast(`${label} saved`);
+      return true;
+    } catch (err) {
+      toast(err.message || `Could not save ${label.toLowerCase()}`, 'error');
+      return false;
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const toggleAccess = async () => {
+    const next = access === 'suspended' ? 'active' : 'suspended';
+    setBusy('access');
+    try {
+      await onUpdateOrder(order.id, { access: next });
+      setAccess(next);
+      toast(
+        next === 'suspended'
+          ? 'Code suspended — the portal will refuse it'
+          : 'Code reinstated'
+      );
+    } catch (err) {
+      toast(err.message || 'Could not change access', 'error');
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const removeOrder = async () => {
+    setBusy('delete');
+    try {
+      const res = await onDeleteOrder(order.id, order.accessCode);
+      toast(res?.message || `Order ${order.id} deleted`);
+      onClose();
+    } catch (err) {
+      toast(err.message || 'Could not delete the order', 'error');
+    } finally {
+      setBusy('');
+    }
+  };
+
   const handleCopyLink = () => {
     navigator.clipboard.writeText(portalUrl);
     setCopied(true);
@@ -128,21 +190,6 @@ export default function OrderDetailsModal({
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleSave = async (e) => {
-    e.preventDefault();
-    setSaving(true);
-    try {
-      await onSaveAssets(order.id, {
-        personalizationNote: pkgNote,
-        audioUrl: pkgAudio,
-      });
-      toast(`Keepsake details saved for Order #${order.id}`);
-    } catch (err) {
-      toast('Failed to save assets', 'error');
-    } finally {
-      setSaving(false);
-    }
-  };
 
   const handleSendNotification = async () => {
     setSendingEmail(true);
@@ -373,67 +420,195 @@ export default function OrderDetailsModal({
             </p>
           </div>
 
-          <form onSubmit={handleSave} className="space-y-4">
-            <div className="flex items-center justify-between pb-1 border-b border-neutral-100 dark:border-neutral-800">
-              <div className="flex items-center gap-2">
-                <Sparkles size={15} className="text-accent" />
-                <h4 className="font-semibold text-xs text-neutral-900 dark:text-white">
-                  Quick Edits
-                </h4>
+
+          {/* Order details */}
+          {details && (
+            <div className="mb-6">
+              <div className="flex items-center justify-between pb-1 mb-3">
+                <div className="flex items-center gap-2">
+                  <User size={15} className="text-accent" />
+                  <h4 className="font-semibold text-xs text-neutral-900 dark:text-white">
+                    Order Details
+                  </h4>
+                </div>
+                <span className="text-[10px] text-neutral-400">The code stays the same</span>
               </div>
-              <span className="text-[10px] text-neutral-400">Photos &amp; voice note live in the builder</span>
-            </div>
 
-            {/* Background Audio URL */}
-            <div>
-              <label className="uppercase-label text-neutral-400 block mb-1">
-                Background Music URL (optional)
-              </label>
-              <input
-                type="text"
-                value={pkgAudio}
-                onChange={(e) => setPkgAudio(e.target.value)}
-                placeholder="https://.../audio/message.mp3"
-                className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+              <div className="grid sm:grid-cols-2 gap-3">
+              <div>
+                <label className="uppercase-label text-neutral-400 block mb-1">Recipient name</label>
+                <input
+                  type="text"
+                  value={details.recipientName}
+                  onChange={(e) => setDetails({ ...details, recipientName: e.target.value })}
+                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+              <div>
+                <label className="uppercase-label text-neutral-400 block mb-1">Recipient email</label>
+                <input
+                  type="email"
+                  value={details.recipientEmail}
+                  onChange={(e) => setDetails({ ...details, recipientEmail: e.target.value })}
+                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+              <div>
+                <label className="uppercase-label text-neutral-400 block mb-1">Purchaser name</label>
+                <input
+                  type="text"
+                  value={details.purchaserName}
+                  onChange={(e) => setDetails({ ...details, purchaserName: e.target.value })}
+                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+              <div>
+                <label className="uppercase-label text-neutral-400 block mb-1">Purchaser email</label>
+                <input
+                  type="email"
+                  value={details.purchaserEmail}
+                  onChange={(e) => setDetails({ ...details, purchaserEmail: e.target.value })}
+                  className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                />
+              </div>
+                <div className="sm:col-span-2">
+                  <label className="uppercase-label text-neutral-400 block mb-1">Fulfilment</label>
+                  <select
+                    value={details.fulfillmentType}
+                    onChange={(e) => setDetails({ ...details, fulfillmentType: e.target.value })}
+                    className="w-full rounded-full border border-neutral-200/60 dark:border-neutral-700 px-4 py-2 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+                  >
+                    <option value="digital_physical">Digital + physical</option>
+                    <option value="digital_only">Digital only</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="flex justify-end mt-3">
+                <button
+                  type="button"
+                  onClick={() => patchOrder(details, 'Order details')}
+                  disabled={Boolean(busy)}
+                  className="primary-button text-xs py-2 px-5 btn-press disabled:opacity-60"
+                >
+                  <Save size={13} />
+                  <span>{busy === 'Order details' ? 'Saving...' : 'Save Details'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Keepsake content */}
+          {experience && (
+            <div className="mb-6">
+              <ExperienceBuilder
+                value={experience}
+                onChange={setExperience}
+                orderId={order.id}
               />
+              <div className="flex justify-end mt-3">
+                <button
+                  type="button"
+                  onClick={() => patchOrder({ experience }, 'Keepsake content')}
+                  disabled={Boolean(busy)}
+                  className="primary-button text-xs py-2 px-5 btn-press disabled:opacity-60"
+                >
+                  <Save size={13} />
+                  <span>{busy === 'Keepsake content' ? 'Saving...' : 'Save Photos & Letter'}</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Access and removal */}
+          <div className="mb-6">
+            <div className="flex items-center gap-2 pb-1 mb-3">
+              <Ban size={15} className="text-accent" />
+              <h4 className="font-semibold text-xs text-neutral-900 dark:text-white">
+                Access &amp; Removal
+              </h4>
             </div>
 
-            {/* Inside Cover Dedication Note */}
-            <div>
-              <label className="uppercase-label text-neutral-400 block mb-1">
-                Letter (painted onto its own page)
-              </label>
-              <textarea
-                rows={3}
-                value={pkgNote}
-                onChange={(e) => setPkgNote(e.target.value)}
-                placeholder="A cherished message, written onto the first page of the book..."
-                className="w-full rounded-xl p-3 text-xs bg-neutral-50/50 dark:bg-neutral-800/50 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
-              />
-            </div>
-
-            {/* Action Buttons */}
-            <div className="flex items-center justify-between pt-2">
+            <div className="flex items-center justify-between gap-3 px-3.5 py-2.5 rounded-xl surface-secondary mb-2">
+              <span className="min-w-0">
+                <span className="block text-xs font-medium text-neutral-900 dark:text-white">
+                  {access === 'suspended' ? 'Code suspended' : 'Code active'}
+                </span>
+                <span className="block text-[10px] text-neutral-500 dark:text-neutral-400">
+                  {access === 'suspended'
+                    ? 'The portal refuses this code. Nothing has been deleted.'
+                    : 'Suspending stops the code working without deleting anything.'}
+                </span>
+              </span>
               <button
                 type="button"
-                onClick={handleSendNotification}
-                disabled={sendingEmail || !order.recipientEmail}
-                className="px-3.5 py-2 rounded-full border border-neutral-200 dark:border-neutral-700 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all btn-press inline-flex items-center gap-1.5 disabled:opacity-50"
+                onClick={toggleAccess}
+                disabled={Boolean(busy)}
+                className="px-3 py-1.5 rounded-full border border-neutral-200 dark:border-neutral-700 text-[11px] font-medium text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-800 transition-all btn-press whitespace-nowrap disabled:opacity-60"
               >
-                <Mail size={13} />
-                <span>{sendingEmail ? 'Sending...' : 'Dispatch Email'}</span>
-              </button>
-
-              <button
-                type="submit"
-                disabled={saving}
-                className="primary-button text-xs py-2 px-5 btn-press shadow-sm"
-              >
-                <Save size={13} />
-                <span>{saving ? 'Saving...' : 'Save Changes'}</span>
+                {busy === 'access' ? '...' : access === 'suspended' ? 'Reinstate' : 'Suspend'}
               </button>
             </div>
-          </form>
+
+            {!confirmDelete ? (
+              <button
+                type="button"
+                onClick={() => setConfirmDelete(true)}
+                className="w-full px-3.5 py-2.5 rounded-xl text-left text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors inline-flex items-center gap-2"
+              >
+                <Trash2 size={13} /> Delete this order
+              </button>
+            ) : (
+              <div className="px-3.5 py-3 rounded-xl bg-red-50 dark:bg-red-950/30">
+                <div className="flex items-start gap-2 mb-2.5">
+                  <AlertTriangle size={14} className="text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
+                  <p className="text-[11px] text-red-800 dark:text-red-300">
+                    This deletes order <strong>{order.id}</strong>, its photographs and its
+                    recording. The code <strong>{accessCode}</strong> will stop working. It
+                    cannot be undone.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={removeOrder}
+                    disabled={Boolean(busy)}
+                    className="px-3 py-1.5 rounded-full bg-red-600 text-white text-[11px] font-medium hover:bg-red-700 transition-colors btn-press disabled:opacity-60"
+                  >
+                    {busy === 'delete' ? 'Deleting...' : 'Delete permanently'}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setConfirmDelete(false)}
+                    className="px-3 py-1.5 rounded-full text-[11px] font-medium text-neutral-600 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-800 transition-colors btn-press"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-2">
+            <button
+              type="button"
+              onClick={handleSendNotification}
+              disabled={sendingEmail || !order.recipientEmail}
+              className="px-3.5 py-2 rounded-full border border-neutral-200 dark:border-neutral-700 text-xs font-medium text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-all btn-press inline-flex items-center gap-1.5 disabled:opacity-50"
+            >
+              <Mail size={13} />
+              <span>{sendingEmail ? 'Sending...' : 'Dispatch Email'}</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 rounded-full text-xs font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors btn-press"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     </div>
