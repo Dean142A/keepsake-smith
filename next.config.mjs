@@ -44,24 +44,38 @@ const nextConfig = {
             key: 'Strict-Transport-Security',
             value: 'max-age=31536000; includeSubDomains',
           },
+          {
+            // Next inlines its bootstrap, and the 3D book builds page
+            // textures on canvases, hence 'unsafe-inline' and blob:. The
+            // value of the policy here is the connect/img/frame limits and
+            // the ban on object embeds.
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+              "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+              "font-src 'self' https://fonts.gstatic.com data:",
+              "img-src 'self' data: blob: https://*.b-cdn.net https://images.unsplash.com",
+              "media-src 'self' blob: https://*.b-cdn.net",
+              "connect-src 'self' https://*.b-cdn.net https://raw.githack.com https://cdn.jsdelivr.net",
+              "worker-src 'self' blob:",
+              "frame-ancestors 'self'",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+            ].join('; '),
+          },
         ],
       },
       {
-        // CORS headers for 3D textures, assets, and APIs across domains
-        source: '/(textures|audios|api)/:path*',
+        // Static scene assets only. The API used to be in this list, which
+        // invited every origin on the web to call /api/admin/*. Browsers
+        // refuse a wildcard origin with credentials so the cookie was never
+        // at risk, but there is no reason to advertise the endpoints.
+        source: '/(textures|audios)/:path*',
         headers: [
-          {
-            key: 'Access-Control-Allow-Origin',
-            value: '*',
-          },
-          {
-            key: 'Access-Control-Allow-Methods',
-            value: 'GET, POST, PUT, OPTIONS',
-          },
-          {
-            key: 'Access-Control-Allow-Headers',
-            value: 'Content-Type, Authorization',
-          },
+          { key: 'Access-Control-Allow-Origin', value: '*' },
+          { key: 'Access-Control-Allow-Methods', value: 'GET, OPTIONS' },
         ],
       },
     ];

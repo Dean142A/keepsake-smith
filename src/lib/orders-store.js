@@ -24,9 +24,13 @@
 import fs from 'fs';
 import path from 'path';
 import { normaliseCode } from './keepsake';
+import { seal, open as unseal, isSealed } from './order-crypto';
 
-const ZONE = process.env.BUNNY_STORAGE_ZONE_NAME;
-const KEY = process.env.BUNNY_STORAGE_API_KEY;
+// Order records belong in a zone with no pull zone in front of it. Falling
+// back to the media zone keeps existing deployments working; the records are
+// sealed either way, so a public zone discloses nothing.
+const ZONE = process.env.BUNNY_ORDERS_ZONE_NAME || process.env.BUNNY_STORAGE_ZONE_NAME;
+const KEY = process.env.BUNNY_ORDERS_API_KEY || process.env.BUNNY_STORAGE_API_KEY;
 const REGION = (process.env.BUNNY_STORAGE_REGION || 'de').toLowerCase();
 const PREFIX = 'orders';
 
@@ -56,7 +60,7 @@ async function bunnyPut(key, obj) {
   const res = await fetch(`https://${storageHost()}/${ZONE}/${key}`, {
     method: 'PUT',
     headers: { AccessKey: KEY, 'Content-Type': 'application/json' },
-    body: JSON.stringify(obj, null, 2),
+    body: JSON.stringify(seal(obj)),
   });
   if (!res.ok) throw new Error(`Order save failed (${res.status} ${res.statusText}) for ${key}`);
 }
@@ -67,7 +71,9 @@ async function bunnyGet(key) {
   });
   if (res.status === 404) return null;
   if (!res.ok) throw new Error(`Order read failed (${res.status}) for ${key}`);
-  return res.json();
+  // Records written before sealing was introduced come back as plain JSON and
+  // pass through untouched; the next save re-writes them sealed.
+  return unseal(await res.json());
 }
 
 async function bunnyList() {

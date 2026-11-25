@@ -60,6 +60,16 @@ export async function POST(request) {
     let paystackData = null;
 
     // Verify transaction with Paystack API if secret key exists
+    // Without the secret there is no way to confirm a payment actually
+    // happened, so production refuses rather than trusting the caller.
+    if (!paystackSecret && process.env.NODE_ENV === 'production') {
+      console.error('[Paystack] PAYSTACK_SECRET_KEY is not set — refusing to verify payments.');
+      return NextResponse.json(
+        { success: false, error: 'Payments are not configured on this environment.' },
+        { status: 503 }
+      );
+    }
+
     if (paystackSecret && reference && !reference.startsWith('SIMULATED-')) {
       try {
         const verifyRes = await fetch(`https://api.paystack.co/transaction/verify/${encodeURIComponent(reference)}`, {
