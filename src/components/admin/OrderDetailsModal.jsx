@@ -340,15 +340,13 @@ export default function OrderDetailsModal({
                       type="button"
                       onClick={() => downloadQr('svg')}
                       className="px-2.5 py-1 rounded-full text-[11px] font-medium text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-800 transition-all btn-press inline-flex items-center gap-1"
-                    >
-                      <Download size={11} /> SVG
+                    >SVG
                     </button>
                     <button
                       type="button"
                       onClick={() => downloadQr('png')}
                       className="px-2.5 py-1 rounded-full text-[11px] font-medium text-neutral-700 dark:text-neutral-300 hover:bg-white/60 dark:hover:bg-neutral-800 transition-all btn-press inline-flex items-center gap-1"
-                    >
-                      <Download size={11} /> PNG
+                    >PNG
                     </button>
                   </div>
                 </div>
@@ -360,9 +358,7 @@ export default function OrderDetailsModal({
           {/* Fulfilment stage */}
           <div className="mb-6">
             <div className="flex items-center justify-between pb-1 mb-3 border-b border-neutral-100 dark:border-neutral-800">
-              <div className="flex items-center gap-2">
-                <Package size={15} className="text-accent" />
-                <h4 className="font-semibold text-xs text-neutral-900 dark:text-white">
+              <div className="flex items-center gap-2"><h4 className="font-semibold text-xs text-neutral-900 dark:text-white">
                   Fulfilment Stage
                 </h4>
               </div>
@@ -423,9 +419,7 @@ export default function OrderDetailsModal({
           {details && (
             <div className="mb-6">
               <div className="flex items-center justify-between pb-1 mb-3">
-                <div className="flex items-center gap-2">
-                  <User size={15} className="text-accent" />
-                  <h4 className="font-semibold text-xs text-neutral-900 dark:text-white">
+                <div className="flex items-center gap-2"><h4 className="font-semibold text-xs text-neutral-900 dark:text-white">
                     Order Details
                   </h4>
                 </div>
@@ -516,9 +510,7 @@ export default function OrderDetailsModal({
 
           {/* Access and removal */}
           <div className="mb-6">
-            <div className="flex items-center gap-2 pb-1 mb-3">
-              <Ban size={15} className="text-accent" />
-              <h4 className="font-semibold text-xs text-neutral-900 dark:text-white">
+            <div className="flex items-center gap-2 pb-1 mb-3"><h4 className="font-semibold text-xs text-neutral-900 dark:text-white">
                 Access &amp; Removal
               </h4>
             </div>
@@ -549,13 +541,11 @@ export default function OrderDetailsModal({
                 type="button"
                 onClick={() => setConfirmDelete(true)}
                 className="w-full px-3.5 py-2.5 rounded-xl text-left text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors inline-flex items-center gap-2"
-              >
-                <Trash2 size={13} /> Delete this order
+              >Delete this order
               </button>
             ) : (
               <div className="px-3.5 py-3 rounded-xl bg-red-50 dark:bg-red-950/30">
                 <div className="flex items-start gap-2 mb-2.5">
-                  <AlertTriangle size={14} className="text-red-600 dark:text-red-400 mt-0.5 shrink-0" />
                   <p className="text-[11px] text-red-800 dark:text-red-300">
                     This deletes order <strong>{order.id}</strong>, its photographs and its
                     recording. The code <strong>{accessCode}</strong> will stop working. It

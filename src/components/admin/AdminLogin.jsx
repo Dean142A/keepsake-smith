@@ -107,7 +107,6 @@ export default function AdminLogin({ onLoginSuccess }) {
             </div>
 
             <div className="flex items-start gap-2.5 p-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl mb-6">
-              <Shield size={15} className="text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
                 Secure access for authorized administrators only. Session cookies are encrypted and verified server-side.
               </p>

@@ -58,8 +58,7 @@ export default function AdminCatalog({ products = [], onRefresh }) {
 
             <div className="p-4 pt-0 border-t border-neutral-100 dark:border-neutral-800/60 flex items-center justify-between text-xs text-neutral-400 mt-3">
               <span className="font-mono text-[11px]">SKU: KS-{prod.id}</span>
-              <span className="inline-flex items-center gap-1 text-accent font-medium text-[11px]">
-                <Sparkles size={11} /> 3D Flip Enabled
+              <span className="inline-flex items-center gap-1 text-accent font-medium text-[11px]">3D Flip Enabled
               </span>
             </div>
           </div>

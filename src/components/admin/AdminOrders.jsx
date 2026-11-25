@@ -189,12 +189,10 @@ export default function AdminOrders({
                       }`}
                     >
                       {hasAssets ? (
-                        <>
-                          <CheckCircle2 size={11} /> 3D Ready
+                        <>3D Ready
                         </>
                       ) : (
-                        <>
-                          <Clock size={11} /> Needs Assets
+                        <>Needs Assets
                         </>
                       )}
                     </span>

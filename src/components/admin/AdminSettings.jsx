@@ -15,16 +15,7 @@ import {
 } from 'lucide-react';
 import { useToast } from './AdminToast';
 
-const ACCENT_PRESETS = [
-  { name: 'Keepsake Gold', value: '#C5A059' },
-  { name: 'Bronze', value: '#A88653' },
-  { name: 'Emerald', value: '#10b981' },
-  { name: 'Royal Blue', value: '#3b82f6' },
-  { name: 'Violet', value: '#8b5cf6' },
-  { name: 'Rose', value: '#f43f5e' },
-];
-
-export default function AdminSettings({ currentAccent, onChangeAccent, user }) {
+export default function AdminSettings({ user }) {
   const { toast } = useToast();
   const [testEmail, setTestEmail] = useState('');
   const [sendingTest, setSendingTest] = useState(false);
@@ -62,49 +53,6 @@ export default function AdminSettings({ currentAccent, onChangeAccent, user }) {
 
   return (
     <div className="max-w-5xl mx-auto space-y-6 md:space-y-8 animate-fade-in">
-      {/* 1. BRANDING & ACCENT COLOR (TeleFlow Theme Picker) */}
-      <div className="card-surface overflow-hidden animate-slide-up">
-        <div className="p-5 bg-neutral-50 dark:bg-neutral-800 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <Palette size={16} className="text-accent" />
-            <div>
-              <h3 className="font-semibold text-sm text-neutral-900 dark:text-white tracking-[-0.025em]">
-                Branding &amp; Accent Theme
-              </h3>
-              <p className="text-[11px] text-neutral-400 mt-0.5">
-                Customize the visual accent palette across the administrative dashboard.
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-5 md:p-6">
-          <div className="flex flex-wrap items-center gap-3">
-            {ACCENT_PRESETS.map((preset) => {
-              const isSelected = currentAccent === preset.value;
-              return (
-                <button
-                  key={preset.value}
-                  onClick={() => onChangeAccent(preset.value)}
-                  className={`flex items-center gap-2.5 px-3.5 py-2 rounded-full border text-xs font-medium transition-all btn-press ${
-                    isSelected
-                      ? 'border-neutral-900 dark:border-white bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white shadow-xs'
-                      : 'border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-300'
-                  }`}
-                >
-                  <span
-                    className="w-3.5 h-3.5 rounded-full flex-shrink-0"
-                    style={{ backgroundColor: preset.value }}
-                  />
-                  <span>{preset.name}</span>
-                  {isSelected && <Check size={12} className="text-neutral-900 dark:text-white" />}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
       {/* 2. INFRASTRUCTURE & ARCHITECTURE SPECS */}
       <div className="card-surface overflow-hidden animate-slide-up">
         <div className="p-5 bg-neutral-50 dark:bg-neutral-800">

@@ -30,21 +30,10 @@ function HeroMark() {
   );
 }
 
-const Tile = ({ label, value, hint, tone = 'neutral', Icon }) => (
+const Tile = ({ label, value, hint }) => (
   <div className="card-surface p-5">
-    <div className="flex items-center justify-between mb-3">
+    <div className="mb-3">
       <span className="text-[12px] text-neutral-500 dark:text-neutral-400">{label}</span>
-      <span
-        className={`w-8 h-8 rounded-full flex items-center justify-center ${
-          tone === 'warn'
-            ? 'bg-amber-500/10 text-amber-500'
-            : tone === 'good'
-            ? 'bg-emerald-500/10 text-emerald-500'
-            : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-500'
-        }`}
-      >
-        <Icon size={15} />
-      </span>
     </div>
     <div className="text-[30px] font-semibold tracking-[-0.03em] leading-none">{value}</div>
     <div className="text-[12px] text-neutral-400 mt-1.5">{hint}</div>
@@ -121,15 +110,11 @@ export default function AdminDashboard({
           label="Awaiting photos"
           value={pending}
           hint={pending ? 'Needs your attention' : 'All assigned'}
-          tone={pending ? 'warn' : 'good'}
-          Icon={pending ? Clock : CheckCircle2}
         />
         <Tile
           label="Opened in portal"
           value={redeemed}
           hint={total ? `${Math.round((redeemed / total) * 100)}% of orders` : '—'}
-          tone="good"
-          Icon={CheckCircle2}
         />
       </div>
 

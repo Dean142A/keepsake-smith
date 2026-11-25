@@ -294,9 +294,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
           </div>
 
           {/* Drag & Drop File Upload Area */}
-          <div className="border-2 border-dashed border-neutral-200 dark:border-neutral-700 rounded-2xl p-8 text-center hover:border-accent transition-colors">
-            <Upload size={32} className="mx-auto text-neutral-400 mb-3" />
-            <span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 block">
+          <div className="border-2 border-dashed border-neutral-200 dark:border-neutral-700 rounded-2xl p-8 text-center hover:border-accent transition-colors"><span className="text-xs font-semibold text-neutral-800 dark:text-neutral-200 block">
               Drag and drop your daily orders CSV here
             </span>
             <span className="text-[11px] text-neutral-400 block mt-1">or browse from your computer</span>

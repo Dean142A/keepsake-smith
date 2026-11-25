@@ -166,7 +166,6 @@ export default function AdminTopBar({
                 </div>
                 <div className="text-[10px] text-neutral-400 mt-0.5">Master Administrator</div>
                 <div className="mt-2 inline-flex items-center gap-1 px-2 py-0.5 bg-accent-soft text-accent rounded-full text-[9px] font-semibold uppercase tracking-[0.05em]">
-                  <ShieldCheck size={10} />
                   <span>Verified Session</span>
                 </div>
               </div>

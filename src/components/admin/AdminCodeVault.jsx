@@ -131,9 +131,7 @@ export default function AdminCodeVault({ orders = [], onOpenOrder }) {
 
       {/* Instant Code Validator Tool */}
       <div className="card-surface p-5 bg-neutral-50 dark:bg-neutral-800/40">
-        <div className="flex items-center gap-2 mb-2">
-          <ShieldCheck size={16} className="text-accent" />
-          <h3 className="font-semibold text-xs text-neutral-900 dark:text-white">
+        <div className="flex items-center gap-2 mb-2"><h3 className="font-semibold text-xs text-neutral-900 dark:text-white">
             Instant Code Verifier &amp; Order Lookup
           </h3>
         </div>

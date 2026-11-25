@@ -17,38 +17,12 @@ import AdminSettings from '@/components/admin/AdminSettings';
 import OrderDetailsModal from '@/components/admin/OrderDetailsModal';
 
 const STORAGE_DARK = 'keepsake_admin_dark_mode';
-const STORAGE_ACCENT = 'keepsake_admin_accent';
-
-/** Keepsake gold — the console's default accent. */
-// The reference has no coloured accent: the primary is near-black and
-// everything else is greyscale. Sampled from the 'Create new chat' button.
-const DEFAULT_ACCENT = '#0b151d';
 
 /** Shift a hex colour lighter (positive) or darker (negative). */
-function adjustColor(hex, amount) {
-  let c = String(hex).replace('#', '');
-  if (c.length === 3) c = c.split('').map((x) => x + x).join('');
-  const num = parseInt(c, 16);
-  if (Number.isNaN(num)) return hex;
-  const r = Math.min(255, Math.max(0, (num >> 16) + amount));
-  const g = Math.min(255, Math.max(0, ((num >> 8) & 0xff) + amount));
-  const b = Math.min(255, Math.max(0, (num & 0xff) + amount));
-  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-}
-
-function hexToRgba(hex, alpha) {
-  let c = String(hex).replace('#', '');
-  if (c.length === 3) c = c.split('').map((x) => x + x).join('');
-  const num = parseInt(c, 16);
-  if (Number.isNaN(num)) return `rgba(197, 160, 89, ${alpha})`;
-  return `rgba(${(num >> 16) & 255}, ${(num >> 8) & 255}, ${num & 255}, ${alpha})`;
-}
 
 function AdminPortalInner({
   darkMode,
   setDarkMode,
-  accentColor,
-  setAccentColor,
 }) {
   const { toast } = useToast();
 
@@ -121,14 +95,6 @@ function AdminPortalInner({
       window.localStorage.setItem(STORAGE_DARK, String(next));
     } catch { /* ignore */ }
     toast(next ? 'Switched to obsidian theme' : 'Switched to light theme');
-  };
-
-  const handleChangeAccent = (color) => {
-    setAccentColor(color);
-    try {
-      window.localStorage.setItem(STORAGE_ACCENT, color);
-    } catch { /* ignore */ }
-    toast('Accent updated');
   };
 
   const handleLogout = async () => {
@@ -380,11 +346,7 @@ function AdminPortalInner({
               )}
 
               {activeTab === 'settings' && (
-                <AdminSettings
-                  currentAccent={accentColor}
-                  onChangeAccent={handleChangeAccent}
-                  user={currentUser}
-                />
+                <AdminSettings user={currentUser} />
               )}
               </div>
             </main>
@@ -440,12 +402,10 @@ export default function AdminPage() {
   // deterministic so SSR and the first client render agree; the saved
   // preference is applied after mount.
   const [darkMode, setDarkMode] = useState(true);
-  const [accentColor, setAccentColor] = useState(DEFAULT_ACCENT);
 
   useEffect(() => {
     try {
       const savedDark = window.localStorage.getItem(STORAGE_DARK);
-      const savedAccent = window.localStorage.getItem(STORAGE_ACCENT);
       if (savedDark !== null) setDarkMode(savedDark === 'true');
       if (savedAccent) setAccentColor(savedAccent);
     } catch {
@@ -471,8 +431,6 @@ export default function AdminPage() {
         <AdminPortalInner
           darkMode={darkMode}
           setDarkMode={setDarkMode}
-          accentColor={accentColor}
-          setAccentColor={setAccentColor}
         />
       </ToastProvider>
     </div>
