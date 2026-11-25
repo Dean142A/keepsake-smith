@@ -182,7 +182,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
 
       {activeSubTab === 'single' ? (
         /* SINGLE GIFT ORDER FORM */
-        <div className="card-border p-6 md:p-8 animate-slide-up shadow-xs">
+        <div className="card-surface p-6 md:p-8 animate-slide-up shadow-xs">
           <div className="mb-6">
             <h2 className="text-lg font-bold tracking-[-0.035em] text-neutral-900 dark:text-white">
               Create Gift Order & Access Code
@@ -287,7 +287,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
         </div>
       ) : (
         /* DAILY CSV BATCH IMPORT */
-        <div className="card-border p-6 md:p-8 animate-slide-up shadow-xs space-y-6">
+        <div className="card-surface p-6 md:p-8 animate-slide-up shadow-xs space-y-6">
           <div>
             <h2 className="text-lg font-bold tracking-[-0.035em] text-neutral-900 dark:text-white">
               Daily CSV Batch Import
@@ -327,7 +327,7 @@ export default function AdminCreateOrder({ onOrderCreated, onBatchImported }) {
                 setCsvPreviewCount(Math.max(0, lines.length - 1));
               }}
               placeholder="purchaser_name,purchaser_email,recipient_name,recipient_email,note,fulfillment..."
-              className="w-full rounded-xl border border-neutral-200/60 dark:border-neutral-700 p-3 font-mono text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
+              className="w-full rounded-xl p-3 font-mono text-xs bg-white dark:bg-neutral-900 text-neutral-900 dark:text-white focus:outline-none focus:border-[var(--accent)]"
             />
           </div>
 

@@ -68,7 +68,7 @@ export default function AdminOrders({
   return (
     <div className="flex flex-col gap-4 md:gap-6 animate-fade-in">
       {/* TeleFlow Page Guide Banner */}
-      <div className="p-4 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/50 border border-neutral-200/50 dark:border-neutral-800 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs text-neutral-600 dark:text-neutral-400">
+      <div className="p-4 rounded-xl bg-neutral-100/70 dark:bg-neutral-800/50 flex flex-col md:flex-row md:items-center justify-between gap-3 text-xs text-neutral-600 dark:text-neutral-400">
         <div className="flex items-center gap-2">
           <span className="text-base">🎁</span>
           <span>
@@ -134,7 +134,7 @@ export default function AdminOrders({
       </div>
 
       {/* Directory Table (TeleFlow Style) */}
-      <div className="border border-neutral-200/60 dark:border-neutral-800 rounded-xl bg-white dark:bg-neutral-900 overflow-hidden flex-1 shadow-xs">
+      <div className=" rounded-xl bg-white dark:bg-neutral-900 overflow-hidden flex-1 shadow-xs">
         {filteredOrders.length === 0 ? (
           <div className="p-12 text-center text-xs text-neutral-400">
             {orders.length === 0

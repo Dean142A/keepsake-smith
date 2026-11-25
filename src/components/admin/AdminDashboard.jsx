@@ -53,7 +53,7 @@ export default function AdminDashboard({
   return (
     <div className="space-y-6 md:space-y-8 animate-fade-in">
       {/* Top Greeting & Date Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2 border-b border-neutral-200/40 dark:border-neutral-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-2">
         <div>
           <h2 className="text-xl md:text-2xl font-bold tracking-[-0.035em] text-neutral-900 dark:text-white">
             {getGreeting()}, Administrator
@@ -81,7 +81,7 @@ export default function AdminDashboard({
       {/* 4 TeleFlow KPI Stat Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {/* Card 1: Total Orders */}
-        <div className="card-border p-5 card-hover">
+        <div className="card-surface p-5 card-hover">
           <div className="flex items-center justify-between">
             <span className="uppercase-label text-neutral-400">Total Gift Orders</span>
             <div className="w-8 h-8 rounded-full bg-accent-soft text-accent flex items-center justify-center">
@@ -100,7 +100,7 @@ export default function AdminDashboard({
         </div>
 
         {/* Card 2: Pending WebGL Assets */}
-        <div className="card-border p-5 card-hover">
+        <div className="card-surface p-5 card-hover">
           <div className="flex items-center justify-between">
             <span className="uppercase-label text-neutral-400">Pending 3D Assets</span>
             <div className="w-8 h-8 rounded-full bg-amber-500/10 text-amber-500 flex items-center justify-center">
@@ -125,7 +125,7 @@ export default function AdminDashboard({
         </div>
 
         {/* Card 3: Redeemed in Portal */}
-        <div className="card-border p-5 card-hover">
+        <div className="card-surface p-5 card-hover">
           <div className="flex items-center justify-between">
             <span className="uppercase-label text-neutral-400">Redeemed in Portal</span>
             <div className="w-8 h-8 rounded-full bg-blue-500/10 text-blue-500 flex items-center justify-center">
@@ -144,7 +144,7 @@ export default function AdminDashboard({
         </div>
 
         {/* Card 4: Active Access Codes */}
-        <div className="card-border p-5 card-hover">
+        <div className="card-surface p-5 card-hover">
           <div className="flex items-center justify-between">
             <span className="uppercase-label text-neutral-400">Active Access Codes</span>
             <div className="w-8 h-8 rounded-full bg-purple-500/10 text-purple-500 flex items-center justify-center">
@@ -165,7 +165,7 @@ export default function AdminDashboard({
 
       {/* Urgent Production Queue */}
       {urgentQueue.length > 0 && (
-        <div className="card-border overflow-hidden animate-slide-up">
+        <div className="card-surface overflow-hidden animate-slide-up">
           <div className="p-4 md:p-5 border-b border-neutral-100 dark:border-neutral-800 bg-neutral-50/60 dark:bg-neutral-800/40 flex items-center justify-between">
             <div className="flex items-center gap-2.5">
               <AlertCircle size={16} className="text-amber-500" />
@@ -223,7 +223,7 @@ export default function AdminDashboard({
       )}
 
       {/* Recent Activity & Orders List */}
-      <div className="card-border overflow-hidden">
+      <div className="card-surface overflow-hidden">
         <div className="p-4 md:p-5 border-b border-neutral-100 dark:border-neutral-800 flex items-center justify-between">
           <div>
             <h3 className="font-semibold text-sm text-neutral-900 dark:text-white tracking-[-0.025em]">

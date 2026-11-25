@@ -113,7 +113,7 @@ export default function AdminCodeVault({ orders = [], onOpenOrder }) {
   return (
     <div className="space-y-6 animate-fade-in">
       {/* Top Header & Export Action */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2 border-b border-neutral-200/40 dark:border-neutral-800">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-2">
         <div>
           <h2 className="text-xl font-bold tracking-[-0.035em] text-neutral-900 dark:text-white">
             Access Code Vault &amp; Cryptographic Keys
@@ -132,7 +132,7 @@ export default function AdminCodeVault({ orders = [], onOpenOrder }) {
       </div>
 
       {/* Instant Code Validator Tool */}
-      <div className="card-border p-5 bg-neutral-50/50 dark:bg-neutral-800/40">
+      <div className="card-surface p-5 bg-neutral-50/50 dark:bg-neutral-800/40">
         <div className="flex items-center gap-2 mb-2">
           <ShieldCheck size={16} className="text-accent" />
           <h3 className="font-semibold text-xs text-neutral-900 dark:text-white">
@@ -174,7 +174,7 @@ export default function AdminCodeVault({ orders = [], onOpenOrder }) {
       </div>
 
       {/* Directory Table */}
-      <div className="card-border overflow-hidden">
+      <div className="card-surface overflow-hidden">
         {/* Table Filter Toolbar */}
         <div className="p-4 border-b border-neutral-100 dark:border-neutral-800 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div className="relative max-w-xs w-full">

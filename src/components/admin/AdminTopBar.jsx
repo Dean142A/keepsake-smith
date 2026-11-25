@@ -122,8 +122,8 @@ export default function AdminTopBar({
           </button>
 
           {showNotifications && (
-            <div className="absolute right-0 top-full mt-2 w-[280px] bg-white dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800 rounded-xl shadow-lg p-3 z-50 animate-scale-in">
-              <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-neutral-800 text-xs font-semibold text-neutral-800 dark:text-neutral-200">
+            <div className="absolute right-0 top-full mt-2 w-[280px] bg-white dark:bg-neutral-900 rounded-xl shadow-lg p-3 z-50 animate-scale-in">
+              <div className="flex items-center justify-between pb-2 text-xs font-semibold text-neutral-800 dark:text-neutral-200">
                 <span>System Notifications</span>
                 <span className="text-[10px] text-accent font-normal">Active</span>
               </div>
@@ -161,7 +161,7 @@ export default function AdminTopBar({
           </button>
 
           {showProfileMenu && (
-            <div className="absolute right-0 top-full mt-2 w-[230px] bg-white dark:bg-neutral-900 border border-neutral-200/60 dark:border-neutral-800 rounded-xl shadow-lg overflow-hidden z-50 animate-scale-in">
+            <div className="absolute right-0 top-full mt-2 w-[230px] bg-white dark:bg-neutral-900 rounded-xl shadow-lg overflow-hidden z-50 animate-scale-in">
               <div className="p-3.5 border-b border-neutral-100 dark:border-neutral-800">
                 <div className="font-semibold text-xs text-neutral-900 dark:text-white truncate">
                   {user?.username || 'admin@thekeepsakesmith.com'}

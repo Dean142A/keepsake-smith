@@ -130,7 +130,7 @@ export default function ExperienceBuilder({ value, onChange, orderId = 'unassign
   return (
     <div className="space-y-5">
       {/* Photos */}
-      <div className="card-border p-4">
+      <div className="card-surface p-4">
         <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
           <div>
             <span className="uppercase-label text-neutral-400">Keepsake Pages</span>
@@ -180,7 +180,7 @@ export default function ExperienceBuilder({ value, onChange, orderId = 'unassign
             {exp.pages.map((p, i) => (
               <li
                 key={`${p.imageUrl}-${i}`}
-                className="flex items-center gap-3 p-2 rounded-xl bg-neutral-50 dark:bg-neutral-800/60 border border-neutral-200/50 dark:border-neutral-800"
+                className="flex items-center gap-3 p-2 rounded-xl bg-neutral-50 dark:bg-neutral-800/60"
               >
                 <span className="font-mono text-[10px] text-neutral-400 w-5 text-center">
                   {i + 1}
@@ -219,7 +219,7 @@ export default function ExperienceBuilder({ value, onChange, orderId = 'unassign
       </div>
 
       {/* Letter */}
-      <div className="card-border p-4">
+      <div className="card-surface p-4">
         <span className="uppercase-label text-neutral-400">The Letter</span>
         <p className="text-[11px] text-neutral-500 mt-0.5 mb-3">
           Shown as a readable note inside the experience.
@@ -229,7 +229,7 @@ export default function ExperienceBuilder({ value, onChange, orderId = 'unassign
           value={exp.letter.body}
           onChange={(e) => patch({ letter: { ...exp.letter, body: e.target.value } })}
           placeholder="Write the message the buyer wants their partner to read…"
-          className="w-full rounded-xl border border-neutral-200/60 dark:border-neutral-700 bg-white dark:bg-neutral-900 px-3.5 py-2.5 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[var(--accent)] resize-y"
+          className="w-full rounded-xl bg-white dark:bg-neutral-900 px-3.5 py-2.5 text-xs text-neutral-900 dark:text-neutral-100 focus:outline-none focus:border-[var(--accent)] resize-y"
         />
         <input
           type="text"
@@ -242,7 +242,7 @@ export default function ExperienceBuilder({ value, onChange, orderId = 'unassign
 
       {/* Audio */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="card-border p-4">
+        <div className="card-surface p-4">
           <span className="uppercase-label text-neutral-400">Voice Note</span>
           <p className="text-[11px] text-neutral-500 mt-0.5 mb-3">MP3, WAV, M4A or OGG.</p>
           <input ref={voiceInput} type="file" accept="audio/*" hidden onChange={addVoice} />
@@ -266,7 +266,7 @@ export default function ExperienceBuilder({ value, onChange, orderId = 'unassign
           )}
         </div>
 
-        <div className="card-border p-4">
+        <div className="card-surface p-4">
           <span className="uppercase-label text-neutral-400">Background Music</span>
           <p className="text-[11px] text-neutral-500 mt-0.5 mb-3">Optional ambient track.</p>
           <input ref={musicInput} type="file" accept="audio/*" hidden onChange={addMusic} />
