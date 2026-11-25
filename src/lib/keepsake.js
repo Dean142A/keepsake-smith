@@ -112,9 +112,16 @@ export function buildSpreads(experience) {
 
 export function generateAccessCode() {
   const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no I/O/0/1
+  // The code is the only credential guarding a customer's gift, so it comes
+  // from the CSPRNG. Math.random is a predictable sequence: a few observed
+  // codes are enough to narrow down the ones issued around them. Web Crypto
+  // rather than node:crypto because this module is also bundled for the
+  // browser, where the admin renders order data.
+  const bytes = new Uint8Array(8);
+  globalThis.crypto.getRandomValues(bytes);
   let body = '';
   for (let i = 0; i < 8; i++) {
-    body += alphabet[Math.floor(Math.random() * alphabet.length)];
+    body += alphabet[bytes[i] % alphabet.length];
   }
   return `KPSK-${body.slice(0, 4)}-${body.slice(4)}`;
 }

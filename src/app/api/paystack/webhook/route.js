@@ -34,20 +34,37 @@ export async function POST(request) {
 
     const rawBody = await request.text();
 
-    // Verify Paystack HMAC SHA-512 Signature if secret is configured
-    if (paystackSecret && signature) {
-      const hash = crypto
-        .createHmac('sha512', paystackSecret)
-        .update(rawBody)
-        .digest('hex');
+    // An unsigned webhook is an open door to marking any order paid, so a
+    // missing secret or a missing signature is a rejection rather than a
+    // reason to skip the check.
+    if (!paystackSecret) {
+      console.error('[Paystack] PAYSTACK_SECRET_KEY is not set — refusing to accept webhooks.');
+      return NextResponse.json(
+        { success: false, error: 'Payment webhooks are not configured on this environment.' },
+        { status: 503 }
+      );
+    }
 
-      if (hash !== signature) {
-        console.warn('Paystack Webhook HMAC SHA-512 signature mismatch detected.');
-        return NextResponse.json(
-          { success: false, error: 'Invalid payload signature' },
-          { status: 401 }
-        );
-      }
+    if (!signature) {
+      return NextResponse.json(
+        { success: false, error: 'Missing payload signature' },
+        { status: 401 }
+      );
+    }
+
+    const expected = crypto.createHmac('sha512', paystackSecret).update(rawBody).digest('hex');
+    const provided = Buffer.from(signature, 'utf8');
+    const expectedBuf = Buffer.from(expected, 'utf8');
+
+    if (
+      provided.length !== expectedBuf.length ||
+      !crypto.timingSafeEqual(provided, expectedBuf)
+    ) {
+      console.warn('Paystack webhook signature mismatch.');
+      return NextResponse.json(
+        { success: false, error: 'Invalid payload signature' },
+        { status: 401 }
+      );
     }
 
     const payload = JSON.parse(rawBody || '{}');

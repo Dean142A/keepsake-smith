@@ -11,8 +11,10 @@ const LOCKOUT_DURATION_MS = 15 * 60 * 1000;
 
 export async function POST(req) {
   try {
-    const clientIp =
-      req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+    // Only the first hop of X-Forwarded-For is the proxy's own observation;
+    // anything after it was supplied by the caller.
+    const forwarded = (req.headers.get('x-forwarded-for') || '').split(',')[0].trim();
+    const clientIp = forwarded || req.headers.get('x-real-ip') || '127.0.0.1';
     const body = await req.json();
     const { code } = body;
 
@@ -21,7 +23,9 @@ export async function POST(req) {
     }
 
     const cleanCode = normaliseCode(code);
-    const rateLimitKey = `${clientIp}:${cleanCode}`;
+    // Keyed on the caller alone. Keying on caller *and* code handed every
+    // new guess a fresh allowance, which is no limit on guessing at all.
+    const rateLimitKey = clientIp;
     const now = Date.now();
 
     const attemptRecord = FAILED_ATTEMPTS.get(rateLimitKey);
